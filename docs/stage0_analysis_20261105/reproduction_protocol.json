@@ -1,0 +1,666 @@
+{
+  "schema": "vsr_single_external_row_reproduction_v1",
+  "project_root": "/home/hugo/Projects/VSR_",
+  "harness": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/VSR-sync/scripts/reproduce_external_row.py",
+    "bytes": 30403,
+    "sha256": "d4f026054cf384447e154600776a85e16610ae52c5877f92bfa930c22ac922ed"
+  },
+  "old_project_root": "/home/hugo/Projects/VSR",
+  "old_child_run": "/home/hugo/Projects/VSR/runs/external_paired_frozen_20261103T125240.867596Z/external",
+  "reference_files": {
+    "metrics": {
+      "path": "/home/hugo/Projects/VSR/runs/external_paired_frozen_20261103T125240.867596Z/external/results/NoRef_Base_seed20261102_step8192/REDS4/000/metrics.json",
+      "bytes": 133295,
+      "sha256": "f1ebe19ccbe606990bb96dfd0857b093e482a34dbfb96fd5e404a9a86528684f"
+    },
+    "complete": {
+      "path": "/home/hugo/Projects/VSR/runs/external_paired_frozen_20261103T125240.867596Z/external/results/NoRef_Base_seed20261102_step8192/REDS4/000/complete.json",
+      "bytes": 180,
+      "sha256": "9f3a71847b2103ab97b4056f011efb12229ee5ff5e4f374f50ede70e9b348fe3"
+    },
+    "child_protocol": {
+      "path": "/home/hugo/Projects/VSR/runs/external_paired_frozen_20261103T125240.867596Z/external/protocol.json",
+      "bytes": 67262,
+      "sha256": "439859e1abc509babbdb910a7b348dd9b63f572ae826e21eb3f74424b5917c6e"
+    },
+    "execution_policy": {
+      "path": "/home/hugo/Projects/VSR/runs/external_paired_frozen_20261103T125240.867596Z/execution_policy.json",
+      "bytes": 297158,
+      "sha256": "9fc5ad3e3e9a00d2de7cc6c4fbc9e91032274f8dffb16fef7f0d39296661dc13"
+    },
+    "official_model_manifest": {
+      "path": "/home/hugo/Projects/VSR/docs/official-model-manifest.json",
+      "bytes": 12225,
+      "sha256": "740321dbd8dab4c816d6db465b45dc08dd2ea9a728b935a38ea41dcbcf7960d3"
+    }
+  },
+  "reference_row_contract_sha256": "d11e42fd2f68492039046625c63df41d2a36576958cc543eb458cfe8d08570aa",
+  "historical_child_protocol_digest": "e0f8fd19081559483a7e45dae3371030169a0c8975e2316a10c0c81f24d46e4e",
+  "checkpoint": {
+    "path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/Base/checkpoint_008192.pt",
+    "bytes": 78685253,
+    "sha256": "8f3d1e19edc24b8ad72219ef207b85c4c798f241f6f204fac57e57c11960806c"
+  },
+  "checkpoint_spec": {
+    "path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/Base/checkpoint_008192.pt",
+    "checkpoint_sha256": "8f3d1e19edc24b8ad72219ef207b85c4c798f241f6f204fac57e57c11960806c",
+    "config": {
+      "schema_version": 1,
+      "stage": "formal_round1_HQ_only_four_way",
+      "seed": 20261102,
+      "model": {
+        "repo_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+        "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+        "local_dir": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers"
+      },
+      "data": {
+        "raw_root": "/home/hugo/Projects/ReprVSR-pretrained/data/HQ-VSR",
+        "manifest": "manifests/hq_vsr.json",
+        "num_frames": 9,
+        "height": 128,
+        "width": 224,
+        "scale": 4,
+        "fps": "preserve_sampled_input_fps",
+        "selection": "train",
+        "val_limit": 32,
+        "save_input_videos": 2,
+        "temporal_stride": 4,
+        "eligibility_inventory": "manifests/hq_temporal_stride4_inventory.json",
+        "eligible_train_clips": 1641
+      },
+      "conditioning": {
+        "injection_layers": [
+          0,
+          5,
+          9
+        ],
+        "alignment_layer": 9,
+        "rank": 8,
+        "alpha": 8,
+        "stem_channels": 128,
+        "projector_hidden": 1024,
+        "teacher_dim": 768,
+        "hri_enabled": false
+      },
+      "teacher": {
+        "repo": "https://github.com/facebookresearch/dinov2",
+        "revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+        "source_dir": "vendor/dinov2",
+        "weights": "weights/dinov2_vitb14_pretrain.pth",
+        "weights_url": "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth",
+        "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73"
+      },
+      "training": {
+        "variants": [
+          "Base",
+          "Align",
+          "Relation",
+          "Both"
+        ],
+        "batch_size": 1,
+        "learning_rate": 0.0001,
+        "weight_decay": 0.01,
+        "max_grad_norm": 1.0,
+        "mixed_precision": "bf16",
+        "gradient_checkpointing": true,
+        "lambda_align": 0.01,
+        "fm_target": "noise_minus_clean",
+        "noise_interpolation": "(1-sigma)*clean+sigma*noise",
+        "timestep": "native_UniPC_1000_timestep_grid_uniform_index",
+        "official_initialization_per_variant": true,
+        "resume": false,
+        "updates": 8192,
+        "evaluate_at": [
+          0,
+          2048,
+          4096,
+          8192
+        ],
+        "checkpoint_at": [
+          2048,
+          4096,
+          8192
+        ],
+        "gradient_log_every": 512,
+        "log_every": 200,
+        "lambda_relation": 1.0
+      },
+      "formal_training": {
+        "enabled": true,
+        "training_source": "HQ-VSR only",
+        "matrix": [
+          "Base",
+          "Align",
+          "Relation",
+          "Both"
+        ],
+        "updates_each": 8192,
+        "official_independent_initialization_each": true,
+        "shared_data_and_degradation": true,
+        "caption_ignored_by_user_fixed_interface": true
+      },
+      "evaluation_protocol": {
+        "internal_val": "HQ-VSR source grouped val",
+        "internal_test": "HQ-VSR source grouped test untouched during preflight",
+        "external_paired": [
+          "REDS explicit sequence IDs pending",
+          "YouHQ40"
+        ],
+        "real": [
+          "VideoLQ MUSIQ + playback blind review"
+        ],
+        "second_round_expansion": "OpenVidHD only after module benefit confirmed",
+        "hri": "stage5 only",
+        "metrics": "official LPIPS/tLP/tOF adapters not yet implemented; never approximate under these names"
+      },
+      "experiment_name": "formal_hq_v2_noref",
+      "caption_policy": "user_approved_fixed_generic_text; preserve_caption_interface; no_semantic_claim",
+      "evaluation": {
+        "sampling_steps": 20,
+        "seeds": [
+          42,
+          43
+        ],
+        "monitor_seeds": [
+          42
+        ],
+        "modes": [
+          "correct",
+          "disabled",
+          "shuffled"
+        ],
+        "rgb_range": [
+          0,
+          1
+        ],
+        "border_shave": 0,
+        "scope": "prospective HQ-VSR protocol-v2 full train1641; fixed source-held-out val32; internal test211 untouched",
+        "acceptance": {
+          "minimum_psnr_margin_over_controls_db": 1.0,
+          "all_clip_seed_pairs_positive": true,
+          "manual_content_motion_check": true
+        }
+      },
+      "weight_selection": {
+        "lambda_A": 0.01,
+        "lambda_R": 1.0,
+        "source": "bounded pilot val search + train-only gradient scale calibration, frozen before formal",
+        "no_test_used": true
+      },
+      "flow": {
+        "weights": "weights/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
+        "weights_sha256": "ff5fadd56d26b40647388883af1547351ea17868b765c05b27231e72dd16a322",
+        "updates": 12,
+        "fb_alpha": 0.01,
+        "fb_beta": 0.5,
+        "direct_anchor_pairs": [
+          [
+            0,
+            4
+          ],
+          [
+            4,
+            8
+          ]
+        ]
+      },
+      "reproducibility": {
+        "mode": "strict",
+        "relation_loss_device": "cpu",
+        "verified_probe": "strict_determinism_probe: identical backward and 3-update same-state trajectories on thisGPU; no cross-hardware claim"
+      },
+      "protocol_transition": {
+        "pilot_v1": "64train/8val; 9contiguousframes; selectedfour-way budget4096each; extra tuning runs recorded separately",
+        "prospective_v2": "full1641train/32val; source stride4 gives9sampledframes across33rawframes; HR/LR shareFPSorig/4; stronger motion span; all4fresh official",
+        "raw_split_unchanged": true,
+        "motivation": "pilot shorttimewindow showed onlytiny/inconsistent benefits; prospective longer motion supervision before formal fixed comparison",
+        "test_pixels_or_scores_not_used_for_protocol_choice": true
+      },
+      "_sha256": "597e99b658f60684983966d8f3287f999bbb04285b0667f6ac077c062261f6d7"
+    },
+    "variant": "Base",
+    "step": 8192
+  },
+  "caption": {
+    "text": "A high quality video.",
+    "cache": {
+      "path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/fresh_text_embeddings.pt",
+      "bytes": 4196043,
+      "sha256": "1dd219cde3005b4d16febaad67ad87e79c1403ae9bdaae69f2723ab9cbf239c2"
+    },
+    "config": {
+      "path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/config.json",
+      "bytes": 5180,
+      "sha256": "fb03abf27dfa4ee393310d99743310855913f864f19080f2fd83b8c079145639"
+    },
+    "embedding_sha256": "f99e3246097b8b2052c9e0f1b8ab1e9b08d02cae42cd899e77dae3f20b9bd127",
+    "shape": [
+      1,
+      512,
+      4096
+    ],
+    "dtype": "torch.bfloat16",
+    "T5_fallback": false
+  },
+  "scope": {
+    "label": "NoRef_Base_seed20261102_step8192",
+    "dataset": "REDS4",
+    "sequence_id": "000",
+    "frames": 17,
+    "start": 0,
+    "temporal_stride": 1,
+    "seeds": [
+      42,
+      43
+    ],
+    "steps": 20,
+    "tile_hw": [
+      256,
+      448
+    ],
+    "overlap": 64,
+    "cfg": 1.0,
+    "reference_image": null,
+    "native_LR_hw": [
+      180,
+      320
+    ],
+    "native_HR_hw": [
+      720,
+      1280
+    ],
+    "tiles_per_restore": 16
+  },
+  "production_code_sha256": {
+    "/home/hugo/Projects/VSR_/vsr/__init__.py": "b758452c554a704017b6ff410ee914525da000691ce357a904ab9213df4b43e5",
+    "/home/hugo/Projects/VSR_/vsr/alignment.py": "e005061b70c229d9934cc49d8785ea9545a981d025ab4806cc84a82a6344ae4d",
+    "/home/hugo/Projects/VSR_/vsr/audit.py": "dc2bcc8b45ccd31901d98b5a6996c0cf88e173c88ab9e14f220a059115c061ec",
+    "/home/hugo/Projects/VSR_/vsr/blind_review.py": "07c9fe2afb3694c8b1fb287df7a96c8904d9684829dea64baa9e80ba4e53f29d",
+    "/home/hugo/Projects/VSR_/vsr/cache.py": "af5ccb5a445aca6abb639a8e6ee8bf7eda218807f89a7231423419379fe5101c",
+    "/home/hugo/Projects/VSR_/vsr/calibrate_relation.py": "dfa0830ae5044533df7b7a65ee25fad6dbb972cf33080e420660ca83b15fe4c1",
+    "/home/hugo/Projects/VSR_/vsr/calibration.py": "63e09f59a822299dc7012ccd38330524b465d58c6ebc1ff64ae9e9fc8018d677",
+    "/home/hugo/Projects/VSR_/vsr/checkpoints.py": "44f2f827a5074e032166b182227d493ff6a159e61e73d4c1ed9c9da94084e700",
+    "/home/hugo/Projects/VSR_/vsr/data.py": "654bd03809cca1649cbd618b145751b723c1ea2a4e68738a53d4c90dddda82a0",
+    "/home/hugo/Projects/VSR_/vsr/evaluate_external.py": "bae3e275d61fa222f4e8996c5363845e905c4e4be05a898c976cfd32481687ea",
+    "/home/hugo/Projects/VSR_/vsr/evaluate_hq.py": "87bcc427ac00e6397ad69b7ab14d4bb4ed289204526dad1ab03c100efcfa6bdf",
+    "/home/hugo/Projects/VSR_/vsr/evaluation.py": "83a4a0f616fb1634658d07855cdec462dabc0b81c7b62b157847d2cdcb804648",
+    "/home/hugo/Projects/VSR_/vsr/external_data.py": "0a185c08bf158e11f7a424f8304611b841396293b66daf43011aa84ee9f629f1",
+    "/home/hugo/Projects/VSR_/vsr/feature_diagnostics.py": "b8e4ce4accd9b51b13bf5a938ac5e5d8d2e16b2d8c7f5459cab84c9a81dfd887",
+    "/home/hugo/Projects/VSR_/vsr/flow.py": "505fc6fc4829d6d3c5f6c2bc18dab5b6052043f245e23108cbad7fd4b2e0cd4b",
+    "/home/hugo/Projects/VSR_/vsr/frozen_evaluation.py": "80ded9e065255d73b60fcb8e45a84b34eb89bbfcad4ea8adf68ca3bad34ddece",
+    "/home/hugo/Projects/VSR_/vsr/hq_evaluation_data.py": "7c3ad821338eff32e312b13dde389c839a8d4fba3edfbec2e27b28e4aee54fc7",
+    "/home/hugo/Projects/VSR_/vsr/infer_video.py": "9e37d09efcc47c112d845ea86385ac072889dcfc7c184b0957450a526a93f0cd",
+    "/home/hugo/Projects/VSR_/vsr/inference.py": "c01b2349d2af7126d23d05202714aef8809a697af0bb81ff8aa8c53c9ac949d6",
+    "/home/hugo/Projects/VSR_/vsr/metric_pools.py": "89de9477a202d86315b3db749902d192f5609d4fdd5f8bd00d48ebea88261dfa",
+    "/home/hugo/Projects/VSR_/vsr/model.py": "e086a84c61f2b957c980fae771fe52010008a38263fe05ca92e99bd4a623b0de",
+    "/home/hugo/Projects/VSR_/vsr/native_operator_qa.py": "777a2c163a558f487519c027074c1c47d7531e8899d48d4d2ddc5b54a37e6be0",
+    "/home/hugo/Projects/VSR_/vsr/native_qa_reader.py": "88b39a736d6a561ea6c4345dfc511d7d244c7c1d7b6bfb9cef1c0d09639bb7ab",
+    "/home/hugo/Projects/VSR_/vsr/native_qa_restore.py": "cf0a13fb4a60e6c50b8fe63505f92b3e56c270edcf1bec1b8739cad30adc7e4f",
+    "/home/hugo/Projects/VSR_/vsr/native_resource_probe.py": "dfa91c2bb46464ee915944c360de1f6f4d6867b16f461b3d4f83323a3a65d8d9",
+    "/home/hugo/Projects/VSR_/vsr/no_reference.py": "60544d481ca794a1773698a6ad92fbd349dcde112763d16e4a9fbb05c550f6b1",
+    "/home/hugo/Projects/VSR_/vsr/noref_feature_diagnostics.py": "b51cb2dd53e06a9df209eb7de16996b745f7485d783ca1c9db54e65afa2cfcaa",
+    "/home/hugo/Projects/VSR_/vsr/paired_statistics.py": "87f9f8015b32053ad6c54d3166decacef97f2b276e41788013332bcc975a3b89",
+    "/home/hugo/Projects/VSR_/vsr/perceptual_metrics.py": "78f415a4346430e37fe13a79891ed61cc5da9e779ebcd188ae3a8bb7e9f3e345",
+    "/home/hugo/Projects/VSR_/vsr/preflight.py": "7e291163598c4fd1c73cd38567603381eeaaccf0c1332c4d81beb041eba9ca40",
+    "/home/hugo/Projects/VSR_/vsr/prepared_cache.py": "d51bacfa97cb83f3aa9d096fdf830cd5034137ee68150db857f7eece04162a77",
+    "/home/hugo/Projects/VSR_/vsr/probes.py": "6c103c9303fe51592624e5d0eae6f1c8a74d2db9e32b88d9c2e81c6914ac3db2",
+    "/home/hugo/Projects/VSR_/vsr/reference.py": "c46325adb78cb437741c3d268aee80673b0c48384adc1ea536751809ff703fb0",
+    "/home/hugo/Projects/VSR_/vsr/reference_diagnostics.py": "aecbb4a5cec30ea24e2c4f75f82b257e762b0c5842bf18fc412e64c6a7a9cfa0",
+    "/home/hugo/Projects/VSR_/vsr/reference_evaluation.py": "1cda5a7496c388fe4dd56e42442408cc5ee814751d7d6b7e6e05da898ce12f06",
+    "/home/hugo/Projects/VSR_/vsr/reference_model.py": "880785a0f394b1bce01ff0321148939c4d18fabedd54f85f90e29758aa6bc610",
+    "/home/hugo/Projects/VSR_/vsr/reference_training.py": "945b383b43f4ad37a7d024b4abbf7f9cce5cfa636eebd756ce5bf9af01f03086",
+    "/home/hugo/Projects/VSR_/vsr/relation.py": "ba67a280f3cfdd2e46ea02b419a2c34536c795651d181f274d0792a0018c7238",
+    "/home/hugo/Projects/VSR_/vsr/reproducibility.py": "a861af3fcd7ded7c9c0d973c8223d3e585eab3d8006bfef926a444db5f7cc6b0",
+    "/home/hugo/Projects/VSR_/vsr/robustness.py": "1bcfed021054527beaebe3ddefac55b85c7639c7344e2b59edd887f27fedb021",
+    "/home/hugo/Projects/VSR_/vsr/score_reference_saved.py": "98a51bbdc696a33a078cafbeaa46e7d20a352ce0f5b86e76db58f88bd5569939",
+    "/home/hugo/Projects/VSR_/vsr/score_saved.py": "8de60b859e2ef4706d99e9ee8c107112d677cb8443449c1488203bb6a61b3128",
+    "/home/hugo/Projects/VSR_/vsr/summarize_reference_saved.py": "f8c2066add1c277feba96d5321315d2ccede13d123fc543dd29002f6741a239a",
+    "/home/hugo/Projects/VSR_/vsr/summarize_saved.py": "ea5dbc3d3daef5268d5ee99d52bf1f671ad5a2a354d16500ea9c364299d0d740",
+    "/home/hugo/Projects/VSR_/vsr/summarize_training_repeats.py": "cc8a8314ed27a701dfb6ef03bc9792a67d8e26128f82a3e71f3339552a994505",
+    "/home/hugo/Projects/VSR_/vsr/train.py": "dc4b426034acb1c31424c0e299ea97f5b66fcaf07b5355117dd3199a693ba7f2"
+  },
+  "helper_bindings": {
+    "external": {
+      "path": "/home/hugo/Projects/VSR_/scripts/frozen_external/work/run_frozen_external_T1_policy_desktop_v2.py",
+      "bytes": 45096,
+      "sha256": "bcdbf8ee9c741afc8db57064c67d8fcd3bb61702073310c287529d6b944095f6"
+    },
+    "hq": {
+      "path": "/home/hugo/Projects/VSR_/scripts/frozen_external/work/run_frozen_HQ_test_T1_policy.py",
+      "bytes": 25739,
+      "sha256": "6304f49d5a30ad0a26fd8ae5e8a52d782dd12ee5dd6148b87b099f03d93c50c7"
+    },
+    "policy": {
+      "path": "/home/hugo/Projects/VSR_/scripts/frozen_external/work/t1_vae_cache_policy.py",
+      "bytes": 10749,
+      "sha256": "d94340b33868912f43633c71ef4a34a97b2dd7eb7b74e9d40ded363b09417270"
+    }
+  },
+  "metadata_bindings": {
+    "manifest": {
+      "path": "/home/hugo/Projects/VSR/manifests/external.json",
+      "bytes": 566088,
+      "sha256": "008a958ea42dd41dfb5ec55e1f76b66f15b5c2326861568a4c8f92493fb0454a"
+    },
+    "stream_metadata": {
+      "path": "/home/hugo/Projects/VSR/docs/external-streams.json",
+      "bytes": 102591,
+      "sha256": "ea4edaf6a5cb923ac0d656f78de29d0f1dbd104374a186419b1e5d8311437b07"
+    },
+    "provenance": {
+      "path": "/home/hugo/Projects/VSR/docs/external-data-provenance.json",
+      "bytes": 4082,
+      "sha256": "524ff3e1fedffca3bd06a2efe5adde9c3540a3effec442c1f2f58b750fc939b5"
+    },
+    "Wan_VAE_source": {
+      "path": "/home/hugo/miniconda3/envs/reprvsr-pretrained/lib/python3.12/site-packages/diffusers/models/autoencoders/autoencoder_kl_wan.py",
+      "bytes": 54656,
+      "sha256": "29ea101ecd11d5886e21c75fa6c27cca38b026d48a0cbe8f061db9b77bbfa9dd"
+    },
+    "caption_preflight": {
+      "path": "/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_final_evaluation_text_cache_preflight.json",
+      "bytes": 10731,
+      "sha256": "c903115c195e5f8f818c46743e82d8233309c92400fb8cdad964308263a1568e"
+    }
+  },
+  "official_files": [
+    {
+      "path": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers/scheduler/scheduler_config.json",
+      "bytes": 751,
+      "sha256": "3fed2abbd9bbc301a74db01947198057ec5049808910dccab320925bf27bea6e"
+    },
+    {
+      "path": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers/transformer/config.json",
+      "bytes": 465,
+      "sha256": "0b093fa072e9ff28763febe9b964ee582f566733a6d6709deb9dfba1bde16b81"
+    },
+    {
+      "path": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers/transformer/diffusion_pytorch_model-00001-of-00002.safetensors",
+      "bytes": 4998781576,
+      "sha256": "6d011927dbd2cc8afe53d57abab04a8fd86f615d83324770d985fb058ece3a24"
+    },
+    {
+      "path": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers/transformer/diffusion_pytorch_model-00002-of-00002.safetensors",
+      "bytes": 677289072,
+      "sha256": "b92ec2309b1f239af6f746431815a881afcc938abb26a4f08d9a2fd6c892f872"
+    },
+    {
+      "path": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers/transformer/diffusion_pytorch_model.safetensors.index.json",
+      "bytes": 73296,
+      "sha256": "dcbcf3497134a3f50557ff069dd7d2c84b5c4d8c5932472f6bdb780fb4016589"
+    },
+    {
+      "path": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers/vae/config.json",
+      "bytes": 724,
+      "sha256": "f0c1cc1d7decb5badc384f54691746a27a9aeff49f7ebca974e583389342d527"
+    },
+    {
+      "path": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers/vae/diffusion_pytorch_model.safetensors",
+      "bytes": 507591892,
+      "sha256": "d6e524b3fffede1787a74e81b30976dce5400c4439ba64222168e607ed19e793"
+    }
+  ],
+  "metric_weights": [
+    {
+      "path": "/home/hugo/Projects/VSR/weights/alexnet-owt-7be5be79.pth",
+      "bytes": 244408911,
+      "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+    },
+    {
+      "path": "/home/hugo/Projects/VSR/weights/lpips_v0.1_alex.pth",
+      "bytes": 6009,
+      "sha256": "df73285e35b22355a2df87cdb6b70b343713b667eddbda73e1977e0c860835c0"
+    }
+  ],
+  "runtime_versions": {
+    "torch": "2.14.1+cu130",
+    "torchvision": "0.29.1+cu130",
+    "diffusers": "0.42.1",
+    "transformers": "5.21.0",
+    "numpy": "2.5.2",
+    "Pillow": "12.3.0",
+    "opencv-python-headless": "4.14.0.94",
+    "lpips": "0.1.4"
+  },
+  "runtime_environment": {
+    "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+    "OMP_NUM_THREADS": "2",
+    "MKL_NUM_THREADS": "2",
+    "PYTORCH_ALLOC_CONF": "expandable_segments:True",
+    "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"
+  },
+  "runtime_flags_expected": {
+    "torch_version": "2.14.1+cu130",
+    "torch_cuda_version": "13.0",
+    "cuda_initialized": false,
+    "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+    "PYTHONHASHSEED": null,
+    "deterministic_algorithms": true,
+    "deterministic_warn_only": false,
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": true,
+    "cudnn_allow_tf32": false,
+    "matmul_allow_tf32": false,
+    "float32_matmul_precision": "highest",
+    "matmul_allow_fp16_reduced_precision_reduction": false,
+    "matmul_allow_bf16_reduced_precision_reduction": false,
+    "sdp_flash": false,
+    "sdp_memory_efficient": false,
+    "sdp_cudnn": false,
+    "sdp_math": true,
+    "sdp_math_allow_fp16_bf16_reduction": false,
+    "cpu_threads": 2,
+    "cpu_interop_threads": 32
+  },
+  "VAE_policy_metadata": {
+    "phase": "paired",
+    "records": [
+      {
+        "LR_hw": [
+          180,
+          320
+        ],
+        "HR_hw": [
+          720,
+          1280
+        ],
+        "tile_count": 16
+      }
+    ]
+  },
+  "VAE_lifecycle": "public_remove_reinstall_same_VAE_after_each_successful_restore",
+  "reference_pngs": {
+    "42": [
+      {
+        "frame": 0,
+        "bytes": 1441733,
+        "sha256": "a08a475f9b512e626d5c126eae00bab746a31c022d9c70d17fd36af997dc9ee2"
+      },
+      {
+        "frame": 1,
+        "bytes": 1473555,
+        "sha256": "8dea0b0092894a1eb8c5ba3d8f393e274711faaafce3b958deaffb130ea6c549"
+      },
+      {
+        "frame": 2,
+        "bytes": 1481337,
+        "sha256": "59b38c8d7ffc87981056bc756c26181415c7e1c4acf484a359aa012541292bed"
+      },
+      {
+        "frame": 3,
+        "bytes": 1484536,
+        "sha256": "55086dbbec5c96a13d1b334799f3885ab82356cc6b303b5356475bbd5fb5b021"
+      },
+      {
+        "frame": 4,
+        "bytes": 1476593,
+        "sha256": "40a413e7e0de870ba2850ff9d1f316ef2ea9c5832e912d5c77885d2c1fe6bb13"
+      },
+      {
+        "frame": 5,
+        "bytes": 1478663,
+        "sha256": "14e38c773190d0ec03cc30e385e7b328ceecabd081230f46596813d277ab576a"
+      },
+      {
+        "frame": 6,
+        "bytes": 1473955,
+        "sha256": "4221cef317e71b5b2ea1588c060c28461378bd82d2d1dec323711fba6f63f82f"
+      },
+      {
+        "frame": 7,
+        "bytes": 1469136,
+        "sha256": "5f1c0f800cfe6781a4e30250262f4f7368d3c47e753c45b37e52619be8c5499c"
+      },
+      {
+        "frame": 8,
+        "bytes": 1459047,
+        "sha256": "2eea9a15830fbb7e4aee7cd425db7943614968e845cbc46a288a86637fb97e92"
+      },
+      {
+        "frame": 9,
+        "bytes": 1466470,
+        "sha256": "85e496a66d26be151589445714f74797ec8d1a14cffc7d91cf84c6566d5e7d5a"
+      },
+      {
+        "frame": 10,
+        "bytes": 1466240,
+        "sha256": "2e76683ddc6855e0a6b28eea372e1099f9ba3f8689b5cd36cea099265d789b14"
+      },
+      {
+        "frame": 11,
+        "bytes": 1467979,
+        "sha256": "29b6bc0335e2e3fc7f9c95d8c7d45d713f6495c6e67ac1afb1c9f3e66be10231"
+      },
+      {
+        "frame": 12,
+        "bytes": 1463490,
+        "sha256": "ed4b470f5111d5e5b3c38b1e287d68f7bacf7cad578cc4ebf9ae643c0249c7f0"
+      },
+      {
+        "frame": 13,
+        "bytes": 1483571,
+        "sha256": "946d2c0c3b77fd53aca1b934b23c91e15b92dc10fd72d25cb1c00927df6e2af9"
+      },
+      {
+        "frame": 14,
+        "bytes": 1477176,
+        "sha256": "1a829b2809632fee9b1f3e16a4327b6caa9eace72d0df9e82443c1cd111bc4d0"
+      },
+      {
+        "frame": 15,
+        "bytes": 1486951,
+        "sha256": "a04d6d99403a76df8419ca7879c13f915f9ae648d05bdde70acfdef01fa5cf46"
+      },
+      {
+        "frame": 16,
+        "bytes": 1474742,
+        "sha256": "3f277b11c9d060f036ed5e680590d9f4b7f15fca49e9e90d92fa081b02af197a"
+      }
+    ],
+    "43": [
+      {
+        "frame": 0,
+        "bytes": 1431476,
+        "sha256": "cbcccff44220bcb759a27815284305afbe4ab40c3dd95b4e3a639f2487b06206"
+      },
+      {
+        "frame": 1,
+        "bytes": 1461716,
+        "sha256": "a1c396d904a004817b7ba2672de5304eaf1c261be92b03a1531d5c4ef9818e9b"
+      },
+      {
+        "frame": 2,
+        "bytes": 1469669,
+        "sha256": "8e3a97cc4e038b3de70e782dfd11490a400d10b85327e5428aee31965c12b6e2"
+      },
+      {
+        "frame": 3,
+        "bytes": 1472994,
+        "sha256": "4433d04e4958f49c01f10ee71083325d560d500e51818d22391b2b024a2ac4fd"
+      },
+      {
+        "frame": 4,
+        "bytes": 1466253,
+        "sha256": "4944a08623f36a8d730a3cf6aae94df298810eaabd20af37b8e6e0d79c3780cc"
+      },
+      {
+        "frame": 5,
+        "bytes": 1467113,
+        "sha256": "e2e063de21feb3acf1340809e364ca6445cc9146f536e681b27ca7a9603c5524"
+      },
+      {
+        "frame": 6,
+        "bytes": 1462127,
+        "sha256": "e82311e25d32b46a12731d95a8c1499254fb7865fad078fad4b890688a768fdb"
+      },
+      {
+        "frame": 7,
+        "bytes": 1457670,
+        "sha256": "2827e35f79e3ebfbfebaf8a8c41216715207ae1b1e069bd7601cc24d40632e28"
+      },
+      {
+        "frame": 8,
+        "bytes": 1449106,
+        "sha256": "eea888bbd0c87436a1adfb85e7cce55e6139ce93dc3121d7c13e7cc5cce81e09"
+      },
+      {
+        "frame": 9,
+        "bytes": 1460306,
+        "sha256": "75d6d8ac4cdc42d821bc4c3949c97d8c6497466a2815e89e19f7251dcbab1d3e"
+      },
+      {
+        "frame": 10,
+        "bytes": 1461841,
+        "sha256": "882330c310398ec0baf86ddcbb269115fca062bbbf0f0a06be8deb3c3e0253e7"
+      },
+      {
+        "frame": 11,
+        "bytes": 1465627,
+        "sha256": "88cde393edbe2af10cb7f60374835b55f3cd55031c3877789c08256990cb817d"
+      },
+      {
+        "frame": 12,
+        "bytes": 1460968,
+        "sha256": "019c9c109733db9c9b76d8134a6e0d4307a58e0a67743237b49e5e8cabdca370"
+      },
+      {
+        "frame": 13,
+        "bytes": 1480440,
+        "sha256": "d8c47a0207179b2cb9fb5e526b7bb42ea34727f70bc401a6ee85d17d07fdfa2d"
+      },
+      {
+        "frame": 14,
+        "bytes": 1476979,
+        "sha256": "8e53f043b4977c33a9f33e16ba50d3d954eed2cb979e89bd125e16cb89e2bb8f"
+      },
+      {
+        "frame": 15,
+        "bytes": 1486698,
+        "sha256": "080649dcf80a99bb642d2c12e9fda80e8e009d9c8d407c25b99a5dc4315451af"
+      },
+      {
+        "frame": 16,
+        "bytes": 1472377,
+        "sha256": "2d6c89ce4b96eebf9e710817dad60dbd9c122795a06e1151c23f5576046ab8af"
+      }
+    ]
+  },
+  "pass_rule": {
+    "all_34_saved_PNG_files_byte_identical": true,
+    "all_pool_scalar_metrics": true,
+    "include_bicubic_baseline_and_seed_mean": true,
+    "metric_atol": 1e-10,
+    "metric_rtol": 1e-08,
+    "seed42_failure_stops_before_seed43": true,
+    "retries": 0
+  },
+  "timing_budget": {
+    "expected_restore_seconds_per_seed": 120,
+    "expected_metric_seconds_per_seed": 11,
+    "expected_total_minutes_approx": 5,
+    "kind": "historical estimate, not a timeout or guarantee"
+  },
+  "training_updates": 0,
+  "parameters_selected_on_test": false
+}

@@ -13,7 +13,7 @@ Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
   - which blocks the LR branch injects into, and whether it mixes frames before injection (D3).
 
   *Done when:* all paths are filled in, and D1–D3 in `DECISIONS.md` have code-level evidence (file and line references).
-- [~] **T0.2 Freeze the inference protocol.** (2026-11-05: historical protocol recovered statically in `RESULTS.md`; no sequence rerun, so reproduction requirement remains open.) Record the protocol used for the finished REDS4 and YouHQ40 runs: sampler, steps, sampler seed, tiling, temporal window and overlap. Put it in `RESULTS.md`.
+- [x] **T0.2 Freeze the inference protocol.** (2026-11-05: fresh NoRef Base / REDS4 / 000 reproduction passed for seeds42/43; all 34 PNG files byte-identical and all original metric pools, bicubic baseline and seed mean match fixed tolerances; see `reproduction_summary.json` in `docs/stage0_analysis_20261105/`.) Record the protocol used for the finished REDS4 and YouHQ40 runs: sampler, steps, sampler seed, tiling, temporal window and overlap. Put it in `RESULTS.md`.
   *Done when:* re-running one sequence with one checkpoint reproduces the stored numbers.
 - [!] **T0.3 Finish external evaluation.** (2026-11-05: blocked pending a fresh-output continuation plan: old worker is fresh-only after user pause; frozen testing is first-17-frame prefixes with stride 1 versus training stride 4, and covers 8 original checkpoints rather than all 16.) Run the remaining Relation sequences and all Both sequences, in both families, with the frozen protocol.
   *Done when:* all 16 checkpoints have per-clip REDS4 and YouHQ40 metrics saved as CSV.
