@@ -1,0 +1,97 @@
+VSR 无参考匹配训练重复：三个预声明训练seed完整配对
+报告时间UTC：2026-11-02T21:45:51.635809+00:00
+
+完成范围：训练seed20261102／20261103／20261104的Base与Align，各8192更新、固定HQ-val32／32来源、全部预设采样42/43最终评价。包含Base04，三个配对全部保留，不选择最优seed、step或采样。
+固定条件：数据seed20261102、1641训练片段、同一来源留出val32及封存窗口／目标、9帧／源步长4、HR128x224、x4 bicubic、20步UniPC／CFG1。同一官方Wan版本独立初始化和新优化器，未恢复任务权重。caption暂保留generic接口。
+统计边界：先在每视频内平均采样42/43，再计算同训练seed的Align−Base。跨训练seed等权给均值／范围／正负零方向计数；N=3仍小，不估计精确训练方差、跨训练置信区间或p值。每seed来源bootstrap95%只是已训练实例的条件来源描述，排除训练变异、未校正多重比较；32来源及两采样不能当成更多训练重复。
+PSNR／SSIM越高越好；LPIPS／tLP100／tOF越低越好。正号不是统一的改善方向，所有负结果和权衡均保留。
+
+训练seed20261102：
+Base：psnr_rgb_db=21.96392671，ssim_rgb=0.68479805，lpips_alex01_rgb_allframes=0.13256417，tLP100_alex_v0_1_TecoGAN_crop=0.78779816，tOF_Farneback_TecoGAN_crop=0.62423218
+Align：psnr_rgb_db=22.10437998，ssim_rgb=0.69077603，lpips_alex01_rgb_allframes=0.13365322，tLP100_alex_v0_1_TecoGAN_crop=0.79650935，tOF_Farneback_TecoGAN_crop=0.63188752
+Align−Base psnr_rgb_db: +0.14045326；条件来源95%区间[0.11157392090419715, 0.168787135414912]
+Align−Base ssim_rgb: +0.00597797；条件来源95%区间[0.004238963093505134, 0.007765034842304853]
+Align−Base lpips_alex01_rgb_allframes: +0.00108905；条件来源95%区间[-0.0017547446042751973, 0.004506850031611972]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: +0.00871119；条件来源95%区间[-0.036917788802384166, 0.05260687704549125]
+Align−Base tOF_Farneback_TecoGAN_crop: +0.00765534；条件来源95%区间[-0.0032939143035036977, 0.020470820032642216]
+
+训练seed20261103：
+Base：psnr_rgb_db=22.02933717，ssim_rgb=0.68370851，lpips_alex01_rgb_allframes=0.13254188，tLP100_alex_v0_1_TecoGAN_crop=0.89326832，tOF_Farneback_TecoGAN_crop=0.60628751
+Align：psnr_rgb_db=22.09045031，ssim_rgb=0.68678991，lpips_alex01_rgb_allframes=0.13260569，tLP100_alex_v0_1_TecoGAN_crop=0.91629011，tOF_Farneback_TecoGAN_crop=0.61281350
+Align−Base psnr_rgb_db: +0.06111315；条件来源95%区间[0.028383242824952717, 0.09890623396050974]
+Align−Base ssim_rgb: +0.00308139；条件来源95%区间[0.0016098961958454726, 0.004808307173920594]
+Align−Base lpips_alex01_rgb_allframes: +0.00006381；条件来源95%区间[-0.002463444416450027, 0.002083784608273865]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: +0.02302180；条件来源95%区间[-0.0021899638693412262, 0.048429492242121334]
+Align−Base tOF_Farneback_TecoGAN_crop: +0.00652598；条件来源95%区间[0.0020131772085733245, 0.011221181369182886]
+
+训练seed20261104：
+Base：psnr_rgb_db=21.76157966，ssim_rgb=0.66611657，lpips_alex01_rgb_allframes=0.13867884，tLP100_alex_v0_1_TecoGAN_crop=0.79994689，tOF_Farneback_TecoGAN_crop=0.60190254
+Align：psnr_rgb_db=21.71638005，ssim_rgb=0.66462751，lpips_alex01_rgb_allframes=0.13950836，tLP100_alex_v0_1_TecoGAN_crop=0.77783344，tOF_Farneback_TecoGAN_crop=0.60435978
+Align−Base psnr_rgb_db: -0.04519961；条件来源95%区间[-0.06683878225686679, -0.02190360498142459]
+Align−Base ssim_rgb: -0.00148906；条件来源95%区间[-0.0025392902859797187, -0.0003727785130548804]
+Align−Base lpips_alex01_rgb_allframes: +0.00082951；条件来源95%区间[-0.0007913971006120083, 0.002306748872150716]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: -0.02211345；条件来源95%区间[-0.05127126633055923, 0.007146188519300257]
+Align−Base tOF_Farneback_TecoGAN_crop: +0.00245723；条件来源95%区间[-0.003928801928850589, 0.008295697191351791]
+
+跨三个训练seed的配对差值描述（每seed等权；不合并成96个独立训练样本）：
+psnr_rgb_db: 均值+0.05212227，范围[-0.04519961, +0.14045326]；正／负／零训练seed=2/1/0；该指标有利方向2/3。
+ssim_rgb: 均值+0.00252344，范围[-0.00148906, +0.00597797]；正／负／零训练seed=2/1/0；该指标有利方向2/3。
+lpips_alex01_rgb_allframes: 均值+0.00066079，范围[+0.00006381, +0.00108905]；正／负／零训练seed=3/0/0；该指标有利方向0/3。
+tLP100_alex_v0_1_TecoGAN_crop: 均值+0.00320651，范围[-0.02211345, +0.02302180]；正／负／零训练seed=2/1/0；该指标有利方向1/3。
+tOF_Farneback_TecoGAN_crop: 均值+0.00554619，范围[+0.00245723, +0.00765534]；正／负／零训练seed=3/0/0；该指标有利方向0/3。
+
+解释与适用范围：
+上述数字分别呈现保真度、感知与时间误差，单项方向不能替代整体收益判断。图中的每条区间仅属于该seed的一对已训练实例；图中没有跨训练seed区间。Base随训练seed变化不等于配对模块效应的训练变异，结论以三组匹配差值描述为准。
+这是固定内部val32的候选确认记录，N=3仍不足精确训练总体推断。内部test211及REDS4／YouHQ40／VideoLQ未用于此处评价或调参；OpenVidHD目前未扩充。后续HRI匹配重复和冻结协议测试按独立阶段执行，本表不混合无参考与HRI非参考帧池。
+重复阶段只追踪预声明Base／Align候选；原Relation／Both的正式单次结果完整保留在下表，未把它们排除或改写为成功，也不把未重复的候选当成N=3。
+
+原训练seed20261102的Relation／Both（单次训练上下文，不参与三seed均值）：
+Relation：psnr_rgb_db=22.02483382，ssim_rgb=0.68758866，lpips_alex01_rgb_allframes=0.13203611，tLP100_alex_v0_1_TecoGAN_crop=0.78647083，tOF_Farneback_TecoGAN_crop=0.62570348
+Relation−Base psnr_rgb_db: +0.06090711；条件来源95%区间[0.03351963535418829, 0.08903370699962149]
+Relation−Base ssim_rgb: +0.00279060；条件来源95%区间[0.0014662172127928583, 0.0041194730916888226]
+Relation−Base lpips_alex01_rgb_allframes: -0.00052806；条件来源95%区间[-0.0022253557412316017, 0.0010245056237585671]
+Relation−Base tLP100_alex_v0_1_TecoGAN_crop: -0.00132733；条件来源95%区间[-0.05121906011709143, 0.049483655934636765]
+Relation−Base tOF_Farneback_TecoGAN_crop: +0.00147130；条件来源95%区间[-0.005882549358648248, 0.010159224653034468]
+Both：psnr_rgb_db=22.03969121，ssim_rgb=0.68668817，lpips_alex01_rgb_allframes=0.13354069，tLP100_alex_v0_1_TecoGAN_crop=0.79809831，tOF_Farneback_TecoGAN_crop=0.62795289
+Both−Base psnr_rgb_db: +0.07576450；条件来源95%区间[0.04857940951580281, 0.1015629188968323]
+Both−Base ssim_rgb: +0.00189012；条件来源95%区间[0.0005724551621824565, 0.003078884921140125]
+Both−Base lpips_alex01_rgb_allframes: +0.00097652；条件来源95%区间[-0.0003071942428101067, 0.0022956640828245604]
+Both−Base tLP100_alex_v0_1_TecoGAN_crop: +0.01030015；条件来源95%区间[-0.029777079398627393, 0.05936137408752983]
+Both−Base tOF_Farneback_TecoGAN_crop: +0.00372072；条件来源95%区间[-0.0033744980944902634, 0.011968042587250233]
+这些原单次结果的所有均值方向和来源区间（包括跨零区间）均按原记录呈现，不能由机制损失或表示诊断替代恢复质量证据。
+
+训练／评价来源与版本：
+汇总helper在staging验证fresh声明、common init签名和完整数据／指标绑定；本脚本还核对三个配对全部8192步的clip／timestep／sigma draw一致、日志连续及损失／梯度范数有限。执行源码数值等价与监督payload由独立运行审计负责，日志SHA不是这些结论的替代。
+已完成的NoRef重复seed03／04训练环境记录为b15accb；原seed02按其原run环境保留commit记录，训练数值源码等价由独立运行审计提供。此前230项staging CPU回归是工具验证，不代表新汇总helper／报告脚本参与这三对训练；后续HRI部署另行记录。本报告不加载任务checkpoint／优化器，不使用旧ReprVSR生成结果或人工评分。
+
+实测成本（分别列更新计时与该组阶段）：
+seed20261102/Base: 更新1296.567s／0.360157更新占用GPU小时；组阶段1619.992s；峰值allocated 3.838GiB；CPU评分核心7.460s。
+seed20261102/Align: 更新1301.551s／0.361542更新占用GPU小时；组阶段1650.302s；峰值allocated 3.878GiB；CPU评分核心7.561s。
+seed20261103/Base: 更新1286.722s／0.357423更新占用GPU小时；组阶段1634.528s；峰值allocated 3.838GiB；CPU评分核心7.232s。
+seed20261103/Align: 更新1312.759s／0.364655更新占用GPU小时；组阶段1659.182s；峰值allocated 3.875GiB；CPU评分核心6.861s。
+seed20261104/Base: 更新1293.437s／0.359288更新占用GPU小时；组阶段1635.674s；峰值allocated 3.838GiB；CPU评分核心7.232s。
+seed20261104/Align: 更新1320.372s／0.366770更新占用GPU小时；组阶段1665.940s；峰值allocated 3.875GiB；CPU评分核心7.054s。
+seed20261103双组计算主流程墙钟3403.208s；官方资产核验21.646s、预备51.002s（原始phase_timings分别记录）。
+seed20261104双组计算主流程墙钟3388.517s；官方资产核验22.182s、预备46.305s（原始phase_timings分别记录）。
+主流程计时不含Python／import、初始配置／目录记录及最终计时／状态写入，不是完整systemd服务寿命。更新占用小时不等于CUDA内核活跃小时；组阶段／双组主流程墙钟包含的阶段不同，不相加当成内核小时。CPU评分核心不含Python／指标模型加载及完整评分服务墙钟，可能与其他训练阶段重叠，和训练计时分开、不相加当作日历墙钟。
+六个完成组的成本不是研究总成本：原中断Align、原Relation／Both、HRI、准备与机制诊断等另有记录，未补造统一总GPU小时。原seed02 Base与恢复Align来自两个run，未估算其统一双组墙钟。
+
+全部配对的LRV控制：
+seed20261102/Base/disabled: 64组合，正确条件PSNR全部更高=True，最小优势7.564786dB。
+seed20261102/Base/shuffled: 64组合，正确条件PSNR全部更高=True，最小优势9.451955dB。
+seed20261102/Align/disabled: 64组合，正确条件PSNR全部更高=True，最小优势7.850314dB。
+seed20261102/Align/shuffled: 64组合，正确条件PSNR全部更高=True，最小优势9.532113dB。
+seed20261103/Base/disabled: 64组合，正确条件PSNR全部更高=True，最小优势6.753023dB。
+seed20261103/Base/shuffled: 64组合，正确条件PSNR全部更高=True，最小优势9.738195dB。
+seed20261103/Align/disabled: 64组合，正确条件PSNR全部更高=True，最小优势6.889638dB。
+seed20261103/Align/shuffled: 64组合，正确条件PSNR全部更高=True，最小优势9.766136dB。
+seed20261104/Base/disabled: 64组合，正确条件PSNR全部更高=True，最小优势6.898066dB。
+seed20261104/Base/shuffled: 64组合，正确条件PSNR全部更高=True，最小优势9.236111dB。
+seed20261104/Align/disabled: 64组合，正确条件PSNR全部更高=True，最小优势6.784259dB。
+seed20261104/Align/shuffled: 64组合，正确条件PSNR全部更高=True，最小优势9.097907dB。
+完整逐视频／采样控制记录保存在key_results；条件利用不保证所有细节正确。
+
+三配对完整来源与逐训练seed／逐source值：/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_noref_training_repeats_seed20261102_20261103_20261104_descriptive.json
+seed04两组绑定汇总：/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_noref_repeat_seed20261104_Base_Align_summary.json
+原Relation／Both绑定汇总：/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_formal_four_way_8192_summary.json
+五指标图：/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_noref_three_training_pairs_deltas.png；可导出PDF：/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_noref_three_training_pairs_deltas.pdf

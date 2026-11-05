@@ -1,0 +1,306 @@
+VSR HRI匹配训练重复：2个预声明训练seed完整配对
+报告时间UTC：2026-11-02T23:01:48.778697+00:00
+
+训练seed：20261102／20261103，每seed的Base与Align均完成8192更新。数据seed20261102、1641训练片段、固定按来源留出val32／32来源、同一封存窗口／目标、HR128x224、9帧／源步长4、x4 bicubic；20步UniPC／CFG1及全部采样42/43。官方版本独立fresh初始化和新优化器，caption暂保留generic接口。
+主结果为ref0/hri_on的Base与Align绝对恢复质量及配对Align−Base。ref0/off是单列缺失参考条件；on−off差之差另列为参考开关响应描述，不能替代绝对质量、证明模块协同或总体收益。ref4全部是预声明次要项，单列且不跨位置池化或选择最优ref。
+统计单位：先每视频内平均采样42/43，再计算同训练seed的配对差；跨2个训练seed等权给均值／范围／正负零计数。N=2仍小，不估计精确训练方差、跨训练置信区间或p值。每seed的来源95%区间仅条件于该对已训练实例，排除训练变异、未校正多重比较；sampling seeds与32来源不是训练重复。
+评价池：on/off均使用相同8个非参考帧，所给帧单独保留在原完整指标。ref0保留原始时间对[2,3]/[3,4]/[4,5]/[5,6]，ref4保留[2,3]/[5,6]，不删帧后重连或重新编号。ref0/ref4 off是不同排除池，不构成额外独立训练。
+PSNR／SSIM越高越好；LPIPS／tLP100／tOF越低越好。差值统一为Align−Base，正号不是统一改善方向。HRI记录范围仅是正确LRV下的on/off；没有在这些HRI checkpoint运行LRV关闭／打乱或错误参考条件，不作相应依赖性／鲁棒性宣称。
+
+ref0/hri_on（预设主ref0；绝对非参考帧恢复质量）
+训练seed20261102：
+Base绝对均值：psnr_rgb_db=21.94152413，ssim_rgb=0.68712465，lpips_alex_v0_1=0.13525102，tLP100_alex_v0_1_TecoGAN_crop=0.83829733，tOF_Farneback_TecoGAN_crop=0.64262080
+Align绝对均值：psnr_rgb_db=21.93468733，ssim_rgb=0.68491216，lpips_alex_v0_1=0.13267883，tLP100_alex_v0_1_TecoGAN_crop=0.81186208，tOF_Farneback_TecoGAN_crop=0.63320063
+Align−Base psnr_rgb_db: -0.00683680；条件来源95%区间[-0.03437403790141356, 0.021007789623331507]
+Align−Base ssim_rgb: -0.00221250；条件来源95%区间[-0.003786737140035257, -0.0008356321370229125]
+Align−Base lpips_alex_v0_1: -0.00257218；条件来源95%区间[-0.004414322440607066, -0.0005590368833509281]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: -0.02643524；条件来源95%区间[-0.05920812062186087, 0.009612480431542258]
+Align−Base tOF_Farneback_TecoGAN_crop: -0.00942017；条件来源95%区间[-0.02481467388861347, 0.0056605636476888275]
+训练seed20261103：
+Base绝对均值：psnr_rgb_db=22.05845583，ssim_rgb=0.68658341，lpips_alex_v0_1=0.13239169，tLP100_alex_v0_1_TecoGAN_crop=0.92592082，tOF_Farneback_TecoGAN_crop=0.60745614
+Align绝对均值：psnr_rgb_db=22.09944388，ssim_rgb=0.68753573，lpips_alex_v0_1=0.13363260，tLP100_alex_v0_1_TecoGAN_crop=0.93089069，tOF_Farneback_TecoGAN_crop=0.61130164
+Align−Base psnr_rgb_db: +0.04098804；条件来源95%区间[0.010776273774838334, 0.07156280617018985]
+Align−Base ssim_rgb: +0.00095232；条件来源95%区间[-0.0005821259997901507, 0.0025110605609370384]
+Align−Base lpips_alex_v0_1: +0.00124092；条件来源95%区间[-0.000979250517229957, 0.0036261046976505894]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: +0.00496988；条件来源95%区间[-0.026057153904730512, 0.03823760842578849]
+Align−Base tOF_Farneback_TecoGAN_crop: +0.00384550；条件来源95%区间[-0.0029894096180214545, 0.010981990715663408]
+跨训练seed等权描述（不含跨训练区间）：
+Base绝对质量：
+psnr_rgb_db: 均值21.99998998，范围[21.94152413, 22.05845583]
+ssim_rgb: 均值0.68685403，范围[0.68658341, 0.68712465]
+lpips_alex_v0_1: 均值0.13382135，范围[0.13239169, 0.13525102]
+tLP100_alex_v0_1_TecoGAN_crop: 均值0.88210907，范围[0.83829733, 0.92592082]
+tOF_Farneback_TecoGAN_crop: 均值0.62503847，范围[0.60745614, 0.64262080]
+Align绝对质量：
+psnr_rgb_db: 均值22.01706560，范围[21.93468733, 22.09944388]
+ssim_rgb: 均值0.68622394，范围[0.68491216, 0.68753573]
+lpips_alex_v0_1: 均值0.13315572，范围[0.13267883, 0.13363260]
+tLP100_alex_v0_1_TecoGAN_crop: 均值0.87137639，范围[0.81186208, 0.93089069]
+tOF_Farneback_TecoGAN_crop: 均值0.62225114，范围[0.61130164, 0.63320063]
+Align−Base psnr_rgb_db: 均值+0.01707562，范围[-0.00683680, +0.04098804]；正／负／零训练seed=1/1/0
+Align−Base ssim_rgb: 均值-0.00063009，范围[-0.00221250, +0.00095232]；正／负／零训练seed=1/1/0
+Align−Base lpips_alex_v0_1: 均值-0.00066563，范围[-0.00257218, +0.00124092]；正／负／零训练seed=1/1/0
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: 均值-0.01073268，范围[-0.02643524, +0.00496988]；正／负／零训练seed=1/1/0
+Align−Base tOF_Farneback_TecoGAN_crop: 均值-0.00278733，范围[-0.00942017, +0.00384550]；正／负／零训练seed=1/1/0
+
+ref0/hri_off（预设主ref0；绝对非参考帧恢复质量）
+训练seed20261102：
+Base绝对均值：psnr_rgb_db=21.93996047，ssim_rgb=0.68489341，lpips_alex_v0_1=0.13390428，tLP100_alex_v0_1_TecoGAN_crop=0.82868690，tOF_Farneback_TecoGAN_crop=0.62747977
+Align绝对均值：psnr_rgb_db=21.93644440，ssim_rgb=0.68534454，lpips_alex_v0_1=0.13228470，tLP100_alex_v0_1_TecoGAN_crop=0.81495346，tOF_Farneback_TecoGAN_crop=0.61981469
+Align−Base psnr_rgb_db: -0.00351607；条件来源95%区间[-0.029255915878575938, 0.022894264617855747]
+Align−Base ssim_rgb: +0.00045113；条件来源95%区间[-0.0011813550008810125, 0.0019558753556339057]
+Align−Base lpips_alex_v0_1: -0.00161958；条件来源95%区间[-0.0033958117386646337, 0.0006569400804437463]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: -0.01373344；条件来源95%区间[-0.039073452908269246, 0.011924317497005166]
+Align−Base tOF_Farneback_TecoGAN_crop: -0.00766508；条件来源95%区间[-0.01748564156005159, 0.002970268677745471]
+训练seed20261103：
+Base绝对均值：psnr_rgb_db=22.15060277，ssim_rgb=0.68950684，lpips_alex_v0_1=0.13226764，tLP100_alex_v0_1_TecoGAN_crop=0.92967134，tOF_Farneback_TecoGAN_crop=0.60808020
+Align绝对均值：psnr_rgb_db=22.16354517，ssim_rgb=0.68946024，lpips_alex_v0_1=0.13277420，tLP100_alex_v0_1_TecoGAN_crop=0.94456874，tOF_Farneback_TecoGAN_crop=0.60962312
+Align−Base psnr_rgb_db: +0.01294240；条件来源95%区间[-0.01717950025896968, 0.04282902051962943]
+Align−Base ssim_rgb: -0.00004660；条件来源95%区间[-0.0015030611772090196, 0.0014163401123369105]
+Align−Base lpips_alex_v0_1: +0.00050656；条件来源95%区间[-0.0013016115566642837, 0.0024760103691733072]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: +0.01489740；条件来源95%区间[-0.015833710917831922, 0.04446679852208034]
+Align−Base tOF_Farneback_TecoGAN_crop: +0.00154292；条件来源95%区间[-0.004862498905276879, 0.008159127671387977]
+跨训练seed等权描述（不含跨训练区间）：
+Base绝对质量：
+psnr_rgb_db: 均值22.04528162，范围[21.93996047, 22.15060277]
+ssim_rgb: 均值0.68720013，范围[0.68489341, 0.68950684]
+lpips_alex_v0_1: 均值0.13308596，范围[0.13226764, 0.13390428]
+tLP100_alex_v0_1_TecoGAN_crop: 均值0.87917912，范围[0.82868690, 0.92967134]
+tOF_Farneback_TecoGAN_crop: 均值0.61777998，范围[0.60808020, 0.62747977]
+Align绝对质量：
+psnr_rgb_db: 均值22.04999479，范围[21.93644440, 22.16354517]
+ssim_rgb: 均值0.68740239，范围[0.68534454, 0.68946024]
+lpips_alex_v0_1: 均值0.13252945，范围[0.13228470, 0.13277420]
+tLP100_alex_v0_1_TecoGAN_crop: 均值0.87976110，范围[0.81495346, 0.94456874]
+tOF_Farneback_TecoGAN_crop: 均值0.61471890，范围[0.60962312, 0.61981469]
+Align−Base psnr_rgb_db: 均值+0.00471317，范围[-0.00351607, +0.01294240]；正／负／零训练seed=1/1/0
+Align−Base ssim_rgb: 均值+0.00020226，范围[-0.00004660, +0.00045113]；正／负／零训练seed=1/1/0
+Align−Base lpips_alex_v0_1: 均值-0.00055651，范围[-0.00161958, +0.00050656]；正／负／零训练seed=1/1/0
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: 均值+0.00058198，范围[-0.01373344, +0.01489740]；正／负／零训练seed=1/1/0
+Align−Base tOF_Farneback_TecoGAN_crop: 均值-0.00306108，范围[-0.00766508, +0.00154292]；正／负／零训练seed=1/1/0
+
+ref0/on_minus_off（预设主ref0；参考开关差值之差；不是绝对质量或协同效应）
+训练seed20261102：
+Base自身on−off：psnr_rgb_db=0.00156365，ssim_rgb=0.00223124，lpips_alex_v0_1=0.00134674，tLP100_alex_v0_1_TecoGAN_crop=0.00961043，tOF_Farneback_TecoGAN_crop=0.01514103
+Align自身on−off：psnr_rgb_db=-0.00175708，ssim_rgb=-0.00043239，lpips_alex_v0_1=0.00039413，tLP100_alex_v0_1_TecoGAN_crop=-0.00309137，tOF_Farneback_TecoGAN_crop=0.01338594
+Align−Base psnr_rgb_db: -0.00332073；条件来源95%区间[-0.018216919800019094, 0.011290544677532644]
+Align−Base ssim_rgb: -0.00266363；条件来源95%区间[-0.0033820687342085874, -0.0019484213800751605]
+Align−Base lpips_alex_v0_1: -0.00095260；条件来源95%区间[-0.002150550798251061, 0.0002512491595553]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: -0.01270180；条件来源95%区间[-0.0354765643828614, 0.009302636840402547]
+Align−Base tOF_Farneback_TecoGAN_crop: -0.00175509；条件来源95%区间[-0.01000450805950095, 0.004709591963182901]
+训练seed20261103：
+Base自身on−off：psnr_rgb_db=-0.09214694，ssim_rgb=-0.00292343，lpips_alex_v0_1=0.00012405，tLP100_alex_v0_1_TecoGAN_crop=-0.00375052，tOF_Farneback_TecoGAN_crop=-0.00062405
+Align自身on−off：psnr_rgb_db=-0.06410130，ssim_rgb=-0.00192451，lpips_alex_v0_1=0.00085840，tLP100_alex_v0_1_TecoGAN_crop=-0.01367805，tOF_Farneback_TecoGAN_crop=0.00167853
+Align−Base psnr_rgb_db: +0.02804564；条件来源95%区间[0.011192817108760739, 0.044344751732923064]
+Align−Base ssim_rgb: +0.00099892；条件来源95%区间[0.0003763657485251315, 0.0016126163405715485]
+Align−Base lpips_alex_v0_1: +0.00073436；条件来源95%区间[-0.0006148635622594156, 0.001877158676870749]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: -0.00992752；条件来源95%区间[-0.025447890566283604, 0.006316640947261474]
+Align−Base tOF_Farneback_TecoGAN_crop: +0.00230258；条件来源95%区间[-0.00048050824261736125, 0.005134541990264551]
+跨训练seed等权描述（不含跨训练区间）：
+Base参考开关差值：
+psnr_rgb_db: 均值-0.04529164，范围[-0.09214694, 0.00156365]
+ssim_rgb: 均值-0.00034610，范围[-0.00292343, 0.00223124]
+lpips_alex_v0_1: 均值0.00073539，范围[0.00012405, 0.00134674]
+tLP100_alex_v0_1_TecoGAN_crop: 均值0.00292995，范围[-0.00375052, 0.00961043]
+tOF_Farneback_TecoGAN_crop: 均值0.00725849，范围[-0.00062405, 0.01514103]
+Align参考开关差值：
+psnr_rgb_db: 均值-0.03292919，范围[-0.06410130, -0.00175708]
+ssim_rgb: 均值-0.00117845，范围[-0.00192451, -0.00043239]
+lpips_alex_v0_1: 均值0.00062627，范围[0.00039413, 0.00085840]
+tLP100_alex_v0_1_TecoGAN_crop: 均值-0.00838471，范围[-0.01367805, -0.00309137]
+tOF_Farneback_TecoGAN_crop: 均值0.00753223，范围[0.00167853, 0.01338594]
+Align−Base psnr_rgb_db: 均值+0.01236246，范围[-0.00332073, +0.02804564]；正／负／零训练seed=1/1/0
+Align−Base ssim_rgb: 均值-0.00083236，范围[-0.00266363, +0.00099892]；正／负／零训练seed=1/1/0
+Align−Base lpips_alex_v0_1: 均值-0.00010912，范围[-0.00095260, +0.00073436]；正／负／零训练seed=1/1/0
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: 均值-0.01131466，范围[-0.01270180, -0.00992752]；正／负／零训练seed=0/2/0
+Align−Base tOF_Farneback_TecoGAN_crop: 均值+0.00027375，范围[-0.00175509, +0.00230258]；正／负／零训练seed=1/1/0
+
+ref4/hri_on（单列次要ref4；绝对非参考帧恢复质量）
+训练seed20261102：
+Base绝对均值：psnr_rgb_db=22.09303975，ssim_rgb=0.68887705，lpips_alex_v0_1=0.13494156，tLP100_alex_v0_1_TecoGAN_crop=0.89334717，tOF_Farneback_TecoGAN_crop=0.64296223
+Align绝对均值：psnr_rgb_db=22.00103436，ssim_rgb=0.68609956，lpips_alex_v0_1=0.13349405，tLP100_alex_v0_1_TecoGAN_crop=0.88817986，tOF_Farneback_TecoGAN_crop=0.63134687
+Align−Base psnr_rgb_db: -0.09200539；条件来源95%区间[-0.11928994238817735, -0.06362165383276575]
+Align−Base ssim_rgb: -0.00277749；条件来源95%区间[-0.004409406744525768, -0.0014240906006307342]
+Align−Base lpips_alex_v0_1: -0.00144752；条件来源95%区间[-0.0037191976536632863, 0.0013152927655028178]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: -0.00516732；条件来源95%区间[-0.046474523212509666, 0.038206500357773614]
+Align−Base tOF_Farneback_TecoGAN_crop: -0.01161536；条件来源95%区间[-0.024665725920931435, 0.0008838703914079804]
+训练seed20261103：
+Base绝对均值：psnr_rgb_db=22.10869527，ssim_rgb=0.68791335，lpips_alex_v0_1=0.13278702，tLP100_alex_v0_1_TecoGAN_crop=1.00643570，tOF_Farneback_TecoGAN_crop=0.61520513
+Align绝对均值：psnr_rgb_db=22.06685031，ssim_rgb=0.68541822，lpips_alex_v0_1=0.13344492，tLP100_alex_v0_1_TecoGAN_crop=1.02033304，tOF_Farneback_TecoGAN_crop=0.61203785
+Align−Base psnr_rgb_db: -0.04184496；条件来源95%区间[-0.06913260902228613, -0.014542406451258684]
+Align−Base ssim_rgb: -0.00249513；条件来源95%区间[-0.003973659113398753, -0.001068409491563217]
+Align−Base lpips_alex_v0_1: +0.00065790；条件来源95%区间[-0.0010585807147435844, 0.0025855291498373843]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: +0.01389734；条件来源95%区间[-0.015839715138099564, 0.04391105824652186]
+Align−Base tOF_Farneback_TecoGAN_crop: -0.00316729；条件来源95%区间[-0.01168249941256363, 0.0049074663475039354]
+跨训练seed等权描述（不含跨训练区间）：
+Base绝对质量：
+psnr_rgb_db: 均值22.10086751，范围[22.09303975, 22.10869527]
+ssim_rgb: 均值0.68839520，范围[0.68791335, 0.68887705]
+lpips_alex_v0_1: 均值0.13386429，范围[0.13278702, 0.13494156]
+tLP100_alex_v0_1_TecoGAN_crop: 均值0.94989144，范围[0.89334717, 1.00643570]
+tOF_Farneback_TecoGAN_crop: 均值0.62908368，范围[0.61520513, 0.64296223]
+Align绝对质量：
+psnr_rgb_db: 均值22.03394234，范围[22.00103436, 22.06685031]
+ssim_rgb: 均值0.68575889，范围[0.68541822, 0.68609956]
+lpips_alex_v0_1: 均值0.13346948，范围[0.13344492, 0.13349405]
+tLP100_alex_v0_1_TecoGAN_crop: 均值0.95425645，范围[0.88817986, 1.02033304]
+tOF_Farneback_TecoGAN_crop: 均值0.62169236，范围[0.61203785, 0.63134687]
+Align−Base psnr_rgb_db: 均值-0.06692517，范围[-0.09200539, -0.04184496]；正／负／零训练seed=0/2/0
+Align−Base ssim_rgb: 均值-0.00263631，范围[-0.00277749, -0.00249513]；正／负／零训练seed=0/2/0
+Align−Base lpips_alex_v0_1: 均值-0.00039481，范围[-0.00144752, +0.00065790]；正／负／零训练seed=1/1/0
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: 均值+0.00436501，范围[-0.00516732, +0.01389734]；正／负／零训练seed=1/1/0
+Align−Base tOF_Farneback_TecoGAN_crop: 均值-0.00739132，范围[-0.01161536, -0.00316729]；正／负／零训练seed=0/2/0
+
+ref4/hri_off（单列次要ref4；绝对非参考帧恢复质量）
+训练seed20261102：
+Base绝对均值：psnr_rgb_db=21.96496493，ssim_rgb=0.68557308，lpips_alex_v0_1=0.13368518，tLP100_alex_v0_1_TecoGAN_crop=0.90246549，tOF_Farneback_TecoGAN_crop=0.63707311
+Align绝对均值：psnr_rgb_db=21.96484741，ssim_rgb=0.68612434，lpips_alex_v0_1=0.13205169，tLP100_alex_v0_1_TecoGAN_crop=0.91208930，tOF_Farneback_TecoGAN_crop=0.62407443
+Align−Base psnr_rgb_db: -0.00011752；条件来源95%区间[-0.026469700551520016, 0.02663932641386089]
+Align−Base ssim_rgb: +0.00055126；条件来源95%区间[-0.001090702455257997, 0.0020611698506399984]
+Align−Base lpips_alex_v0_1: -0.00163349；条件来源95%区间[-0.0034558522151201033, 0.0006485179032097211]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: +0.00962381；条件来源95%区间[-0.03196416463424612, 0.054095829229936464]
+Align−Base tOF_Farneback_TecoGAN_crop: -0.01299868；条件来源95%区间[-0.02472908638883382, -0.002060223663283978]
+训练seed20261103：
+Base绝对均值：psnr_rgb_db=22.17613021，ssim_rgb=0.69011901，lpips_alex_v0_1=0.13227840，tLP100_alex_v0_1_TecoGAN_crop=1.02636854，tOF_Farneback_TecoGAN_crop=0.61575106
+Align绝对均值：psnr_rgb_db=22.18650390，ssim_rgb=0.69007795，lpips_alex_v0_1=0.13293952，tLP100_alex_v0_1_TecoGAN_crop=1.07704534，tOF_Farneback_TecoGAN_crop=0.61411493
+Align−Base psnr_rgb_db: +0.01037369；条件来源95%区间[-0.019938636718094437, 0.04087439596773702]
+Align−Base ssim_rgb: -0.00004106；条件来源95%区间[-0.0015187788754701614, 0.0014311394450487569]
+Align−Base lpips_alex_v0_1: +0.00066113；条件来源95%区间[-0.001169102052153903, 0.0026404510676002243]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: +0.05067680；条件来源95%区间[0.011914970791622181, 0.09054389659468141]
+Align−Base tOF_Farneback_TecoGAN_crop: -0.00163612；条件来源95%区间[-0.00929462251951918, 0.006046170144691131]
+跨训练seed等权描述（不含跨训练区间）：
+Base绝对质量：
+psnr_rgb_db: 均值22.07054757，范围[21.96496493, 22.17613021]
+ssim_rgb: 均值0.68784604，范围[0.68557308, 0.69011901]
+lpips_alex_v0_1: 均值0.13298179，范围[0.13227840, 0.13368518]
+tLP100_alex_v0_1_TecoGAN_crop: 均值0.96441702，范围[0.90246549, 1.02636854]
+tOF_Farneback_TecoGAN_crop: 均值0.62641208，范围[0.61575106, 0.63707311]
+Align绝对质量：
+psnr_rgb_db: 均值22.07567566，范围[21.96484741, 22.18650390]
+ssim_rgb: 均值0.68810114，范围[0.68612434, 0.69007795]
+lpips_alex_v0_1: 均值0.13249560，范围[0.13205169, 0.13293952]
+tLP100_alex_v0_1_TecoGAN_crop: 均值0.99456732，范围[0.91208930, 1.07704534]
+tOF_Farneback_TecoGAN_crop: 均值0.61909468，范围[0.61411493, 0.62407443]
+Align−Base psnr_rgb_db: 均值+0.00512808，范围[-0.00011752, +0.01037369]；正／负／零训练seed=1/1/0
+Align−Base ssim_rgb: 均值+0.00025510，范围[-0.00004106, +0.00055126]；正／负／零训练seed=1/1/0
+Align−Base lpips_alex_v0_1: 均值-0.00048618，范围[-0.00163349, +0.00066113]；正／负／零训练seed=1/1/0
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: 均值+0.03015030，范围[+0.00962381, +0.05067680]；正／负／零训练seed=2/0/0
+Align−Base tOF_Farneback_TecoGAN_crop: 均值-0.00731740，范围[-0.01299868, -0.00163612]；正／负／零训练seed=0/2/0
+
+ref4/on_minus_off（单列次要ref4；参考开关差值之差；不是绝对质量或协同效应）
+训练seed20261102：
+Base自身on−off：psnr_rgb_db=0.12807482，ssim_rgb=0.00330397，lpips_alex_v0_1=0.00125639，tLP100_alex_v0_1_TecoGAN_crop=-0.00911832，tOF_Farneback_TecoGAN_crop=0.00588912
+Align自身on−off：psnr_rgb_db=0.03618695，ssim_rgb=-0.00002478，lpips_alex_v0_1=0.00144236，tLP100_alex_v0_1_TecoGAN_crop=-0.02390945，tOF_Farneback_TecoGAN_crop=0.00727244
+Align−Base psnr_rgb_db: -0.09188787；条件来源95%区间[-0.10655889230823884, -0.07864841046680489]
+Align−Base ssim_rgb: -0.00332875；条件来源95%区间[-0.004022310137224849, -0.002688391889387276]
+Align−Base lpips_alex_v0_1: +0.00018597；条件来源95%区间[-0.0007740330514934612, 0.001274377882509725]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: -0.01479113；条件来源95%区间[-0.039773457783667254, 0.00825907486614596]
+Align−Base tOF_Farneback_TecoGAN_crop: +0.00138332；条件来源95%区间[-0.003353311395039782, 0.006535516910662406]
+训练seed20261103：
+Base自身on−off：psnr_rgb_db=-0.06743495，ssim_rgb=-0.00220566，lpips_alex_v0_1=0.00050863，tLP100_alex_v0_1_TecoGAN_crop=-0.01993284，tOF_Farneback_TecoGAN_crop=-0.00054592
+Align自身on−off：psnr_rgb_db=-0.11965359，ssim_rgb=-0.00465973，lpips_alex_v0_1=0.00050540，tLP100_alex_v0_1_TecoGAN_crop=-0.05671230，tOF_Farneback_TecoGAN_crop=-0.00207709
+Align−Base psnr_rgb_db: -0.05221865；条件来源95%区间[-0.0688891989170593, -0.036455450935495896]
+Align−Base ssim_rgb: -0.00245407；条件来源95%区间[-0.0030402071744902058, -0.0018928347170003692]
+Align−Base lpips_alex_v0_1: -0.00000323；条件来源95%区间[-0.000749869132960157, 0.0007854280715037018]
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: -0.03677946；条件来源95%区间[-0.06632715304476733, -0.009365445062030634]
+Align−Base tOF_Farneback_TecoGAN_crop: -0.00153116；条件来源95%区间[-0.004339294371311553, 0.0012897821972728703]
+跨训练seed等权描述（不含跨训练区间）：
+Base参考开关差值：
+psnr_rgb_db: 均值0.03031994，范围[-0.06743495, 0.12807482]
+ssim_rgb: 均值0.00054915，范围[-0.00220566, 0.00330397]
+lpips_alex_v0_1: 均值0.00088251，范围[0.00050863, 0.00125639]
+tLP100_alex_v0_1_TecoGAN_crop: 均值-0.01452558，范围[-0.01993284, -0.00911832]
+tOF_Farneback_TecoGAN_crop: 均值0.00267160，范围[-0.00054592, 0.00588912]
+Align参考开关差值：
+psnr_rgb_db: 均值-0.04173332，范围[-0.11965359, 0.03618695]
+ssim_rgb: 均值-0.00234226，范围[-0.00465973, -0.00002478]
+lpips_alex_v0_1: 均值0.00097388，范围[0.00050540, 0.00144236]
+tLP100_alex_v0_1_TecoGAN_crop: 均值-0.04031087，范围[-0.05671230, -0.02390945]
+tOF_Farneback_TecoGAN_crop: 均值0.00259768，范围[-0.00207709, 0.00727244]
+Align−Base psnr_rgb_db: 均值-0.07205326，范围[-0.09188787, -0.05221865]；正／负／零训练seed=0/2/0
+Align−Base ssim_rgb: 均值-0.00289141，范围[-0.00332875, -0.00245407]；正／负／零训练seed=0/2/0
+Align−Base lpips_alex_v0_1: 均值+0.00009137，范围[-0.00000323, +0.00018597]；正／负／零训练seed=1/1/0
+Align−Base tLP100_alex_v0_1_TecoGAN_crop: 均值-0.02578529，范围[-0.03677946, -0.01479113]；正／负／零训练seed=0/2/0
+Align−Base tOF_Farneback_TecoGAN_crop: 均值-0.00007392，范围[-0.00153116, +0.00138332]；正／负／零训练seed=1/1/0
+
+原HRI Relation／Both单训练seed20261102上下文（不进入以上N2/N3均值）：
+ref0/hri_on/Relation绝对质量：psnr_rgb_db=21.98311766，ssim_rgb=0.68763004，lpips_alex_v0_1=0.13831221，tLP100_alex_v0_1_TecoGAN_crop=0.83736272，tOF_Farneback_TecoGAN_crop=0.65414808
+Relation−Base psnr_rgb_db: +0.04159353；条件来源95%区间[0.008283117137760275, 0.07382262087378305]
+Relation−Base ssim_rgb: +0.00050539；条件来源95%区间[-0.0008986906803329475, 0.0019386836342164312]
+Relation−Base lpips_alex_v0_1: +0.00306119；条件来源95%区间[0.0014104222025707713, 0.004842356070003007]
+Relation−Base tLP100_alex_v0_1_TecoGAN_crop: -0.00093461；条件来源95%区间[-0.039967796565179015, 0.03999806388947034]
+Relation−Base tOF_Farneback_TecoGAN_crop: +0.01152728；条件来源95%区间[-0.004819355217478005, 0.02625135050402604]
+ref0/hri_on/Both绝对质量：psnr_rgb_db=21.89838890，ssim_rgb=0.68417201，lpips_alex_v0_1=0.13707838，tLP100_alex_v0_1_TecoGAN_crop=0.80760263，tOF_Farneback_TecoGAN_crop=0.65717824
+Both−Base psnr_rgb_db: -0.04313523；条件来源95%区间[-0.08095111699466634, -0.005392289781491877]
+Both−Base ssim_rgb: -0.00295264；条件来源95%区间[-0.004294305160874501, -0.001599795857327991]
+Both−Base lpips_alex_v0_1: +0.00182737；条件来源95%区间[-5.0797396033885877e-05, 0.0034989063889952366]
+Both−Base tLP100_alex_v0_1_TecoGAN_crop: -0.03069470；条件来源95%区间[-0.07766909440761083, 0.01626153829533903]
+Both−Base tOF_Farneback_TecoGAN_crop: +0.01455744；条件来源95%区间[-0.0003238429468183299, 0.02986161247317795]
+ref0/hri_off/Relation绝对质量：psnr_rgb_db=21.92666755，ssim_rgb=0.68310317，lpips_alex_v0_1=0.13351051，tLP100_alex_v0_1_TecoGAN_crop=0.81039216，tOF_Farneback_TecoGAN_crop=0.61966827
+Relation−Base psnr_rgb_db: -0.01329292；条件来源95%区间[-0.037491533672896205, 0.010280975432908249]
+Relation−Base ssim_rgb: -0.00179024；条件来源95%区间[-0.0029244525940157473, -0.0005756342376116665]
+Relation−Base lpips_alex_v0_1: -0.00039377；条件来源95%区间[-0.0018964166247315006, 0.0011211617800654494]
+Relation−Base tLP100_alex_v0_1_TecoGAN_crop: -0.01829474；条件来源95%区间[-0.048467774702203315, 0.011498443949449174]
+Relation−Base tOF_Farneback_TecoGAN_crop: -0.00781149；条件来源95%区间[-0.020941602694801987, 0.0019536890496965496]
+ref0/hri_off/Both绝对质量：psnr_rgb_db=21.80202012，ssim_rgb=0.68061805，lpips_alex_v0_1=0.13467765，tLP100_alex_v0_1_TecoGAN_crop=0.78637720，tOF_Farneback_TecoGAN_crop=0.62720899
+Both−Base psnr_rgb_db: -0.13794035；条件来源95%区间[-0.17114132575817434, -0.10443089568092292]
+Both−Base ssim_rgb: -0.00427536；条件来源95%区间[-0.005737402947852388, -0.00284581802552566]
+Both−Base lpips_alex_v0_1: +0.00077337；条件来源95%区间[-0.0010492968332982853, 0.0023462464871045084]
+Both−Base tLP100_alex_v0_1_TecoGAN_crop: -0.04230970；条件来源95%区间[-0.07448956460393674, -0.010119936316641551]
+Both−Base tOF_Farneback_TecoGAN_crop: -0.00027078；条件来源95%区间[-0.010941762656875654, 0.00964940404810476]
+ref4/hri_on/Relation绝对质量：psnr_rgb_db=22.02862842，ssim_rgb=0.68753378，lpips_alex_v0_1=0.13730653，tLP100_alex_v0_1_TecoGAN_crop=0.90229826，tOF_Farneback_TecoGAN_crop=0.63673635
+Relation−Base psnr_rgb_db: -0.06441133；条件来源95%区间[-0.09604306020625748, -0.03416442807859763]
+Relation−Base ssim_rgb: -0.00134327；条件来源95%区间[-0.002571514731971547, -0.0001230173205840408]
+Relation−Base lpips_alex_v0_1: +0.00236497；条件来源95%区间[0.0009584600085872808, 0.0038165947600646176]
+Relation−Base tLP100_alex_v0_1_TecoGAN_crop: +0.00895109；条件来源95%区间[-0.044906453733801754, 0.07391163753482033]
+Relation−Base tOF_Farneback_TecoGAN_crop: -0.00622589；条件来源95%区间[-0.020177912597137037, 0.004692094326310318]
+ref4/hri_on/Both绝对质量：psnr_rgb_db=21.97616604，ssim_rgb=0.68658908，lpips_alex_v0_1=0.13665438，tLP100_alex_v0_1_TecoGAN_crop=0.85836700，tOF_Farneback_TecoGAN_crop=0.64716769
+Both−Base psnr_rgb_db: -0.11687371；条件来源95%区间[-0.15539337307299692, -0.07927651239687493]
+Both−Base ssim_rgb: -0.00228797；条件来源95%区间[-0.003402952691249084, -0.0011648062296444551]
+Both−Base lpips_alex_v0_1: +0.00171281；条件来源95%区间[-0.00028964784578420214, 0.003442546735641371]
+Both−Base tLP100_alex_v0_1_TecoGAN_crop: -0.03498018；条件来源95%区间[-0.09659126678343455, 0.02483223983745117]
+Both−Base tOF_Farneback_TecoGAN_crop: +0.00420546；条件来源95%区间[-0.010033009597100316, 0.01748575304081896]
+ref4/hri_off/Relation绝对质量：psnr_rgb_db=21.95571017，ssim_rgb=0.68381974，lpips_alex_v0_1=0.13340767，tLP100_alex_v0_1_TecoGAN_crop=0.92612531，tOF_Farneback_TecoGAN_crop=0.62458456
+Relation−Base psnr_rgb_db: -0.00925476；条件来源95%区间[-0.03317695827738526, 0.014252959791837936]
+Relation−Base ssim_rgb: -0.00175334；条件来源95%区间[-0.0028797427847166547, -0.000551029654161539]
+Relation−Base lpips_alex_v0_1: -0.00027750；条件来源95%区间[-0.0017742585152518585, 0.0012612748918400026]
+Relation−Base tLP100_alex_v0_1_TecoGAN_crop: +0.02365981；条件来源95%区间[-0.030634004492640088, 0.08761095624777225]
+Relation−Base tOF_Farneback_TecoGAN_crop: -0.01248855；条件来源95%区间[-0.02816444014169974, -0.00011811352305812866]
+ref4/hri_off/Both绝对质量：psnr_rgb_db=21.83064082，ssim_rgb=0.68137282，lpips_alex_v0_1=0.13451547，tLP100_alex_v0_1_TecoGAN_crop=0.89235973，tOF_Farneback_TecoGAN_crop=0.63344838
+Both−Base psnr_rgb_db: -0.13432411；条件来源95%区间[-0.1683853280571934, -0.10005919884913983]
+Both−Base ssim_rgb: -0.00420026；条件来源95%区间[-0.005666269725770689, -0.002758899175387343]
+Both−Base lpips_alex_v0_1: +0.00083029；条件来源95%区间[-0.0009980990453186676, 0.0024319146958077906]
+Both−Base tLP100_alex_v0_1_TecoGAN_crop: -0.01010577；条件来源95%区间[-0.05876110104736654, 0.04299416617186577]
+Both−Base tOF_Farneback_TecoGAN_crop: -0.00362473；条件来源95%区间[-0.01795806005684426, 0.010604150821745857]
+原Relation／Both的全部混合／负结果及提供帧池保留在原四组完整汇总；未重复的候选不当作N2/N3，也不按其中较好次要ref宣称总体收益。
+
+保留的NoRef背景（不同评价池，不作公平跨族绝对均值比较）：
+NoRef lpips_alex01_rgb_allframes: 三seed差值均值+0.00066079，范围[+0.00006381, +0.00108905]；正／负／零=3/0/0
+NoRef psnr_rgb_db: 三seed差值均值+0.05212227，范围[-0.04519961, +0.14045326]；正／负／零=2/1/0
+NoRef ssim_rgb: 三seed差值均值+0.00252344，范围[-0.00148906, +0.00597797]；正／负／零=2/1/0
+NoRef tLP100_alex_v0_1_TecoGAN_crop: 三seed差值均值+0.00320651，范围[-0.02211345, +0.02302180]；正／负／零=2/1/0
+NoRef tOF_Farneback_TecoGAN_crop: 三seed差值均值+0.00554619，范围[+0.00245723, +0.00765534]；正／负／零=3/0/0
+原NoRef第三seed的反向／混合结果保留，不由HRI开关差异覆盖。HRI机制／辅助梯度诊断及参考开关差值不能代替绝对恢复质量。
+本报告只用内部val；内部test211及REDS4／YouHQ40／VideoLQ未用于此处评价或调参。截至本阶段OpenVidHD尚未扩充；人工盲评分数必须来自真实评分，未在本报告编造。
+
+版本、固定监督与成本边界：
+各run环境commit、fresh初始化声明、8192步日志与全部配对draw已绑定。部署前230项实际工程CPU检查日志已存SHA；新增统计／配置不改变既有训练数值来源的结论由独立运行审计提供，不能从git标签或SHA链接自动推出。
+每个repeat固定teacher/flow文件SHA与原训练相同；1673片段／15057个独立T1参考tensor在仅归一化外层binding.config_sha256后dtype／shape／CPU值精确相同，容器文件SHA本身不要求相同。此监督审计不证明质量收益或运行数值等价。
+记录的CPU评分阶段含样本读取／评分／目标metadata及paired_rgb SHA，不含Python／指标模型初始化／最终输出序列化／完整服务寿命；可能与GPU阶段重叠，不相加成日历时间。
+优化更新小时不等于CUDA内核活跃小时。summary训练评价阶段从模型／VAE／优化器等setup后计时，含更新／评价、排除最终release；完整variant阶段另含模型／VAE加载、setup、cleanup和release。HRI主流程墙钟从main入口起，包含初始配置／metadata、共享准备、加载、更新、评价、release及最终status记录；排除interpreter/import启动和最终timing文件序列化，不冒充完整systemd服务寿命。各范围不同，不重复相加为总成本。
+seed20261102/Base: 更新1332.073s／0.370020更新占用GPU小时；summary训练评价阶段1803.246s；完整variant阶段1815.754s；峰值allocated 4.020GiB；CPU评分记录阶段33.312s；commit86edd64cd84589f86da35f1b93ec31b7b69cd970。
+seed20261102/Align: 更新1336.298s／0.371194更新占用GPU小时；summary训练评价阶段1807.148s；完整variant阶段1816.456s；峰值allocated 4.055GiB；CPU评分记录阶段33.193s；commit86edd64cd84589f86da35f1b93ec31b7b69cd970。
+seed20261102 原正式四组计算主流程墙钟7996.516s；原四组成本包含Relation／Both与共享准备，不能归给匹配二组或重复累加。
+seed20261103/Base: 更新1316.677s／0.365744更新占用GPU小时；summary训练评价阶段1787.234s；完整variant阶段1805.758s；峰值allocated 4.020GiB；CPU评分记录阶段33.276s；commit04228644605f5a3d96834ba05dde636636400817。
+seed20261103/Align: 更新1338.102s／0.371695更新占用GPU小时；summary训练评价阶段1809.162s；完整variant阶段1821.001s；峰值allocated 4.057GiB；CPU评分记录阶段32.449s；commit04228644605f5a3d96834ba05dde636636400817。
+seed20261103 本次Base／Align双组计算主流程墙钟4246.553s；原四组成本包含Relation／Both与共享准备，不能归给匹配二组或重复累加。
+
+完整逐source／逐trainingseed／全部指标与源SHA：/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_HRI_training_repeats_seed20261102_20261103_descriptive.json
+原HRI四组与提供帧完整池：/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_formal_HRI_four_way_8192_summary.json
+NoRef负结果记录：/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_noref_three_training_pairs_key_results.json
+原始每组提供帧／全池完整评分文件在key_results.full_original_metric_records中保留。
+图中仅为每seed条件来源区间；没有跨seed区间。图文件：
+/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_HRI_two_training_pairs_PSNR_deltas.png
+/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_HRI_two_training_pairs_PSNR_deltas.pdf
+/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_HRI_two_training_pairs_LPIPS_deltas.png
+/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_HRI_two_training_pairs_LPIPS_deltas.pdf

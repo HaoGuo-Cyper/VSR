@@ -1,0 +1,119 @@
+{
+  "audit_time_utc": "2026-11-02T14:46:59.598977+00:00",
+  "scope": "read-only metadata/config/code/log audit; no GPU execution; no training mutation",
+  "run": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z",
+  "status": "no_current_training_blocker_found",
+  "launch_commit": "057071b137d44bef9f5fc1bb3d3b1d2ec0121d27",
+  "config_sha256": "597e99b658f60684983966d8f3287f999bbb04285b0667f6ac077c062261f6d7",
+  "data": {
+    "raw_catalog_seal": "305d71993836df42def707ff5ed2bda1fad838e298aaee7d36a83873d2d47484",
+    "all_1673_clip_metadata_checked": true,
+    "metadata_identity_split_raw_sha_stride_fps_binding_errors": 0,
+    "training_clips": 1641,
+    "training_sources": 1442,
+    "validation_clips": 32,
+    "validation_sources": 32,
+    "heldout_test_clips": 211,
+    "test_selected_or_decoded": false,
+    "source_overlap_train_val": 0,
+    "temporal_stride": 4,
+    "frames": 9,
+    "raw_span_frames": 33,
+    "output_fps_policy": "HR/LR sampled FPS=original/4; inference preserves that sampled input FPS",
+    "spatial_hr": [
+      128,
+      224
+    ],
+    "scale": 4,
+    "all_train_catalog_clips_selected": true
+  },
+  "initialization": {
+    "official_artifacts_verified": true,
+    "repo": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "matrix": [
+      "Base",
+      "Align",
+      "Relation",
+      "Both"
+    ],
+    "updates_each": 8192,
+    "actual_initialized_variants": [
+      "Base"
+    ],
+    "future_initialization_verification_pending": [
+      "Align",
+      "Relation",
+      "Both"
+    ],
+    "base_fresh_official": true,
+    "base_legacy_state_loaded": false,
+    "base_fresh_optimizer": true,
+    "base_common_initial_hashes": {
+      "lrv": "61ad3406f64000466f0ebdb7f6de6236b50c3417fdc64cef031319dd256f39c4",
+      "lora": "846e7445c4a2e7e2683abb25b6fb67b859e78a90b6bedd0b30828f35fae4c113"
+    },
+    "source_code_guarantee": "train_variant calls make_model and creates a new AdamW for every variant; no task-checkpoint resume path used"
+  },
+  "strict_reproducibility": {
+    "configured_before_cuda_initialization": true,
+    "flags": {
+      "torch_version": "2.14.1+cu130",
+      "torch_cuda_version": "13.0",
+      "cuda_initialized": false,
+      "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+      "PYTHONHASHSEED": null,
+      "deterministic_algorithms": true,
+      "deterministic_warn_only": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": true,
+      "cudnn_allow_tf32": false,
+      "matmul_allow_tf32": false,
+      "float32_matmul_precision": "highest",
+      "matmul_allow_fp16_reduced_precision_reduction": false,
+      "matmul_allow_bf16_reduced_precision_reduction": false,
+      "sdp_flash": false,
+      "sdp_memory_efficient": false,
+      "sdp_cudnn": false,
+      "sdp_math": true,
+      "sdp_math_allow_fp16_bf16_reduction": false,
+      "cpu_threads": 2,
+      "cpu_interop_threads": 32
+    },
+    "relation_loss_route": "CPU in strict mode; differentiable student transfer and return loss preserve generator gradients",
+    "bitwise_formal_training_repeatability_proven": false
+  },
+  "runtime": {
+    "active_training": {
+      "status": "running",
+      "run": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z"
+    },
+    "trace_last_step": 2048,
+    "trace_count": 2048,
+    "steps_contiguous": true,
+    "loss_and_gradient_norm_finite": true,
+    "clip_order_matches_selection": true,
+    "frozen_gradient_audits_zero": true,
+    "status_json_absent_expected_while_running": true,
+    "logs_advanced_during_audit": true,
+    "no_disk_capacity_blocker_observed": true
+  },
+  "followups": [
+    {
+      "priority": "required_before_claiming_four_way_init_equality",
+      "action": "As Align/Relation/Both start, compare their lrv/lora initialization hashes against Base; compare projector hashes across Align/Relation/Both. Their actual initialization artifacts do not exist yet."
+    },
+    {
+      "priority": "required_before_reusing_formal_cache_in_later_stages",
+      "action": "Create/verify cache_asset_seal.json once this run is ready for frozen-cache reuse; currently absent. This does not block current within-run matrix."
+    },
+    {
+      "priority": "documentation",
+      "action": "Frozen config evaluation_protocol.metrics still says LPIPS/tLP/tOF not implemented, although metric modules now exist. Clarify in a sidecar/final report; do not edit the active frozen config."
+    },
+    {
+      "priority": "interpretation",
+      "action": "Report 9 sampled frames at128x224 and one fixed window per training video. This full-source round does not by itself establish full-resolution or long-video restoration."
+    }
+  ]
+}

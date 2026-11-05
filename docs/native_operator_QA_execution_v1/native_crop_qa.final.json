@@ -1,0 +1,416 @@
+{
+  "schema": "vsr_native_crop_operator_qa_predeclaration_v1",
+  "status": "frozen_for_real_HQval_operator_QA",
+  "created_utc": "2026-11-03T00:29:33.799620+00:00",
+  "scope": "Structural real-official-GPU QA of native-pixel spatial-crop x4 restoration; does not evaluate entire native720x1280 source, external data, internal test, generalization or restoration-quality benefit.",
+  "pixel_data_read_in_this_audit": false,
+  "GPU_jobs_launched_in_this_audit": false,
+  "selection": {
+    "rule": "First ID in already sealed ordered formal validation_ids satisfying metadata frame_count>=17,height>=256,width>=896. First ID qualifies; no result-based ranking.",
+    "ordered_validation_selection_sha256": "c76176a4aceb05024a8517e9bda26b61a409d7923ef54a134adc16dc3560b971",
+    "manifest_sha256": "305d71993836df42def707ff5ed2bda1fad838e298aaee7d36a83873d2d47484",
+    "record_id": "oHeY69nSZkk_9_0to379",
+    "source_id": "oHeY69nSZkk",
+    "split": "val",
+    "source_path": "/home/hugo/Projects/ReprVSR-pretrained/data/HQ-VSR/oHeY69nSZkk_9_0to379.mp4",
+    "source_sha256": "9c3f00139e3fa39fcc50aca489d80e614b7004e65e26e93fe180ff967dd6fa3a",
+    "source_bytes": 2116551,
+    "header_inventory_sha256": "b6a3ceb05b0c8be776354c98a43f42d021d41a468d8cd69c1c371f6211d2440e",
+    "header_inventory_observation": {
+      "opened": true,
+      "fps": 29.97,
+      "frame_count": 374,
+      "width": 1280,
+      "height": 720,
+      "backend": "FFMPEG"
+    },
+    "header_caveat": "Preexisting inventory is header-only. Execution must rehash source and verify actual decoded RGB/FPS/geometry.",
+    "ordered_validation_selection_path": "runs/formal_hq_v2_noref_20261102T142214.588571Z/selection.json",
+    "header_inventory_path": "manifests/hq_temporal_stride4_inventory.json"
+  },
+  "input_preparation": {
+    "source_frame_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "temporal_stride": 1,
+    "num_frames": 17,
+    "source_hw": [
+      720,
+      1280
+    ],
+    "native_center_crop_tlhw": [
+      232,
+      192,
+      256,
+      896
+    ],
+    "crop_rule": "integer center original-pixel crop, no HR resize or interpolation before crop",
+    "HR_shape": [
+      1,
+      3,
+      17,
+      256,
+      896
+    ],
+    "LR_shape": [
+      1,
+      3,
+      17,
+      64,
+      224
+    ],
+    "scale": 4,
+    "LR_degradation": {
+      "kernel": "torch bicubic",
+      "antialias": true,
+      "align_corners": false,
+      "clamp_01": true,
+      "operation": "one same x4 downsampling rule across all17 frames"
+    },
+    "source_fps_observed": 29.97,
+    "output_fps_rule": "exact actual input FPS from runtime decoder, unchanged; original source frames0..16 contiguous",
+    "LR_storage_for_CLI": "Use lossless RGB PNG/tensor or lossless video preserving exact preparedLR pixels; do not introduce mp4v/H264 degradation into operator QA input. If CLI container used, verify decoded LR bytes bind exact prepared bytes."
+  },
+  "restoration": {
+    "steps": 20,
+    "sampling_seed": 42,
+    "CFG": 1.0,
+    "scheduler": "official local UniPC configuration",
+    "HR_tile_hw": [
+      256,
+      448
+    ],
+    "overlap": 64,
+    "padded_HR_T_HW": [
+      17,
+      256,
+      896
+    ],
+    "padded_latent_T_HW": [
+      5,
+      32,
+      112
+    ],
+    "tile_hr_tlhw": [
+      [
+        0,
+        0,
+        256,
+        448
+      ],
+      [
+        0,
+        384,
+        256,
+        448
+      ],
+      [
+        0,
+        448,
+        256,
+        448
+      ]
+    ],
+    "tile_latent_tlhw": [
+      [
+        0,
+        0,
+        32,
+        56
+      ],
+      [
+        0,
+        48,
+        32,
+        56
+      ],
+      [
+        0,
+        56,
+        32,
+        56
+      ]
+    ],
+    "tile_count": 3,
+    "global_CPU_Gaussian_noise_shape": [
+      1,
+      16,
+      5,
+      32,
+      112
+    ],
+    "global_noise_rule": "single seeded float32 CPU field once per fullvideo, spatial crop offsets/8 for each tile; allmodel/onoff comparisons use identical seed/geometry",
+    "temporal_windowing": false,
+    "max_frames": 17,
+    "text": "A high quality video.",
+    "caption_embedding": "independently verified official encoder or SHA-bound own new-VSR frozen text cache; shared identical embedding across all QA modes"
+  },
+  "checkpoint_policy": {
+    "role": "infrastructure QA only; no checkpoint chosen by QA output score",
+    "no_reference_baseline": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/Base/checkpoint_008192.pt",
+    "no_reference_SHA256": "8f3d1e19edc24b8ad72219ef207b85c4c798f241f6f204fac57e57c11960806c",
+    "initialization": "fresh pinned official backbone plus own exact trained parameters for evaluation; optimizer/scheduler/RNG not restored; no old ReprVSR task state",
+    "reference_baseline": "/home/hugo/Projects/VSR/runs/formal_hq_v2_reference_20261102T171545.936007Z/Base/checkpoint_008192.pt",
+    "reference_SHA256": "b9664949b02270a8240b792d28521f8c7b4c9db9c7170ee6f1b9ef349ea5d5ac",
+    "required_checkpoint_count_and_variants": "exactly two Base8192 own checkpoints; no Both in this infrastructure proposal",
+    "selection_rule": "original trainingseed20261102 accepted matrix Base roles, no quality ranking or best-repeat substitution",
+    "accepted_primary_cohort": {
+      "acceptance_path": "/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_evaluation_primary_checkpoint_cohort_acceptance_v1.json",
+      "acceptance_sha256": "c2e054cd00c2eca25a8c190bee4282ea1af7c0d272c36453bbe20f2d3a3a3557",
+      "cohort_fingerprint_sha256": "c41a2455ae79ad4ce764f1d34194596fa9ecc97db1ca9e031c4e93d8e8609788",
+      "proposal_path": "/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_evaluation_primary_checkpoint_cohort_proposal_v1.json",
+      "proposal_sha256": "ad2e10542536160bed4dbb2a55196d88a9749596872e29c808f95de7046b94ca",
+      "CPU_payload_preview_path": "/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_evaluation_primary_checkpoint_payload_preview_v1.json",
+      "CPU_payload_preview_sha256": "53f328b0f9880cfed4b6f3a42cc3271daa7d09befb16e75f93121f91af3af665",
+      "reference_scope": "existing accepted records only; not re-previewed by this preparation"
+    },
+    "explicit_checkpoint_bindings": {
+      "no_reference": {
+        "label": "NoRef_Base_seed20261102_step8192",
+        "path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/Base/checkpoint_008192.pt",
+        "sha256": "8f3d1e19edc24b8ad72219ef207b85c4c798f241f6f204fac57e57c11960806c",
+        "variant": "Base",
+        "step": 8192,
+        "training_seed": 20261102,
+        "data_seed": 20261102,
+        "family": "no_reference",
+        "actual_payload_preview_performed_during_v2_preparation": false
+      },
+      "reference": {
+        "label": "HRI_Base_seed20261102_step8192",
+        "path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_reference_20261102T171545.936007Z/Base/checkpoint_008192.pt",
+        "sha256": "b9664949b02270a8240b792d28521f8c7b4c9db9c7170ee6f1b9ef349ea5d5ac",
+        "variant": "Base",
+        "step": 8192,
+        "training_seed": 20261102,
+        "data_seed": 20261102,
+        "family": "reference",
+        "actual_payload_preview_performed_during_v2_preparation": false
+      }
+    }
+  },
+  "required_modes": [
+    {
+      "name": "no_reference_Base",
+      "HRI": false
+    },
+    {
+      "name": "reference_Base_off",
+      "HRI": false
+    },
+    {
+      "name": "reference_Base_on",
+      "HRI": true,
+      "reference_index": 0,
+      "reference_image": "only cloned single cropped original frame0, exact256x896, separatelyT=1encoded once, same whole HRI for all3tiles"
+    }
+  ],
+  "execution_guard": {
+    "wait_for_current_HRI_training": "All formal variants and requested isolated diagnostics must finish; verify unit/PID/GPU idle before launch.",
+    "service": "one independent systemd user service, direct Python entrypoint, no parallelGPU jobs",
+    "prepixel_freeze": "Write immutable protocol with chosen own checkpoint fullSHA, input selection, code hashes and fixed settings BEFORE decoding QA pixels.",
+    "failures": "Preserve failed record and cost; change only on valQA evidence with a new version/predeclaration, never silently fall back to fewersteps/frames/tiles.",
+    "pre_CUDA_environment": {
+      "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+      "set_before_Python_process_and_any_CUDA_initialization": true,
+      "reason": "measurement or metric setup may initialize CUDA before checkpoint loader configures strict mode; use fresh process with startup env"
+    },
+    "plan_raw_file_binding": "native_operator_qa._read_plan turns raw JSON files into dicts; reader declaration_file_sha256 may be None while canonical plan content is bound. Future external launch/execution seal must record both raw file paths and full byte SHA; never embed a file own SHA into itself.",
+    "formal_launch_boundary": "Root-frozen after actual complete resource pass; raw plan/code/actual GPU idle are rechecked before real validation pixels.",
+    "T1_memory_policy": {
+      "path": "/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/work/t1_vae_cache_policy.py",
+      "sha256": "d94340b33868912f43633c71ef4a34a97b2dd7eb7b74e9d40ded363b09417270",
+      "policy": "verified instance-only T1 fresh feat_cache=None; non-T1 original delegation; no precision/device/attention/geometry change",
+      "original_reader_and_restore_required": true
+    }
+  },
+  "hard_acceptance": [
+    "SourceSHA/size match sealed val catalogue; actual decoded frames0..16 are17 RGB frames with fixed720x1280 geometry and finite positive FPS.",
+    "Prepared native crop256x896 and LR64x224 match declared indices/crop/degradation; actual tensors and text embedding have recordedSHA256.",
+    "Each required realGPUmode finishes withoutOOM/exception, finite RGB in[0,1], exact output[1,3,17,256,896]. No frame loss/reorder/resampling, output FPS verified against actual input.",
+    "Metadata confirms3 declared tile boxes, latent shapes, positive fullpixel coverage, single globalCPU seedednoise; identical fullnoiseSHA and inputSHA for same geometry in allrequiredmodes.",
+    "HRIon uses exactly oneT1encode of provided frame0 and same whole reference latent for everytile; HRIoff has explicit falsevalidity and no referencepixel access in model call.",
+    "Before/after restore RNG states unchanged (Python/NumPy/TorchCPU/CUDA as applicable), per-module trainingflags restored, no residualfeatures/referencecontext and no gradients/optimizerupdates.",
+    "LosslessRGB/PNG artifacts and source/protocol/checkpoint/code hashes seal correctly; playback MP4 is supplementary and its exact framecount/FPS/geometry is reopened and checked."
+  ],
+  "descriptive_only_not_pass_thresholds": [
+    "PSNR/SSIM/LPIPS/tLP/tOF if later scored against croppedHR are val diagnostics only; no required gain versusbicubic or betweenonoff.",
+    "Seam/boundary statistics and visualmontage may expose artifacts; do not optimize tileparameters by these scores within one frozenrun.",
+    "PeakCUDAallocated bytes and synchronized restorewallseconds per mode, fullallocatedGPU walltime, load/text/VAEprep costs separately.",
+    "Exactsame-input/seed repeat may be added as a reproducibility check but must be predeclared; absent such repeat, do not claim real tiled determinism from CPUfake tests."
+  ],
+  "not_covered": [
+    "Whole original720x1280nativeframe operator memory/runtime and seams in bothaxes.",
+    "RealGPU temporal replicatepadding branch (17frames already1mod4).",
+    "RealGPU bottom/right padding branch (256x896 already16aligned).",
+    "Unbounded fullvideo length performance; this is explicit17framecropQA.",
+    "External/test quality or human ratings."
+  ],
+  "code_audit": {
+    "vsr/native_operator_qa.py": "777a2c163a558f487519c027074c1c47d7531e8899d48d4d2ddc5b54a37e6be0",
+    "vsr/native_qa_reader.py": "88b39a736d6a561ea6c4345dfc511d7d244c7c1d7b6bfb9cef1c0d09639bb7ab",
+    "vsr/native_qa_restore.py": "cf0a13fb4a60e6c50b8fe63505f92b3e56c270edcf1bec1b8739cad30adc7e4f",
+    "vsr/inference.py": "c01b2349d2af7126d23d05202714aef8809a697af0bb81ff8aa8c53c9ac949d6",
+    "vsr/infer_video.py": "9e37d09efcc47c112d845ea86385ac072889dcfc7c184b0957450a526a93f0cd",
+    "vsr/frozen_evaluation.py": "80ded9e065255d73b60fcb8e45a84b34eb89bbfcad4ea8adf68ca3bad34ddece",
+    "vsr/reference_diagnostics.py": "aecbb4a5cec30ea24e2c4f75f82b257e762b0c5842bf18fc412e64c6a7a9cfa0",
+    "vsr/reproducibility.py": "a861af3fcd7ded7c9c0d973c8223d3e585eab3d8006bfef926a444db5f7cc6b0",
+    "vsr/checkpoints.py": "44f2f827a5074e032166b182227d493ff6a159e61e73d4c1ed9c9da94084e700",
+    "vsr/model.py": "e086a84c61f2b957c980fae771fe52010008a38263fe05ca92e99bd4a623b0de",
+    "vsr/reference_model.py": "880785a0f394b1bce01ff0321148939c4d18fabedd54f85f90e29758aa6bc610",
+    "vsr/reference.py": "c46325adb78cb437741c3d268aee80673b0c48384adc1ea536751809ff703fb0"
+  },
+  "proposal_revision": 2,
+  "previous_proposal": {
+    "path": "/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/work/native_qa_plan/native_crop_qa_predeclaration.proposed.json",
+    "sha256": "29bd29753db63c36bbe10ee8fa95f093cfe7d3f12a5800481030f2c67e5efbec",
+    "preserved_unchanged": true
+  },
+  "proposal_boundary": {
+    "formal_QA_execution_plan_or_protocol": false,
+    "resource_pass_claimed": false,
+    "resource_pixels_or_outputs_read_during_preparation": false,
+    "checkpoint_payload_preview_or_model_or_decoder_called_during_preparation": false,
+    "numeric_input_restoration_and_required_modes_unchanged_from_v1": true,
+    "execution_seal_required_after_actual_resource_pass": true
+  },
+  "code_audit_scope": "read-only current source snapshot; final root execution seal must rebind all executed code/dependencies after real resource evidence, not a completed QA claim",
+  "resource_gate": {
+    "must_pass_and_be_actually_idle_before_QA": true,
+    "actual_resource_passed": true,
+    "resource_run": "/home/hugo/Projects/VSR/runs/native_resource_T1_policy_20261103T012608.429126Z",
+    "resource_outer_summary_sha256": "facdf49cd5303357f29d453ce340612ffdbe39b1701fe4b6de95f14e3634fda0",
+    "resource_inner_summary_sha256": "4a27402a04b642352e7e9ca89b231c71ccff8a8ddfb3552468027eea1256c65d",
+    "metric_device": "cpu",
+    "metric_device_selection_basis": "same earlier CPU Perceptual implementation after resource feasibility; no QA-output quality selection",
+    "inference_device": "cuda:0",
+    "GPU_recheck_immediately_before_launch_required": true,
+    "resource_is_quality_or_20step_QA_pass": false
+  },
+  "text_cache_provenance_proposal": {
+    "own_source_run": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z",
+    "relative_asset": "fresh_text_embeddings.pt",
+    "previously_sealed_byte_sha256": "1dd219cde3005b4d16febaad67ad87e79c1403ae9bdaae69f2723ab9cbf239c2",
+    "source_cache_seal_sha256": "8d17e5cca0ac25bb6b077fce2e3cc999853892183da4c34702243d1fe99032ee",
+    "payload_read_or_verified_now": false,
+    "future_requirement": "prepixel execution evidence rehashes declared cache against its sealed identity, or explicitly records native encoder fallback and its real cost/provenance"
+  },
+  "HRI_token_geometry_note": {
+    "latent_grid_hw": [
+      32,
+      112
+    ],
+    "unpatched_latent_positions": 3584,
+    "HRI_stem_patch_and_stride_THW": [
+      1,
+      2,
+      2
+    ],
+    "attention_KV_grid_hw": [
+      16,
+      56
+    ],
+    "attention_KV_token_count": 896,
+    "description_only_no_runtime_shape_or_code_change": true
+  },
+  "execution_revision": 1,
+  "execution_frozen_utc": "2026-11-03T01:52:33.434816+00:00",
+  "execution_freeze": {
+    "frozen_utc": "2026-11-03T01:52:33.434816+00:00",
+    "purpose": "validation-only operator QA before final test protocol freeze",
+    "resource_outer_run": "/home/hugo/Projects/VSR/runs/native_resource_T1_policy_20261103T012608.429126Z",
+    "resource_outer_summary_sha256": "facdf49cd5303357f29d453ce340612ffdbe39b1701fe4b6de95f14e3634fda0",
+    "resource_outer_protocol_sha256": "58c5c45f79e61266a2e4250c3523ff37f23c67f32cfa037d5d57f907a392994f",
+    "resource_inner_run": "/home/hugo/Projects/VSR/runs/native_resource_T1_policy_20261103T012608.429126Z/native_probe",
+    "resource_inner_summary_sha256": "4a27402a04b642352e7e9ca89b231c71ccff8a8ddfb3552468027eea1256c65d",
+    "resource_independent_review_sha256": "03e4a730a3095a29c7a8a4d013f9d0f29d7a1b93b1e94ee743874f9d0d57f486",
+    "inference_device": "cuda:0",
+    "metric_device": "cpu",
+    "metric_device_selection": "same earlier CPU Perceptual implementation after resource feasibility; no QA-output quality selection",
+    "producer_commit": "04228644605f5a3d96834ba05dde636636400817",
+    "producer106_environment_sha256": "2c5d148df36b73d0b3f5228687239db7f5deed0f008a11e017d8b1d74e1b81dd",
+    "QA_driver": "/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/work/run_native_QA_T1_policy.py",
+    "QA_driver_sha256": "dd99144dace5f9c7543881ad6c6daf2718936ea17d6ab639729a09fb525100e0",
+    "memory_policy": "/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/work/t1_vae_cache_policy.py",
+    "memory_policy_sha256": "d94340b33868912f43633c71ef4a34a97b2dd7eb7b74e9d40ded363b09417270",
+    "freeze_script_sha256": "ca77d155fd90f84f0e10ab210999eb11a978a0b602fa8ab05355016158f22d11",
+    "installed_Wan_VAE_source_sha256": "29ea101ecd11d5886e21c75fa6c27cca38b026d48a0cbe8f061db9b77bbfa9dd",
+    "generic_text_cache_preflight": "/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_native_QA_text_cache_preflight.json",
+    "generic_text_cache_preflight_sha256": "775f64b1336ef9bb9c2a9bdc39bca20b1302bf0e35d2c640c9e2faeaea11bb38",
+    "text_caches": {
+      "NoRef_Base": {
+        "cache_path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/fresh_text_embeddings.pt",
+        "cache_file_sha256": "1dd219cde3005b4d16febaad67ad87e79c1403ae9bdaae69f2723ab9cbf239c2",
+        "origin_config_path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/config.json",
+        "origin_config_sha256": "fb03abf27dfa4ee393310d99743310855913f864f19080f2fd83b8c079145639",
+        "model": {
+          "repo_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+          "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+          "local_dir": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers"
+        },
+        "shape": [
+          1,
+          512,
+          4096
+        ],
+        "dtype": "torch.bfloat16",
+        "embedding_sha256": "f99e3246097b8b2052c9e0f1b8ab1e9b08d02cae42cd899e77dae3f20b9bd127",
+        "matches_frozen_default_caption_first_valid_cache_rule": true
+      },
+      "HRI_Base": {
+        "cache_path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/fresh_text_embeddings.pt",
+        "cache_file_sha256": "1dd219cde3005b4d16febaad67ad87e79c1403ae9bdaae69f2723ab9cbf239c2",
+        "origin_config_path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/config.json",
+        "origin_config_sha256": "fb03abf27dfa4ee393310d99743310855913f864f19080f2fd83b8c079145639",
+        "model": {
+          "repo_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+          "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+          "local_dir": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers"
+        },
+        "shape": [
+          1,
+          512,
+          4096
+        ],
+        "dtype": "torch.bfloat16",
+        "embedding_sha256": "f99e3246097b8b2052c9e0f1b8ab1e9b08d02cae42cd899e77dae3f20b9bd127",
+        "matches_frozen_default_caption_first_valid_cache_rule": true
+      }
+    },
+    "startup_environment": {
+      "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+      "PYTORCH_ALLOC_CONF": "expandable_segments:True",
+      "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+      "OMP_NUM_THREADS": "2",
+      "MKL_NUM_THREADS": "2"
+    },
+    "actual_resource_closed": {
+      "LoadState": "not-found",
+      "ActiveState": "inactive",
+      "MainPID": "0",
+      "ExecMainPID": "0",
+      "ExecMainCode": "0",
+      "ExecMainStatus": "0"
+    },
+    "GPU_idle_before_freeze": [
+      "4816, gjs, 64 MiB"
+    ],
+    "QA_pixels_decoded_to_freeze": false
+  }
+}

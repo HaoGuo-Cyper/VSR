@@ -1,0 +1,82 @@
+VSR HRI训练重复：Base／训练seed20261103完成
+报告时间UTC：2026-11-02T22:42:46.188190+00:00
+
+完成范围：新HRI Base／训练seed20261103完成8192更新与固定val32／32来源、全部预设采样42/43的ref0/ref4 on/off最终评价。原HRI Base／训练seed20261102作为实例参照；同seed20261103的Align尚未在本报告中形成完整配对。
+比较的是两个Base训练实例的变化，不能据此判断Align模块效应或估计精确训练方差。先在每视频内平均采样42/43，再做32视频等权配对；每个来源区间仅条件于这两个已训练实例，排除训练变异、未校正多重比较，不跨参考位置合并或挑选较好ref。
+固定数据：数据seed20261102、1641训练片段及固定来源留出的val32、同一封存窗口／目标、9帧／源步长4、HR128x224、x4 bicubic、20步UniPC／CFG1，caption保留generic接口。两个Base分别从同一官方版本独立初始化、优化器新建，未恢复任务权重。
+HRI协议：ref0是预设主项，ref4是单列次要项。on/off均比较相同8个非参考帧（原9帧中排除提供位置）；提供帧的完整指标另见原始记录，不纳入本表。原始时间对先在完整9帧评分，再剔除涉及参考位置的既有相邻对，不删除帧后重连接。ref0保留[2,3]/[3,4]/[4,5]/[5,6]四对；ref4保留[2,3]/[5,6]两对。
+on−off表示同一Base的参考开关差值；该上下文的新−旧差值是两个Base实例的参考开关差值之差，不是Align模块交互。ref0/ref4的off属于不同排除池，不能作为额外独立训练或参考重复。
+PSNR／SSIM越高越好，LPIPS／tLP100／tOF越低越好。所有方向及负结果保留。
+
+ref0/hri_on（ref0预设主项）
+Base训练seed20261102：psnr_rgb_db=21.94152413，ssim_rgb=0.68712465，lpips_alex_v0_1=0.13525102，tLP100_alex_v0_1_TecoGAN_crop=0.83829733，tOF_Farneback_TecoGAN_crop=0.64262080
+Base训练seed20261103：psnr_rgb_db=22.05845583，ssim_rgb=0.68658341，lpips_alex_v0_1=0.13239169，tLP100_alex_v0_1_TecoGAN_crop=0.92592082，tOF_Farneback_TecoGAN_crop=0.60745614
+新Base−旧Base psnr_rgb_db: +0.11693171；条件来源95%区间[0.04775134642808739, 0.18693631139321432]
+新Base−旧Base ssim_rgb: -0.00054124；条件来源95%区间[-0.003341096782241948, 0.0022195881538209505]
+新Base−旧Base lpips_alex_v0_1: -0.00285933；条件来源95%区间[-0.005572795113766915, -0.0002432382216284179]
+新Base−旧Base tLP100_alex_v0_1_TecoGAN_crop: +0.08762349；条件来源95%区间[-0.011428441689531606, 0.19038245747765356]
+新Base−旧Base tOF_Farneback_TecoGAN_crop: -0.03516466；条件来源95%区间[-0.05320496260683285, -0.01875435838082922]
+
+ref0/hri_off（ref0预设主项）
+Base训练seed20261102：psnr_rgb_db=21.93996047，ssim_rgb=0.68489341，lpips_alex_v0_1=0.13390428，tLP100_alex_v0_1_TecoGAN_crop=0.82868690，tOF_Farneback_TecoGAN_crop=0.62747977
+Base训练seed20261103：psnr_rgb_db=22.15060277，ssim_rgb=0.68950684，lpips_alex_v0_1=0.13226764，tLP100_alex_v0_1_TecoGAN_crop=0.92967134，tOF_Farneback_TecoGAN_crop=0.60808020
+新Base−旧Base psnr_rgb_db: +0.21064230；条件来源95%区间[0.1504999501092649, 0.2708076959790928]
+新Base−旧Base ssim_rgb: +0.00461343；条件来源95%区间[0.0021629583861795254, 0.007109944950207136]
+新Base−旧Base lpips_alex_v0_1: -0.00163664；条件来源95%区间[-0.00443379813714273, 0.0009993598687287844]
+新Base−旧Base tLP100_alex_v0_1_TecoGAN_crop: +0.10098444；条件来源95%区间[-0.0009025798431139231, 0.2012228399348714]
+新Base−旧Base tOF_Farneback_TecoGAN_crop: -0.01939957；条件来源95%区间[-0.03199819224319071, -0.00716379367731861]
+
+ref0/on_minus_off（ref0预设主项）
+Base训练seed20261102：psnr_rgb_db=0.00156365，ssim_rgb=0.00223124，lpips_alex_v0_1=0.00134674，tLP100_alex_v0_1_TecoGAN_crop=0.00961043，tOF_Farneback_TecoGAN_crop=0.01514103
+Base训练seed20261103：psnr_rgb_db=-0.09214694，ssim_rgb=-0.00292343，lpips_alex_v0_1=0.00012405，tLP100_alex_v0_1_TecoGAN_crop=-0.00375052，tOF_Farneback_TecoGAN_crop=-0.00062405
+新Base−旧Base psnr_rgb_db: -0.09371059；条件来源95%区间[-0.11714223498544504, -0.07077341840089411]
+新Base−旧Base ssim_rgb: -0.00515467；条件来源95%区间[-0.006333041928883176, -0.004003197683778126]
+新Base−旧Base lpips_alex_v0_1: -0.00122269；条件来源95%区间[-0.002936640379630262, 0.0007279864345036909]
+新Base−旧Base tLP100_alex_v0_1_TecoGAN_crop: -0.01336095；条件来源95%区间[-0.03716220366186462, 0.010463577232258096]
+新Base−旧Base tOF_Farneback_TecoGAN_crop: -0.01576509；条件来源95%区间[-0.02382321733894059, -0.008785717828868656]
+
+ref4/hri_on（ref4次要项）
+Base训练seed20261102：psnr_rgb_db=22.09303975，ssim_rgb=0.68887705，lpips_alex_v0_1=0.13494156，tLP100_alex_v0_1_TecoGAN_crop=0.89334717，tOF_Farneback_TecoGAN_crop=0.64296223
+Base训练seed20261103：psnr_rgb_db=22.10869527，ssim_rgb=0.68791335，lpips_alex_v0_1=0.13278702，tLP100_alex_v0_1_TecoGAN_crop=1.00643570，tOF_Farneback_TecoGAN_crop=0.61520513
+新Base−旧Base psnr_rgb_db: +0.01565551；条件来源95%区间[-0.043532870211150765, 0.07440466585605814]
+新Base−旧Base ssim_rgb: -0.00096370；条件来源95%区间[-0.0032478347144206054, 0.0012577498331665976]
+新Base−旧Base lpips_alex_v0_1: -0.00215454；条件来源95%区间[-0.004612394737523573, 0.00015610550781275276]
+新Base−旧Base tLP100_alex_v0_1_TecoGAN_crop: +0.11308852；条件来源95%区间[-0.03709750583311688, 0.26390749848587797]
+新Base−旧Base tOF_Farneback_TecoGAN_crop: -0.02775710；条件来源95%区间[-0.04263824141526129, -0.013949562491325201]
+
+ref4/hri_off（ref4次要项）
+Base训练seed20261102：psnr_rgb_db=21.96496493，ssim_rgb=0.68557308，lpips_alex_v0_1=0.13368518，tLP100_alex_v0_1_TecoGAN_crop=0.90246549，tOF_Farneback_TecoGAN_crop=0.63707311
+Base训练seed20261103：psnr_rgb_db=22.17613021，ssim_rgb=0.69011901，lpips_alex_v0_1=0.13227840，tLP100_alex_v0_1_TecoGAN_crop=1.02636854，tOF_Farneback_TecoGAN_crop=0.61575106
+新Base−旧Base psnr_rgb_db: +0.21116528；条件来源95%区间[0.1513137004518925, 0.27129155399048516]
+新Base−旧Base ssim_rgb: +0.00454593；条件来源95%区间[0.002122385395341553, 0.007008748325461054]
+新Base−旧Base lpips_alex_v0_1: -0.00140678；条件来源95%区间[-0.004002357867102546, 0.0010316159168723968]
+新Base−旧Base tLP100_alex_v0_1_TecoGAN_crop: +0.12390304；条件来源95%区间[-0.03842175628506084, 0.2795746765787043]
+新Base−旧Base tOF_Farneback_TecoGAN_crop: -0.02132206；条件来源95%区间[-0.03795854370109737, -0.006173401762498544]
+
+ref4/on_minus_off（ref4次要项）
+Base训练seed20261102：psnr_rgb_db=0.12807482，ssim_rgb=0.00330397，lpips_alex_v0_1=0.00125639，tLP100_alex_v0_1_TecoGAN_crop=-0.00911832，tOF_Farneback_TecoGAN_crop=0.00588912
+Base训练seed20261103：psnr_rgb_db=-0.06743495，ssim_rgb=-0.00220566，lpips_alex_v0_1=0.00050863，tLP100_alex_v0_1_TecoGAN_crop=-0.01993284，tOF_Farneback_TecoGAN_crop=-0.00054592
+新Base−旧Base psnr_rgb_db: -0.19550977；条件来源95%区间[-0.21838811613259562, -0.174780742186802]
+新Base−旧Base ssim_rgb: -0.00550964；条件来源95%区间[-0.006553413326037117, -0.004513470715028234]
+新Base−旧Base lpips_alex_v0_1: -0.00074776；条件来源95%区间[-0.0019776275565163816, 0.0005168472949662823]
+新Base−旧Base tLP100_alex_v0_1_TecoGAN_crop: -0.01081452；条件来源95%区间[-0.04395155711335974, 0.024027466752158937]
+新Base−旧Base tOF_Farneback_TecoGAN_crop: -0.00643504；条件来源95%区间[-0.015123478796158451, 0.0014416422418435028]
+
+解释与局限：
+表中展示训练随机性下两个Base实例的差值及各自参考开关表现；不能将Base实例变化直接解释为模块收益或配对Align效应的训练变异。需待同seed Align完成后再计算预声明的匹配Base／Align对照，并保留全部训练seed。
+固定监督的独立实际比较已通过：teacher/flow文件SHA相同，1673片段的15057个独立T=1参考tensor在仅归一化外层binding.config_sha256后dtype／shape／CPU值精确相同。T1容器文件SHA本身不相同，不能混写。该审计验证固定监督，不验证恢复质量、模块收益或整个运行数值等价。
+本次重复运行环境commit记录为04228644605f5a3d96834ba05dde636636400817；原HRI运行环境commit为86edd64cd84589f86da35f1b93ec31b7b69cd970。root已记录部署前230项实际工程CPU检查；部署新增统计／配置，既有训练数值来源不变由独立运行审计确认。本报告只读保存记录，不将CPU检查或监督一致当作质量证据。
+这里只使用内部val。内部test211及标准REDS4／YouHQ40／VideoLQ未用于此处评价或调参；OpenVidHD尚未扩充。无参考全9帧池与本HRI非参考8帧池不作公平跨族均值比较，不编造外部或人工盲评结果。
+
+已完成Base的实测成本：
+seed20261102: 更新1332.073s／0.370020更新占用GPU小时；该组阶段1803.246s；峰值allocated 4.020GiB；记录的CPU评分阶段33.312s。
+实际参考提供／缺失更新=4083/4109，8192步连续、记录损失／梯度范数有限、覆盖1641训练片段。
+seed20261103: 更新1316.677s／0.365744更新占用GPU小时；该组阶段1787.234s；峰值allocated 4.020GiB；记录的CPU评分阶段33.276s。
+实际参考提供／缺失更新=4179/4013，8192步连续、记录损失／梯度范数有限、覆盖1641训练片段。
+更新计时不含共享准备／模型加载／采样评价，不等于CUDA内核活跃小时。该组阶段只按原summary范围报告，不冒充完整systemd服务寿命。记录的CPU评分阶段含样本读取／评分／目标metadata及paired_rgb SHA，不含Python／指标模型初始化／最终输出序列化或完整服务墙钟，可能与GPU训练重叠，不相加为日历时间。
+本阶段不估算尚未完成的Base／Align双组主流程墙钟；原四组共享T1准备、监督封存、原Relation／Both及其他阶段成本另有记录。
+
+完整两Base逐视频／采样与来源条件描述：/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/VSR_HRI_Base_training_seeds_20261102_20261103_descriptive.json
+原提供帧及全池指标：/home/hugo/Projects/VSR/runs/formal_hq_v2_reference_20261102T171545.936007Z/Base/step_008192/perceptual_reference_metrics.json
+新提供帧及全池指标：/home/hugo/Projects/VSR/runs/formal_hq_v2_reference_repeat_seed20261103_20261102T214631.884279Z/Base/step_008192/perceptual_reference_metrics.json
+固定监督审计：/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/HRI_repeat03_supervision_audit.json

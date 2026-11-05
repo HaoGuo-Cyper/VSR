@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "stage": "stage3_alignment_weight_validation_search",
+  "seed": 20261102,
+  "model": {
+    "repo_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "local_dir": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers"
+  },
+  "data": {
+    "raw_root": "/home/hugo/Projects/ReprVSR-pretrained/data/HQ-VSR",
+    "manifest": "manifests/hq_vsr.json",
+    "num_frames": 9,
+    "height": 128,
+    "width": 224,
+    "scale": 4,
+    "debug_clips": 2,
+    "fps": "preserve_original",
+    "selection": "train",
+    "val_limit": 8,
+    "save_input_videos": 2,
+    "train_limit": 64,
+    "cache_from": "/home/hugo/Projects/VSR/runs/stage2_base_pilot64_20261102T122328.690735Z"
+  },
+  "conditioning": {
+    "injection_layers": [
+      0,
+      5,
+      9
+    ],
+    "alignment_layer": 9,
+    "rank": 8,
+    "alpha": 8,
+    "stem_channels": 128,
+    "projector_hidden": 1024,
+    "teacher_dim": 768,
+    "hri_enabled": false
+  },
+  "teacher": {
+    "repo": "https://github.com/facebookresearch/dinov2",
+    "revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "source_dir": "vendor/dinov2",
+    "weights": "weights/dinov2_vitb14_pretrain.pth",
+    "weights_url": "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth",
+    "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73"
+  },
+  "training": {
+    "variants": [
+      "Align"
+    ],
+    "batch_size": 1,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.01,
+    "max_grad_norm": 1.0,
+    "mixed_precision": "bf16",
+    "gradient_checkpointing": true,
+    "lambda_align": 0.01,
+    "fm_target": "noise_minus_clean",
+    "noise_interpolation": "(1-sigma)*clean+sigma*noise",
+    "timestep": "native_UniPC_1000_timestep_grid_uniform_index",
+    "official_initialization_per_variant": true,
+    "resume": false,
+    "updates": 1024,
+    "evaluate_at": [
+      1024
+    ],
+    "checkpoint_at": [
+      1024
+    ],
+    "gradient_log_every": 256,
+    "log_every": 100,
+    "lambda_relation": 0.0
+  },
+  "formal_training": {
+    "enabled": false,
+    "scope": "fixed_budget_small_scale_Align_vs_Base",
+    "same_budget_planned_for_align_relation_both": 4096
+  },
+  "evaluation_protocol": {
+    "internal_val": "HQ-VSR source grouped val",
+    "internal_test": "HQ-VSR source grouped test untouched during preflight",
+    "external_paired": [
+      "REDS explicit sequence IDs pending",
+      "YouHQ40"
+    ],
+    "real": [
+      "VideoLQ MUSIQ + playback blind review"
+    ],
+    "second_round_expansion": "OpenVidHD only after module benefit confirmed",
+    "hri": "stage5 only",
+    "metrics": "official LPIPS/tLP/tOF adapters not yet implemented; never approximate under these names"
+  },
+  "experiment_name": "stage3_align_weight_001",
+  "caption_policy": "user_approved_fixed_generic_text; preserve_caption_interface; no_semantic_claim",
+  "evaluation": {
+    "sampling_steps": 20,
+    "seeds": [
+      42
+    ],
+    "monitor_seeds": [
+      42
+    ],
+    "modes": [
+      "correct"
+    ],
+    "rgb_range": [
+      0,
+      1
+    ],
+    "border_shave": 0,
+    "scope": "training-weight selection on source-held-out HQ-VSR val8; one fixed sampling seed for bounded search, no benefit claim",
+    "acceptance": {
+      "minimum_psnr_margin_over_controls_db": 1.0,
+      "all_clip_seed_pairs_positive": true,
+      "manual_content_motion_check": true
+    }
+  },
+  "weight_selection": {
+    "candidates": [
+      0.01,
+      0.03,
+      0.1
+    ],
+    "update_budget_each": 1024,
+    "existing_0_1_trial": "stage3_align_pilot64_20261102T123630.279287Z/Align/step_001024",
+    "existing_base_control": "stage2_base_pilot64_20261102T122328.690735Z/Base/step_001024",
+    "new_trials_total_optimizer_updates": 2048,
+    "sampling_seed_for_search": 42,
+    "selection": "minimum validation LPIPS subject to PSNR >= Base1024-0.2dB and tOF <=1.05*Base1024; if no nonzero candidate passes, report and retain best nonzero as negative control",
+    "formal_confirmation": "selected nonzero weight reinitialized officially for4096steps, evaluatedseeds42/43; testunused"
+  }
+}

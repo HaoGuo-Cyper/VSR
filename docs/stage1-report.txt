@@ -1,0 +1,86 @@
+VSR 第一阶段实施报告
+日期：2026-11-02（UTC+8）
+
+实际工程：/home/hugo/Projects/VSR
+原工程：/home/hugo/Projects/ReprVSR-pretrained（保留，未修改）
+用户给出的 /home/hugo/projects 不存在；实际父目录为首字母大写的 Projects。
+新运行：/home/hugo/Projects/VSR/runs/stage1_20261102T104209.732600Z
+运行代码提交：6f249f1eef330e2be76b9adca084a8a41ce83023
+后续只补充来源说明、清单复现命令与交付报告；运行模块和配置未改变。
+
+一、已完成事实
+独立工程已建立，真实 CUDA 预检通过，状态文件为 passed。
+硬件：RTX 5080，16GB，Driver 580.178.04；现有 reprvsr-pretrained 环境复用，不更改驱动。
+Python 3.12.16；PyTorch 2.14.1+cu130；Diffusers 0.42.1；Transformers 5.21.0；PEFT 0.21.2。
+底座：官方 Wan2.1 T2V 1.3B Diffusers，revision 0fad780a534b6463e45facd96134c9f345acfa5b。
+从官方固定版本API重新取得文件清单，全部8个safetensors通过SHA256校验；配置与tokenizer通过官方Git blob校验。
+DINOv2-B为新下载的官方权重，源码7764ea0f912e53c92e82eb78a2a1631e92725fc8；权重SHA256为0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73。
+未加载旧任务的checkpoint、LoRA、适配器、优化器、调度器状态或生成结果。
+Base和Align各自从同一官方预训练底座新加载，创建新优化器，各执行3次更新；输入片段、噪声种子、时间索引顺序一致。
+12项组件测试通过；清单重建与封存版本逐项相同。组件测试与真实模型预检分别有记录。
+
+二、数据与固定设置
+HQ-VSR本地2053片段，1802来源。按文件名固定11字符来源ID分组，内部train/val/test：
+                 train       val       test
+来源数             1442       180        180
+片段数             1641       201        211
+两个固定debug片段均来自train：LBSiykjHQjg_31_16to143, zgXUeD4RtnI_32_16to122。
+重新统计来源跨集合=0，相同文件SHA256跨集合=0。val/test本阶段未用于调参、采样或评价。
+清单SHA256：305d71993836df42def707ff5ed2bda1fad838e298aaee7d36a83873d2d47484。
+HQ-VSR官方说明将2055段列为训练语料；本地2053段的精确成员与完整性未核实，不能确认差额是哪两段。内部划分是本轮新划分，不是官方验证/测试划分。
+逐视频caption未找到。当前统一“A high quality video.”被标为调试占位，只验证UMT5文本通路；真实文本语义未验证。
+×4，9连续帧，HR128×224/LR32×56，同一裁剪/退化，保留原FPS；clip0为30FPS。
+空间退化：bicubic、antialias、align_corners=False，参数跨帧相同。未混入OpenVidHD或外测数据。
+真实VAE stride=(4,8,8)，latent=(3,16,28)，DiT patch=(1,2,2)，token=(3,8,14)，HR监督锚点0/4/8。
+HR完整裁剪映射到DINO224×392，patch网格16×28，再空间映射到8×14。无padding，当前token均有效；组件测试验证无效位置不参与损失。
+LRV stem128通道，在0/5/9层零初始化残差注入；LoRA rank8/alpha8，所有30层self/cross-attention q/k/v/out.0。
+对齐取0起算的第9层；投影1536→1024→768。lambda_A=0.1仅为调试值。
+VAE/UMT5/教师冻结，LoRA/新增参数FP32，生成网络原生BF16及FP32例外保持。
+FM使用noise-clean方向与原生时间约定；VAE取posterior mode。采样为UniPC4步/CFG1/seed42，仅LRV+caption条件，无HRI。
+
+三、真实检查结果与证据边界
+VAE roundtrip RGB PSNR（无边界裁剪、范围0..1）分别为30.0558和27.3237dB。
+它们仅衡量这两个调试片段的VAE重建，不是超分恢复指标，不代表整个数据集的压缩上限。
+Align单独loss反传的L2梯度：stem=0.00332593，残差=0.23332755，LoRA=0.18393606，投影头=1.02178255；冻结参数无梯度。
+已确认对齐梯度不仅停留在投影头。零初始化分支更新数步后产生有效梯度。
+相同noisy latent/caption下翻转或关闭LRV会改变flow输出；这是条件敏感性检查，不能证明对象、位置、运动跟随正确。
+生成样例均可解码为9帧128×224/30FPS，LRV9帧32×56/30FPS。推理函数只接收LRV latent和文本，不接收HRV/教师/光流。
+人工查看固定预览后确认：Base和Align仅3次更新、4步采样，输出仍主要为纹理/噪声，尚未恢复输入内容。因此Base恢复能力未成立，没有任何模块总体收益结论。
+三步loss使用不同片段/噪声/时间，不能将下降写成可靠收敛证据；Align投影loss下降也不能证明恢复质量改善。
+
+预检资源（小分辨率，不可外推正式训练）：
+Base：更新阶段0.5730秒，峰值allocated 2.873GiB。
+Align：更新阶段0.4614秒，峰值allocated 2.914GiB。
+以上更新时间不含模型加载、文本/VAE/教师特征预处理；完整诊断开销另记录，未将其当正式训练成本比较。
+
+四、尚待验证与下一阶段
+第一阶段只完成工程与真实数据/梯度/采样闭环。正式训练未启动。
+下一阶段首先补齐逐视频caption及数据来源记录；验证Base在少量片段上能真正恢复内容，再确定固定正式预算和验证集搜索预算。
+之后Align从官方底座独立训练；再实现Relation/Both；关系监督使用HR锚点之间的冻结光流和可见性mask。HRI放在后续阶段。
+HQ-VSR是首轮唯一训练源；来源分组val用于调参，internal test用于最终内部评价。
+REDS具体序列ID仍需明确；YouHQ40补充外部配对测试；二者不调参。VideoLQ用于MUSIQ与播放盲评。
+OpenVidHD仅在收益确认后扩训。LPIPS/tLP/tOF、关系收益、参考传播、真实泛化均尚未实施，不存在虚构指标。
+不声称严格同胚、完全等价universal space或任何普遍效果。
+
+五、交付与复现
+本机工程含官方DINO资源、配置、源代码、tests、sealed manifest、全新run、Base/Align诊断checkpoint与样例。
+源码包不含大型官方预训练权重；本机工程已配置其只读路径及校验元数据。
+记录包包含本次run的日志、JSON、全新checkpoint、无损张量与样例视频。
+当前正式Relation/Both/HRI及完整训练评价尚未实现，没有把占位命令写成可运行训练。
+
+cd /home/hugo/Projects/VSR
+/home/hugo/miniconda3/envs/reprvsr-pretrained/bin/python -m unittest discover -s tests -v
+/home/hugo/miniconda3/envs/reprvsr-pretrained/bin/python scripts/make_manifest.py
+/home/hugo/miniconda3/envs/reprvsr-pretrained/bin/python -m vsr.preflight --config configs/stage1.json
+
+每次preflight都创建新run，不续训旧记录。CUDA运行需宿主机GPU访问权限。
+关键文件：README.md、configs/stage1.json、manifests/hq_vsr.json、runs/latest.json；每run含environment、official_artifacts、correspondence、teacher_audit和各组summary/training.jsonl。
+Base checkpoint SHA256：b54545eabac40385a41dd3cd996bbb3e1efa234bfb9c55e8961b4873cd4e3ed2
+Align checkpoint SHA256：b94994392f16318ce401592e42d05b5891c687a090aa5164ea54ee7b4dd064a4
+
+官方来源：
+Wan：https://github.com/Wan-Video/Wan2.1
+权重：https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B-Diffusers/tree/0fad780a534b6463e45facd96134c9f345acfa5b
+DINOv2：https://github.com/facebookresearch/dinov2/tree/7764ea0f912e53c92e82eb78a2a1631e92725fc8
+HQ-VSR说明：https://github.com/zhengchen1999/DOVE#-datasets
+REPA（方案参考）：https://github.com/sihyun-yu/REPA

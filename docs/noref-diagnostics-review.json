@@ -1,0 +1,58 @@
+{
+  "recorded_utc": "2026-11-02T16:51:53.934801+00:00",
+  "kind": "independent_read_only_noref_feature_diagnostic_review",
+  "status": "passed_CPU_and_static_no_production_blocker_found",
+  "source_sha256": {
+    "vsr/noref_feature_diagnostics.py": "b51cb2dd53e06a9df209eb7de16996b745f7485d783ca1c9db54e65afa2cfcaa",
+    "tests/test_noref_feature_diagnostics.py": "00037edb754afb380c8e7f78271d4f5f176fcfa80338148a71e748aaf62ff7a9"
+  },
+  "CPU_validation": {
+    "tests_passed": 10,
+    "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=.deps /home/hugo/miniconda3/envs/reprvsr-pretrained/bin/python -m unittest tests.test_noref_feature_diagnostics -v",
+    "fixtures": "tiny real Wan and synthetic/fake CPU sources only"
+  },
+  "checks": [
+    {
+      "check": "own final no-reference checkpoint and completed variant; source may remain interrupted only with complete prepared-cache seal",
+      "status": "passed_static_and_CPU"
+    },
+    {
+      "check": "same fixed metric-independent val32 ordering, source-held-out split, RGB/per-clip latents/text SHA and metadata bindings; original crop/stride/FPS verified by validate_cache",
+      "status": "passed_static_and_CPU"
+    },
+    {
+      "check": "no loading saved teacher, flow or top training cache; fresh official DINO then release, RAFT then release, then task checkpoint",
+      "status": "passed_static_and_CPU"
+    },
+    {
+      "check": "official identity verified before extraction and numeric source/runtime compared with originating run; no optimizer/RNG restoration",
+      "status": "passed_static_and_CPU"
+    },
+    {
+      "check": "sigma .5/t500, FP32 local model-device generator with config.seed+91+full source clip_index matches original diagnostic",
+      "status": "passed_CPU"
+    },
+    {
+      "check": "no_grad and zero backward/update; parameter/buffer hashes, RNG, module flags and gradient/context cleanup checked including failure",
+      "status": "passed_static_and_CPU"
+    },
+    {
+      "check": "spatial/temporal objectives independently normalized; absent temporal pool is null, combined uses spatial-only when appropriate",
+      "status": "passed_static_and_CPU"
+    },
+    {
+      "check": "flow norms/visibility and fixed valid-interior luma Laplacian descriptors model-independent, no result-based threshold/split/selection",
+      "status": "passed_static_and_CPU"
+    },
+    {
+      "check": "training/GPU guard precedes checkpoint/data access; target models released before task restore; changed checkpoint rejected",
+      "status": "passed_static_and_CPU"
+    }
+  ],
+  "blocking_findings": [],
+  "limits": [
+    "No actual validation/test pixels read, no GPU task started, no code edited.",
+    "Actual CUDA teacher/flow extraction, native memory use and own full-model diagnostics remain to be executed by root after current GPU service is idle.",
+    "These oracle-HR mechanism diagnostics are not LR-only restoration scores, and cannot alone establish useful recovery or a shared universal representation."
+  ]
+}

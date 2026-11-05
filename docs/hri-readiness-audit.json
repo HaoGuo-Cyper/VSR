@@ -1,0 +1,189 @@
+{
+  "recorded_utc": "2026-11-02T16:03:31.703510+00:00",
+  "kind": "read_only_stage5_readiness_audit",
+  "status": "no_blocking_logic_defect_found; launch_prerequisites_and_report_gaps_remain",
+  "project": "/home/hugo/Projects/VSR",
+  "code_commit_audited": "7f8796d73d32e315ffb9ab2f1dda53f7101fb3b9",
+  "scope": {
+    "GPU_tasks_started": false,
+    "real_test_pixels_read": false,
+    "core_edits": false,
+    "real_HRI_training_or_quality_verified": false
+  },
+  "source_sha256": {
+    "vsr/reference_training.py": "ede6ee8a6de504516a739cde91b899e40cbac07dcbd4bf5971acef00437f0167",
+    "vsr/reference_evaluation.py": "1cda5a7496c388fe4dd56e42442408cc5ee814751d7d6b7e6e05da898ce12f06",
+    "vsr/reference_model.py": "880785a0f394b1bce01ff0321148939c4d18fabedd54f85f90e29758aa6bc610",
+    "vsr/reference.py": "c46325adb78cb437741c3d268aee80673b0c48384adc1ea536751809ff703fb0",
+    "scripts/smoke_reference.py": "1c4f3844c6e876232244c3bddd9090e16d4d7b1d7a684758c0cfcf2e8fc076d5",
+    "configs/formal_hq_v2_reference.template.json": "d605c1a5b8a6e0c663b7a3a6616c071f22260997f589f9aa536ab40af3fddf85",
+    "vsr/score_reference_saved.py": "98a51bbdc696a33a078cafbeaa46e7d20a352ce0f5b86e76db58f88bd5569939"
+  },
+  "actual_staging_source_equal": {
+    "vsr/reference_training.py": true,
+    "vsr/reference_evaluation.py": true,
+    "vsr/reference_model.py": true,
+    "vsr/reference.py": true,
+    "scripts/smoke_reference.py": true,
+    "configs/formal_hq_v2_reference.template.json": true,
+    "vsr/score_reference_saved.py": true
+  },
+  "checks": [
+    {
+      "check": "all four reference variants independently official-fresh with AdamW and same fixed budget",
+      "status": "passed_static",
+      "evidence": [
+        "vsr/reference_training.py:163",
+        "vsr/reference_training.py:169",
+        "vsr/reference_training.py:329",
+        "vsr/train.py:41",
+        "configs/formal_hq_v2_reference.template.json"
+      ],
+      "detail": "Base/Align/Relation/Both each8192, batch1, same LR/LoRA and lambdaA=.01/R=1; no task-state loading in reference runner."
+    },
+    {
+      "check": "identical HRI initialization across projection/nonprojection variants",
+      "status": "passed_static_and_CPU",
+      "evidence": [
+        "vsr/reference_model.py:38",
+        "vsr/train.py:61",
+        "tests/test_reference_model.py:58"
+      ],
+      "detail": "Explicit CPU fork_rng/reference_seed=training_seed+100; factory records trainable group SHA. Actual official-GPU hashes remain to be checked at launch."
+    },
+    {
+      "check": "single-frame HRI VAE/cache identity and frozen encoders",
+      "status": "passed_static_and_CPU",
+      "evidence": [
+        "vsr/reference_training.py:38",
+        "vsr/reference_training.py:73",
+        "vsr/reference_training.py:84",
+        "tests/test_reference_training.py:27"
+      ],
+      "detail": "Each original sampled HR frame separately T=1 encoded with official mode and normalization; binding retains original source_indices, crop/FPS and model/code SHA; no compressed video-latent slicing."
+    },
+    {
+      "check": "matched one-reference sampling and 0.5 missing-reference strategy",
+      "status": "passed_static_and_CPU",
+      "evidence": [
+        "vsr/reference_training.py:110",
+        "vsr/reference_training.py:176",
+        "tests/test_reference_training.py:52"
+      ],
+      "detail": "Independent CPU RNG training_seed+3, index+validity drawn every update; absent path None/false and does not read selected frame tensor. Same sequence all four variants."
+    },
+    {
+      "check": "strict precision and deterministic relation backward path",
+      "status": "passed_static",
+      "evidence": [
+        "vsr/reference_training.py:230",
+        "vsr/reference_training.py:316",
+        "vsr/train.py:221"
+      ],
+      "detail": "configure_reproducibility before environment CUDA access; Relation/Both use detached targets plus student-to-CPU autograd route."
+    },
+    {
+      "check": "reference context lifetime during nonreentrant checkpoint replay",
+      "status": "passed_static_and_CPU",
+      "evidence": [
+        "vsr/reference_model.py:22",
+        "vsr/reference_training.py:235",
+        "vsr/reference_training.py:247",
+        "scripts/smoke_reference.py:216",
+        "tests/test_reference_model.py:109"
+      ],
+      "detail": "Reference context retained through backward then cleared; new forward clears stale reference. Missing branch ignores NaN placeholders and has no HRI grads. Real CUDA/BF16 strict replay remains prerequisite."
+    },
+    {
+      "check": "matched on/off restoration semantics and reference exclusion",
+      "status": "passed_static_and_CPU",
+      "evidence": [
+        "vsr/reference_evaluation.py:49",
+        "vsr/score_reference_saved.py",
+        "vsr/metric_pools.py",
+        "tests/test_reference_evaluation.py",
+        "tests/test_score_reference_saved.py",
+        "tests/test_metric_pools.py"
+      ],
+      "detail": "Same seed/noise and full T/FPS, ref0/ref4 separate, identical nonref frame pool on/off, supplied frame separate; temporal full-sequence pairs filtered by original endpoints, null empty pool; scorer verifies actual noise_seed, source/FPS/validity/index."
+    },
+    {
+      "check": "native user-input HRI inference boundary",
+      "status": "passed_static_and_CPU",
+      "evidence": [
+        "vsr/inference.py:119",
+        "tests/test_inference.py"
+      ],
+      "detail": "Only LRV/text/optional supplied single whole HRI+known index; one T=1 encode shared across spatial tiles; no HR target argument; exact full frame count/4x shape after explicit padding/crop. Real CUDA native geometry still pending."
+    }
+  ],
+  "CPU_validation": {
+    "training_and_graph_tests": 16,
+    "evaluation_scoring_native_fake_tests": 14,
+    "total_focused_tests_passed": 30,
+    "training_command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=.deps <envpython> -m unittest tests.test_reference tests.test_reference_model tests.test_reference_training tests.test_smoke_reference -v",
+    "evaluation_command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=.deps <envpython> -m unittest tests.test_reference_evaluation tests.test_score_reference_saved tests.test_metric_pools tests.test_inference -v",
+    "limitation": "tiny/fake CPU tests; no official-model CUDA evidence or restoration-benefit evidence"
+  },
+  "blocking_code_defects_found": [],
+  "launch_prerequisites": [
+    {
+      "action": "Wait for current no-reference systemd service to finish and verify actual unit/PID/GPU is idle; do not start competing GPU task",
+      "basis": "docs/continuation-state.json"
+    },
+    {
+      "action": "Instantiate actual HRI config from template; replace data.cache_from placeholder with validated sealed original V2 preparation, currently old interrupted run, not indirect remaining run",
+      "evidence": "configs/formal_hq_v2_reference.template.json:data.cache_from",
+      "basis": "The placeholder text says completed formal run but this project now intentionally uses fully verified interrupted preparation. No numerical protocol change needed."
+    },
+    {
+      "action": "Run isolated real official-model scripts/smoke_reference.py --cache-run <sealed_original> --updates3 under strict CUDA BF16; inspect summary and discard diagnostic model before full fresh matrix",
+      "evidence": [
+        "scripts/smoke_reference.py:296",
+        "scripts/smoke_reference.py:310"
+      ],
+      "basis": "CPU replay/zero/missing checks passed, real CUDA branch not yet tested. Smoke checks live no-ref marker only, so root must additionally verify service/PID/GPU."
+    },
+    {
+      "action": "After each real HRI variant initializes, compare LRV/LoRA/HRI group SHA across four variants and P among projected variants; after training compare logged reference index/validity sequences",
+      "basis": "Code enforces matching construction/RNG, actual full runs remain pending."
+    }
+  ],
+  "report_completeness_gaps": [
+    {
+      "id": "reference_aux_only_and_feature_diagnostics",
+      "severity": "required_before_final_mechanism_claim; not a blocker to optimization",
+      "evidence": [
+        "vsr/reference_training.py:225",
+        "vsr/reference_training.py:235",
+        "vsr/reference_training.py:280",
+        "vsr/train.py:232",
+        "scripts/smoke_reference.py:186"
+      ],
+      "finding": "Reference runner and smoke log gradients of FM+A+R total loss. Reference runner does not call auxiliary_audit, feature_statistics, retrieval or relation validation diagnostics. Therefore reference-model records alone do not isolate A/R gradients reaching generator or provide on/off shared-feature variance/rank/correspondence evidence.",
+      "next_action": "Use independent zero-update post-training evaluation of own reference checkpoints for Align/Relation/Both; run auxiliary-only (A/R as appropriate) backward and frozen/finite group audits with HRI on/off; record fixed-val oracle-noised-HR alignment/relation, variance/effective rank and correspondence diagnostics per mode. Keep these explicitly separate from LR-only recovery; no optimizer update or test-set tuning. Do not silently call no-ref auxiliary_audit and describe it as HRI-on diagnostic."
+    },
+    {
+      "id": "reference_preparation_and_total_resource_cost",
+      "severity": "fill before long HRI run when possible; otherwise disclose unavailable timing",
+      "evidence": [
+        "vsr/reference_training.py:186",
+        "vsr/reference_training.py:272",
+        "vsr/reference_training.py:321",
+        "vsr/reference_training.py:326",
+        "vsr/reference_evaluation.py:187",
+        "vsr/frozen_evaluation.py:531"
+      ],
+      "finding": "Per-variant phase_wall starts after model/VAE load. Main does not time artifact verification, shared prepare, 15057 separate reference-frame VAE encodes, or total experiment wall; reference cache seal records hashes/shapes but not elapsed or peak. Update GPU-hours omit these costs. Internal sampler/decode times are cached-latent timing, without reference encode/full restore peak.",
+      "next_action": "Prefer non-numerical timing instrumentation in future HRI runner before launch: artifact/shared prepare/reference encoder load+encode/whole run wall and reference-encoding CUDA sync+peak, plus model-load time. Or capture exact service/journal boundaries separately and label missing subphase costs. Full pixel-to-pixel inference time/peak can be measured by already implemented frozen_evaluation/native restore; do not relabel cached-latent sample/decode time as end-to-end."
+    }
+  ],
+  "pending_empirical_claims": [
+    "Real official HRI strict CUDA BF16 forward/backward/checkpoint equality",
+    "Reference cache real single-frame VAE encodes",
+    "Reference nonreference-frame quality gain and missing-HRI stability",
+    "Native-resolution tiled HRI memory/FPS/frame-count behavior on actual GPU",
+    "Source/bootstrap uncertainty and training-seed reproducibility of any reference gain"
+  ],
+  "no_architecture_change_recommended": true
+}

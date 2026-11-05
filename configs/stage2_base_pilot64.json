@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "stage": "stage2_base_fixed_budget_pilot",
+  "seed": 20261102,
+  "model": {
+    "repo_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "local_dir": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers"
+  },
+  "data": {
+    "raw_root": "/home/hugo/Projects/ReprVSR-pretrained/data/HQ-VSR",
+    "manifest": "manifests/hq_vsr.json",
+    "num_frames": 9,
+    "height": 128,
+    "width": 224,
+    "scale": 4,
+    "debug_clips": 2,
+    "fps": "preserve_original",
+    "selection": "train",
+    "val_limit": 8,
+    "save_input_videos": 2,
+    "train_limit": 64
+  },
+  "conditioning": {
+    "injection_layers": [
+      0,
+      5,
+      9
+    ],
+    "alignment_layer": 9,
+    "rank": 8,
+    "alpha": 8,
+    "stem_channels": 128,
+    "projector_hidden": 1024,
+    "teacher_dim": 768,
+    "hri_enabled": false
+  },
+  "teacher": {
+    "repo": "https://github.com/facebookresearch/dinov2",
+    "revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "source_dir": "vendor/dinov2",
+    "weights": "weights/dinov2_vitb14_pretrain.pth",
+    "weights_url": "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth",
+    "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73"
+  },
+  "training": {
+    "variants": [
+      "Base"
+    ],
+    "batch_size": 1,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.01,
+    "max_grad_norm": 1.0,
+    "mixed_precision": "bf16",
+    "gradient_checkpointing": true,
+    "lambda_align": 0.1,
+    "fm_target": "noise_minus_clean",
+    "noise_interpolation": "(1-sigma)*clean+sigma*noise",
+    "timestep": "native_UniPC_1000_timestep_grid_uniform_index",
+    "official_initialization_per_variant": true,
+    "resume": false,
+    "updates": 4096,
+    "evaluate_at": [
+      0,
+      1024,
+      2048,
+      4096
+    ],
+    "checkpoint_at": [
+      1024,
+      2048,
+      4096
+    ],
+    "gradient_log_every": 256,
+    "log_every": 100
+  },
+  "formal_training": {
+    "enabled": false,
+    "scope": "fixed_budget_small_scale_pilot_before_full_matrix",
+    "same_budget_planned_for_align_relation_both": 4096
+  },
+  "evaluation_protocol": {
+    "internal_val": "HQ-VSR source grouped val",
+    "internal_test": "HQ-VSR source grouped test untouched during preflight",
+    "external_paired": [
+      "REDS explicit sequence IDs pending",
+      "YouHQ40"
+    ],
+    "real": [
+      "VideoLQ MUSIQ + playback blind review"
+    ],
+    "second_round_expansion": "OpenVidHD only after module benefit confirmed",
+    "hri": "stage5 only",
+    "metrics": "official LPIPS/tLP/tOF adapters not yet implemented; never approximate under these names"
+  },
+  "experiment_name": "stage2_base_pilot64",
+  "caption_policy": "user_approved_fixed_generic_text; preserve_caption_interface; no_semantic_claim",
+  "evaluation": {
+    "sampling_steps": 20,
+    "seeds": [
+      42,
+      43
+    ],
+    "monitor_seeds": [
+      42
+    ],
+    "modes": [
+      "correct",
+      "disabled",
+      "shuffled"
+    ],
+    "rgb_range": [
+      0,
+      1
+    ],
+    "border_shave": 0,
+    "scope": "HQ-VSR source-held-out validation pilot; 64 train clips and 8 val clips; test untouched",
+    "acceptance": {
+      "minimum_psnr_margin_over_controls_db": 1.0,
+      "all_clip_seed_pairs_positive": true,
+      "manual_content_motion_check": true
+    }
+  }
+}

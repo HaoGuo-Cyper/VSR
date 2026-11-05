@@ -1,0 +1,86 @@
+{
+  "source_repo": "https://github.com/chaofengc/IQA-PyTorch",
+  "source_commit": "259b9161125194d69b31a35defe48cef2244b294",
+  "license": "PolyForm Noncommercial License 1.0.0",
+  "files": {
+    "musiq_arch.py": {
+      "source_path": "pyiqa/archs/musiq_arch.py",
+      "source_url": "https://raw.githubusercontent.com/chaofengc/IQA-PyTorch/259b9161125194d69b31a35defe48cef2244b294/pyiqa/archs/musiq_arch.py",
+      "original_sha256": "2430cf30b56a2e3d5cf93618546df7d50ae1f3857aa95d3aeffe52a536c1ba27",
+      "bytes": 25909,
+      "vendored_sha256": "2e53bbc827dce7bf7ed5e9040801432dfe162a83ee6c79597003e857481c4ed7",
+      "changes": [
+        "Only four package imports rewritten to local pinned namespace; numerical architecture and preprocessing unchanged."
+      ]
+    },
+    "multiscale_trans_util.py": {
+      "source_path": "pyiqa/data/multiscale_trans_util.py",
+      "source_url": "https://raw.githubusercontent.com/chaofengc/IQA-PyTorch/259b9161125194d69b31a35defe48cef2244b294/pyiqa/data/multiscale_trans_util.py",
+      "original_sha256": "6d13c02ec4c93112282342a803ca5efca1d4eef3ddd033bf1aad6423c7904133",
+      "bytes": 7724,
+      "vendored_sha256": "6d13c02ec4c93112282342a803ca5efca1d4eef3ddd033bf1aad6423c7904133"
+    },
+    "padding.py": {
+      "source_path": "pyiqa/matlab_utils/padding.py",
+      "source_url": "https://raw.githubusercontent.com/chaofengc/IQA-PyTorch/259b9161125194d69b31a35defe48cef2244b294/pyiqa/matlab_utils/padding.py",
+      "original_sha256": "51693f915b64ffd03b72bea2ef7d709146fcf336fb1298739c13199ab87dd4f3",
+      "bytes": 3229,
+      "vendored_sha256": "51693f915b64ffd03b72bea2ef7d709146fcf336fb1298739c13199ab87dd4f3"
+    },
+    "registry.py": {
+      "source_path": "pyiqa/utils/registry.py",
+      "source_url": "https://raw.githubusercontent.com/chaofengc/IQA-PyTorch/259b9161125194d69b31a35defe48cef2244b294/pyiqa/utils/registry.py",
+      "original_sha256": "a6561e19d92745cdb18bb5321491a3abdfaa592730aff3b5454fe0ac7c89d4bb",
+      "bytes": 7123,
+      "vendored_sha256": "a6561e19d92745cdb18bb5321491a3abdfaa592730aff3b5454fe0ac7c89d4bb"
+    },
+    "LICENSE": {
+      "source_path": "LICENSE",
+      "source_url": "https://raw.githubusercontent.com/chaofengc/IQA-PyTorch/259b9161125194d69b31a35defe48cef2244b294/LICENSE",
+      "original_sha256": "7cfe4165a261b8f7fb71331f68da011c583e28c3dc3208e934ae7ccc4441cc46",
+      "bytes": 4659,
+      "vendored_sha256": "7cfe4165a261b8f7fb71331f68da011c583e28c3dc3208e934ae7ccc4441cc46"
+    },
+    "__init__.py": {
+      "source_path": "project glue; dist_to_mos adapted from pyiqa/archs/arch_util.py",
+      "vendored_sha256": "1a29045f998ca7f9acb267758f690fd79cbb5ea1d3b0c2de565a95542fc7be70"
+    },
+    "arch_util.py": {
+      "source_path": "project glue; dist_to_mos adapted from pyiqa/archs/arch_util.py",
+      "vendored_sha256": "b1df67d343f49464d284d9a73ab1dffab23d1e0c850042362b9eee6153a8c766"
+    },
+    "upstream_arch_util.py.txt": {
+      "source_path": "pyiqa/archs/arch_util.py",
+      "source_url": "https://raw.githubusercontent.com/chaofengc/IQA-PyTorch/259b9161125194d69b31a35defe48cef2244b294/pyiqa/archs/arch_util.py",
+      "original_sha256": "29d1b91a91fa24c6942eef9e998506c73c6f3d3432f7291eee5f7305807eb084",
+      "vendored_sha256": "29d1b91a91fa24c6942eef9e998506c73c6f3d3432f7291eee5f7305807eb084",
+      "purpose": "reference only; not imported; provenance for adapted dist_to_mos helper"
+    }
+  },
+  "weights": {
+    "url": "https://huggingface.co/chaofengc/IQA-PyTorch-Weights/resolve/main/musiq_koniq_ckpt-e95806b9.pth",
+    "path": "weights/musiq_koniq_ckpt-e95806b9.pth",
+    "bytes": 108610983,
+    "sha256": "e95806b9eae5f3814c410f574ba8e552362bd5bc63d758ed5b97860f5d6185aa",
+    "published_filename_sha256_prefix": "e95806b9",
+    "training_dataset": "KonIQ10k",
+    "head": "single MOS regression",
+    "score_range": "approximately 0 to 100; not forcibly clamped"
+  },
+  "scope": "PyTorch reimplementation of Google MUSIQ; KonIQ10k regression checkpoint, not AVA aesthetics",
+  "requirements": {
+    "torch": "existing project torch2.14.1+cu130",
+    "numpy": "existing project numpy2.5.2",
+    "python": "stdlib only otherwise; no pyiqa package-wide dependency installation"
+  },
+  "preprocess": {
+    "input": "float RGB in[0,1] at full input spatial resolution",
+    "internal_range": "[-1,1]",
+    "scales": "native resolution plus aspect-preserved longer sides224 and384",
+    "patch_size": 32,
+    "patch_stride": 32,
+    "max_seq_len_from_original_res": -1,
+    "resize": "unmodified pinned PyIQA bicubic align_corners=False",
+    "note": "Pinned PyIQA preprocessing; numerical parity with Google JAX implementation has not been claimed."
+  }
+}
