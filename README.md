@@ -2,7 +2,7 @@
 
 ## 当前入口（2026-11-05）
 
-新阶段是 EMA 时间自蒸馏 VSR。请先阅读 [AGENTS.md](AGENTS.md)、[DECISIONS.md](DECISIONS.md)、[TASKS.md](TASKS.md) 和 [Stage 0 代码审计](docs/stage0-code-audit-20261105.md)。D1–D4 目前为 PROPOSED，尚未由用户 SETTLED。已有结果和损失已重新汇总；单条外评复现的 34 张 PNG 与旧结果逐字节一致；58 个 VAE crop 审计和零参数更新资源诊断已完成。原生720p的 untiled decoder 对照因 OOM 停止，未降精度或换协议重试。没有启动新训练或 optimizer 更新，GPU 工作已停止等待用户决定。详细记录见 [RESULTS.md](RESULTS.md)、[Stage 0 汇总](docs/stage0_analysis_20261105/statistics.md) 和 [Stage 1 审计](docs/stage1_audit_20261105/vae_crop_summary.md)。新目录为 `/home/hugo/Projects/VSR_`，旧 `/home/hugo/Projects/VSR` 提供原始资产，安装与本地链接说明见 [setup](docs/setup-20261105.md)。
+新阶段是 EMA 时间自蒸馏 VSR。请先阅读 [AGENTS.md](AGENTS.md)、[DECISIONS.md](DECISIONS.md)、[TASKS.md](TASKS.md) 和 [Stage 0 代码审计](docs/stage0-code-audit-20261105.md)。用户已确定 D1–D4：33连续帧、训练／推理stride1、NoRef主线，先训练3个独立Base种子，每个8192步。A2 pilot默认latent层退化并排除第0个位置；通过检查后按计划连续推进，不重复请求许可。旧外评积压和原生720p untiled VAE对照已移出当前必做范围，原OOM及未完成记录保留且不重试。此前34张PNG复现、内部种子统计、58个VAE crop审计均保留；完整优化器资源检查、新缓存和训练状态见 [RESULTS.md](RESULTS.md)。训练入口为 `python -m vsr.stage2_base_queue queue`，只在确认GPU空闲后启动一次。新目录为 `/home/hugo/Projects/VSR_`，旧 `/home/hugo/Projects/VSR` 提供只读原始资产，安装与本地链接说明见 [setup](docs/setup-20261105.md)。
 
 以下内容保留为旧实验阶段记录；其中“正在训练”“未测 test”等状态以新交接文件和审计记录为准。
 

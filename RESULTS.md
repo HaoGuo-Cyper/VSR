@@ -213,3 +213,28 @@ The four previously pending source/audit commits (35 added text files and 5 upda
 Publication used a normal fast-forward from `880b7738c6b4f73019a97df5662357b562344086`; no branch history was overwritten. The final tree at this point contains 274 regular UTF-8 text files. A separate read-only review of all four snapshots found no binary, symlink, checkpoint/media file or obvious credential pattern. This authorization and the corresponding working rule are recorded in a following documentation commit. Native local history is retained in an archive ref before local/remote commit identities are aligned.
 
 No training or GPU experiment was started by this synchronization. D1–D4 remain PROPOSED; G0/G1 and all research failure dispositions retain their previous status. Original assets/results and all 16 checkpoints remain outside this publication.
+
+
+## Stage 2 authorized protocol — 2026-11-05 (before execution)
+
+The human accepted the33-frame proposal, settled D1–D4 and authorized three Base seeds plus normal planned continuation after successful checks. G1 therefore passes; G0 and the explicitly partial audit items remain open. No native-resolution untiled retry is scheduled.
+
+Frozen T2.1 design: NoRef Base only, fresh official Wan revision0fad780a534b6463e45facd96134c9f345acfa5b, no task checkpoint/optimizer reuse; training seeds20261102/03/04, identical data/window seed20261102; source-grouped train1641/val32 from the unchanged manifest; 33 consecutive frames, stride1, crop128×224, unchanged ×4 bicubic, posterior-mode full-clip FP32 VAE encoding with9 latent positions. Rank8 LoRA and LR residual injections0/5/9; batch1, AdamW lr1e-4/weight_decay.01, norm clip1, bf16/native FP32 exceptions, gradient checkpointing and the existing strict reproducibility policy. Each formal seed gets8192 optimizer updates (3RE total), checkpoints2048/4096/8192, validation at0/2048/4096/8192; fixed20-step UniPC CFG1, monitoring seed42 and final seeds42/43 with correct/disabled/shuffled LR controls. Scores during training retain the existing float32 RGB tensor protocol, separate from the later prospective PNG-equivalent main metrics. Internal test and external test pixels are not read for preparation/model selection.
+
+Before formal initialization, a separate8-update train-only resource diagnostic will use two deterministic training clips, the same full AdamW/gradient path and a resident frozen FP32 evaluation VAE; its adapters/checkpoint are never reused. Finite loss/gradients, no frozen gradients, changed trainable state, correct9-position geometry and observed peak allocation below16GiB must pass. Failures stop the queue. The complete actual EMA/A2 update overhead remains future Stage3 work. Diagnostic updates are reported separately from3RE.
+
+Preparation uses a SHA-bound existing generic text embedding without loading T5; paired RGB is decoded/encoded one clip at a time and retained on disk, with a two-clip lazy reader. A fresh33-frame cache is mandatory; the old9-frame latent cache cannot be reused. Base never constructs DINO or RAFT. Later seeds reuse only the verified/sealed new data/text/VAE cache and independently initialize all task parameters and optimizers. Original configs, checkpoints and historical outputs remain unchanged. Run IDs, git/config hashes, timings, peaks and results will be appended when observed.
+
+
+## Human-approved independent review scope — 2026-11-05
+
+The human supplied a read-only review of GitHub2dc229a and authorized following its approach with continuous progression after successful checks. Retain the explicit earlier choice of **three** NoRef Base seeds. Adopt latent-level A2 at the LR-branch input, excluding latent position0; defer pixel-level training corruption to a possible later ablation after a crop VAE leakage test. Pixel-degraded restoration tests remain distinct.
+
+Descope the old108+hour external backlog from the required new line (including the optional7-hour slice, which is not launched). Close G0 in this revised internal-evidence scope using completed internal statistics/loss diagnostics and reproduced historical row; incomplete external coverage remains labeled. Reserve external evaluation for final models, HRI for optionalStage8. Close the native full-resolution untiled and unavailable E*warp/separate tLPIPS requirements out of T1.1, retain the58-case crop audit and its limited sample, and use explicitly named existing TecoGAN tLP100/tOF. These are human-approved scope changes, not fabricated successful measurements.
+
+The review's training-cost and memory statements remain estimates: the synthetic3.06GiB/1.31× result excludes optimizer/actual EMA/projector, and does **not** pass G3. The separately recorded8-update full-optimizer Base diagnostic remains the first bounded GPU check. A33-frame external tile restore and crop leakage test are not required before Base training and are not launched here. All runtime failures still stop progression.
+
+
+### Stage2 prelaunch CPU checks — PASS
+
+The streaming-preparation, queue/config/lease, unchanged data/model/evaluation/cache/checkpoint/temporal-stride/reproducibility checks passed40/40 in1.007s, with no GPU experiment. A real subprocess fixture verifies that the worker GPU lease survives release of the parent queue lock. Effective diagnostic/formal/reuse configs pass the existing checkpoint loader SHA contract, including tamper rejection. The independent window audit verifies1673/1673 unchanged source windows. See docs/stage2_20261105/. These CPU results do not pass the upcoming full-optimizer resource gate or G3. Runtime numerical source is frozen during the three-seed queue; development and publication of new logs remain in the separate staging checkout.

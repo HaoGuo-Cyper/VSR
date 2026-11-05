@@ -39,6 +39,8 @@ The comparison that matters most is against **C1**: the same corruption used as 
 
 **Continuation audit, 2026-11-05.** T0.2 now passed a fresh NoRef Base / REDS4 / 000 reproduction: 34 saved PNG files byte-identical across both sampler seeds. Internal statistics (including a separate crossed training-seed/source bootstrap) and all 16 final-run loss diagnostics are recorded in `docs/stage0_analysis_20261105/`; external coverage is still incomplete. Stage 1 completed 58 supported VAE crop cases and condition-gap measurements plus six synthetic no-parameter-update resource cases. The independent native720p VAE attempt stopped with OOM in its common untiled decoder, before a tiled-path comparison. Reports are in `docs/stage1_audit_20261105/`. **D1–D4 are PROPOSED, not SETTLED. GPU work is stopped awaiting the human; no training run or optimizer update has occurred.**
 
+**Latest human decision, 2026-11-05.** D1–D4 are now **SETTLED**: 33 contiguous frames / stride1 / 9 latent positions; unchanged 128×224 ×4 bicubic and source split; future student9/teacher21 and trainable-only EMA0.999. G1 passed by explicit human acceptance. T2.1 is authorized: three independently initialized NoRef Base runs, seeds20261102/03/04, 8192 updates each. Cached text only and streaming RGB preparation are required. Normal planned continuation after passing gates is authorized without repeated confirmation. Historical audit statements above describe the earlier pause; The subsequent human-approved review closes G0 in a reduced internal-evidence scope, descopes the old external backlog and native untiled/E*warp audit requirements, and selects latent-level A2 masking excluding position0; the failed native untiled audit is not retried.
+
 ## Where things are
 
 Verified by read-only inspection on 2026-11-05. The new source root is `/home/hugo/Projects/VSR_`; the original `/home/hugo/Projects/VSR` remains the read-only asset and historical-results source. Existing configs retain their original paths and hashes. Do not redirect outputs into the historical runs.
@@ -68,7 +70,7 @@ All checkpoint paths below are relative to `/home/hugo/Projects/VSR/runs/`; appe
 | HRI / 20261103 | `formal_hq_v2_reference_repeat_seed20261103_20261102T214631.884279Z` | Base, Align |
 | HRI / 20261104 | `formal_hq_v2_reference_repeat_seed20261104_20261102T225815.432804Z` | Base, Align |
 
-The 2026-11-05 T0.1 evidence and bounded Stage 1 proposals are in `DECISIONS.md`. D1–D4 are PROPOSED and await human settlement; this audit does not authorize new training. New read-only-audit outputs are under `/home/hugo/Projects/VSR_/runs/{stage0_reproduction_20261105T113721Z,vae_crop_full_20261105T114559Z,profile_protocol_resources_20261105T114931Z,vae_full_resolution_20261105T115318Z}/`.
+The 2026-11-05 T0.1 evidence, bounded Stage 1 proposals and subsequent human settlement of D1–D4 are in `DECISIONS.md`. The earlier read-only-audit outputs are under `/home/hugo/Projects/VSR_/runs/{stage0_reproduction_20261105T113721Z,vae_crop_full_20261105T114559Z,profile_protocol_resources_20261105T114931Z,vae_full_resolution_20261105T115318Z}/`. New Stage2 runs use separate dated directories and the accepted protocol33 configs.
 
 ## Working rules
 
@@ -100,4 +102,4 @@ At the end of each stage, add a short section to `RESULTS.md` containing:
 - the gate verdict (pass or fail, and why);
 - any questions for the human.
 
-Then stop and wait for confirmation before starting a stage that trains models.
+Human authorization on 2026-11-05 permits automatic continuation through the existing plan after successful checks. Report each stage, continue when its gate passes, and ask only for failed gates, problematic results or exceptional changes; do not repeatedly request permission for already-authorized training.

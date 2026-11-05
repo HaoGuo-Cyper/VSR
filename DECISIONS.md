@@ -5,9 +5,13 @@ Status key:
 - **PROPOSED**: the agent has added evidence and a recommendation; awaiting the human.
 - **SETTLED**: do not reopen without new evidence.
 
-## Open: these block Stage 2 onward
+## Protocol decisions (D1–D4 settled by the human, 2026-11-05)
 
-### D1. Frame encoding and clip length (PROPOSED)
+**Authoritative human settlement, 2026-11-05.** The human stated: “采纳33帧方案，确定D1–D4，按之前的规划先做三个Base，代码和日志继续同步到GitHub。” This accepts the latest concrete proposals below: 33 contiguous frames, 128×224, unchanged ×4 bicubic, whole-clip VAE → 9 latent positions; future training/inference ordinal stride1; LR injections before zero-based0/5/9, initial student output9/teacher output21; NoRef main line, mandatory C1, matched-seed Base continuations and trainable-only EMA0.999. First train three fresh official NoRef Bases (seeds20261102/03/04, 8192 updates each;3RE), with fixed data seed20261102 and identical train1641/val32 selection. Accept corrupted-frame LPIPS Alex0.1 and explicitly defined TecoGAN tLP100 as primary metric families, with clean RGB PSNR/SSIM guards; final evaluation intervals/pools/statistical rules/fidelity thresholds still freeze prospectively at T5.0. Historical proposals/evidence below retain their original wording and are superseded by this settlement where they say awaiting acceptance.
+
+The human also authorized normal continuation to the next planned task without repeated permission. Stop and ask only on failed gates, problematic tests/results or exceptional changes requiring a new decision. This does not mark G0 complete, authorize retry of the failed native untiled protocol, change original checkpoints/configs or waive scientific gates.
+
+### D1. Frame encoding and clip length (SETTLED)
 
 **Question.** Are the 9 stride-4 frames encoded by the Wan VAE as one clip, giving 3 latent frames, or frame by frame, giving 9 latent frames?
 
@@ -25,7 +29,7 @@ With nine latent positions, a two-position corruption span realizes 2/9 (22.2%),
 
 This is consistent across all eight `configs/formal*.json` files (including the template and remaining-variants config) and all seven actual formal-run correspondence records. HRI's independent **reference-image** cache is a separate path: `vsr/reference_training.py:98–105,142–157` encodes each possible supplied reference as T=1; it does not change main HR/LR clip encoding. Cached main-video latents are checked against the derived geometry in `vsr/train.py:97–125`. The later bounded T1.1/T1.3 measurements and their explicit remaining scope are documented above and in `RESULTS.md`; the PROPOSED future protocol still awaits human settlement.
 
-### D2. Train/test frame spacing (PROPOSED)
+### D2. Train/test frame spacing (SETTLED)
 
 **Question.** How are test sequences fed at inference: consecutive frames, or stride 4 as in training?
 
@@ -37,7 +41,9 @@ This is consistent across all eight `configs/formal*.json` files (including the 
 
 **T0.1 evidence, 2026-11-05.** Internal HQ inference uses the training spacing: `vsr/evaluate_hq.py:24–26,49–62` sets 9 frames and temporal stride 4, and `vsr/hq_evaluation_data.py:117–135` delegates to the same strided decoder. External REDS4/YouHQ40 inference instead selects **17 consecutive ordinal frames, start 0, stride 1**: `vsr/evaluate_external.py:26–34` sets the 17-frame default; `vsr/external_data.py:315–340,347–360` slices `sources[start:start+num_frames]` and records consecutive source indices. The paused external run's frozen protocol and sequence metadata confirm the 17-frame prefix; this is not a full-sequence sliding-window evaluation. The external protocol therefore differs from training in both frame spacing and clip length. Preserve existing result labels and protocol; any future matched-spacing comparison must be declared separately. This evidence answers current behavior; the PROPOSED future spacing still awaits human settlement.
 
-### D3. LR branch injection points and frame separation (PROPOSED)
+### D3. LR branch injection points and frame separation (SETTLED)
+
+**Accepted review refinement, 2026-11-05.** The human authorized continuation following the attached independent review. A2 starts with **latent-level corruption at the LR branch input**, excluding latent position0 from random masks because the first causal VAE position has distinct support. Pixel-level corruption remains an optional later ablation after a crop-scale VAE leakage test; it is not on the pilot critical path. Layer9/21 choices remain unchanged. Evaluation with pixel-degraded LR remains a separate test of restoration and must not be described as an exactly local latent intervention.
 
 **Question.** Which transformer blocks receive the LR residual branch, and does the branch mix information across frames before injection (for example through temporal convolution or attention)?
 
@@ -56,7 +62,7 @@ This is consistent across all eight `configs/formal*.json` files (including the 
 
 The latent LR stem itself does **not** mix latent time positions: `vsr/model.py:78–84` creates Conv3d with kernel/stride equal to the native DiT patch size plus SiLU, then independent token-wise Linear projections; `vsr/model.py:136–141` forms the token grid. The original official model's `transformer/config.json:13–19` declares 30 blocks and patch size `[1,2,2]`, also preserved in each formal run's `correspondence.json:4–8`, so the stem's temporal kernel and stride are both 1. The upstream clip VAE does encode across time, however: absence of stem mixing must not be described as absence of pixel-frame mixing throughout the LR path. The VAE receptive field and pixel-corruption spread need T1.1 evidence. A future student hook must follow an injection; its EMA teacher hook must be deeper than the student hook. No EMA layer choice is settled by this audit.
 
-### D4. Start point, EMA, scope and primary metrics (PROPOSED)
+### D4. Start point, EMA, scope and primary metrics (SETTLED)
 
 **Recommendation.**
 - **Start:** continue from each NoRef Base checkpoint. Every arm (flow-only, C1, A2, baselines) then shares an identical start.
@@ -86,3 +92,7 @@ The primary validation crossed bootstrap currently includes zero for all five me
 | 2026-11-05 | S1–S6 | Settled during planning | Planning discussion; RESEARCH_PLAN.md |
 | 2026-11-05 | D1–D3 / T0.1 | Existing behavior established from code and historical metadata; all remain OPEN for future protocol decisions | Whole-clip 9→3 VAE encoding; internal stride 4 vs external contiguous 17-frame prefixes; blocks 0/5/9 pre-injection and block 9 post-capture. Source paths in AGENTS.md; no training or protocol change. |
 | 2026-11-05 | D1–D4 / T1.4 | PROPOSED, not SETTLED; awaiting the human after completed bounded crop/resource audits and a stopped native-resolution OOM | Prefer 33 contiguous frames/9 latent positions, matched stride1, zero-based student9/teacher21, NoRef matched Base continuations with trainable-only EMA0.999 and explicitly named LPIPS/tLP100 candidates. Full evidence and limitations in `docs/stage1_audit_20261105/`; no training run or parameter update. |
+
+| 2026-11-05 | D1–D4 / G1 | SETTLED by explicit human acceptance of the 33-frame proposal; authorize T2.1 three fresh NoRef Bases and normal planned continuation after passing checks | Human message quoted above; bounded audit limitations and unclosed G0 remain recorded. |
+
+| 2026-11-05 | Review refinements / G0 scope | Accepted by human: descope old external backlog; close native untiled and unavailable E*warp/tLPIPS sub-items out of scope; latent-level A2 default excluding position0; retain three Base seeds | Pasted independent review and “可以按照这个思路继续运行，没有问题就持续推进”. Existing evidence is retained and no unrun task is marked experimentally passed. |
