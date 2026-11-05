@@ -195,3 +195,21 @@ The new read-only `external_completion_plan.{json,md,csv}` inventories all 16 ch
 The two successfully reproduced NoRef REDS4/000 restores calibrate about 7.43646 seconds per tile at the fixed20-step protocol. Applying that **NoRef rate** to all remaining tile-restores gives a recovery-compute-only optimistic extrapolation of about **108.424 hours**. It excludes or cannot model HRI attention/reference-encoding differences, CPU metrics, PNG/I/O, cold starts, prior-artifact acceptance and possible fresh reruns. It is not a forecast interval or completion-date guarantee. It must not be shortened by silently changing steps, precision, frame spacing or resolution.
 
 This plan does not start an evaluator, GPU queue or automation. A future Stage0 continuation must first review the existing artifacts, freeze a new all-16 cohort contract distinct from the old all-eight outer seal, and use fresh output directories while preserving the original prefix protocol. The pending human decision should consider this substantial cost and its priority relative to the proposed NoRef self-distillation line.
+
+
+## Public text synchronization authorization — 2026-11-05
+
+The human explicitly authorized: “允许同步本次和后续新增和更新的文本文件” (allow synchronization of this and future new/updated text files). This extends the previous 239-file approval to project source, configs, experiment statistics, audit logs and repository documentation, including project-local paths, experiment metadata and data manifests. Weights, checkpoints, raw media, tensor caches and credentials remain excluded. The standing scope is recorded in AGENTS.md rule 11; publication within this scope needs no repeated confirmation.
+
+The four previously pending source/audit commits (35 added text files and 5 updated documents) have been published to main at `2e243f0c1355a371cb9f75890659cdca194d0129` with tree `4db09f639c62fc8d8d4e6d1ed639543352d0af44`. Each uploaded Git tree exactly matches its corresponding native local tree. GitHub creates its own commit metadata, so native and GitHub commit IDs differ while their file trees match:
+
+| Native local commit | GitHub commit | Matching tree |
+| --- | --- | --- |
+| `8f2a2a36dd641d3cb88fcdfef564f646540c141c` | `6f0f86516cb7137e08b6a06c853dc2b3e6d778e3` | `956f84854710d3fcdbdaf94251ba257a4e3bdb72` |
+| `1fb9fdda5ad66c84a758af9cdb38ca29e90ac729` | `834978a711fbfdea3dddbf0c6d7c7443a86078dc` | `7d7fa83eea56f930ad0cb0d77836393044612c88` |
+| `f1aef3d935abaf1ebb6f4e2fdaaca74e918d25be` | `f4ff8a00640f52feda267f6e8f13ff91b5907550` | `3b3f2d9fde04e840dea7549a4282f798e323f095` |
+| `4e838c6c66012f4aa50e4637a888ded19e4495dd` | `2e243f0c1355a371cb9f75890659cdca194d0129` | `4db09f639c62fc8d8d4e6d1ed639543352d0af44` |
+
+Publication used a normal fast-forward from `880b7738c6b4f73019a97df5662357b562344086`; no branch history was overwritten. The final tree at this point contains 274 regular UTF-8 text files. A separate read-only review of all four snapshots found no binary, symlink, checkpoint/media file or obvious credential pattern. This authorization and the corresponding working rule are recorded in a following documentation commit. Native local history is retained in an archive ref before local/remote commit identities are aligned.
+
+No training or GPU experiment was started by this synchronization. D1–D4 remain PROPOSED; G0/G1 and all research failure dispositions retain their previous status. Original assets/results and all 16 checkpoints remain outside this publication.

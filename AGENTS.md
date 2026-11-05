@@ -82,6 +82,7 @@ The 2026-11-05 T0.1 evidence and bounded Stage 1 proposals are in `DECISIONS.md`
 8. **Stop at failed gates.** If a gate fails or a result contradicts the plan, report it and wait. Do not improvise a new research direction.
 9. **Ask the human first** before you delete anything, change the data split, change the degradation used by existing baselines, or spend more than 2 run-equivalents on anything not in `TASKS.md`.
 10. **Fit in 16 GB.** Use the precomputed text embedding and never load the T5 encoder during training. Train in bf16 with gradient checkpointing. Cache DINOv2 features offline.
+11. **Public GitHub synchronization is authorized.** On 2026-11-05 the human authorized this and future new/updated project text files to be synchronized to the public `HaoGuo-Cyper/VSR` repository, including project-local paths, experiment metadata and data manifests. No repeated publication confirmation is needed for that scope. Keep weights, checkpoints, raw media, tensor caches and credentials outside Git. This permission does not settle D1–D4, waive failed gates or authorize training.
 
 ## Vocabulary
 
