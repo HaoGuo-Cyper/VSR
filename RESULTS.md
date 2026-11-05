@@ -142,3 +142,56 @@ Prepared run: `/home/hugo/Projects/VSR_/runs/profile_protocol_resources_20261105
 ### Full-resolution VAE encoding comparison fixed before execution
 
 The independent protocol `configs/audits_20261105/vae_full_resolution_v1.json` (SHA256 `31dc4f55199794f06fea8658722bf741a9caa3cc3d0bca50b9e672fdde9c6420`) fixes REDS4/000, its first nine native 720×1280 frames, stride1, official frozen FP32 VAE and posterior mode. Compare untiled encoding against native `enable_tiling` encoding (256×448 tiles, 192×384 strides). Disable tiling before both decodes so the same untiled decoder isolates the encoding difference. Save latent/reconstruction differences, per-frame metrics, boundary-region errors, phase peak VRAM and time. Script SHA256 is `a21f32175bec1191c4b9ac786087c2cbede26411cf75a64d40d7713b2f7755cd`. Any OOM/failure is preserved and stops this attempt without precision, size, decoder or tiling fallback. This is one native-resolution setting, not evidence for all frame lengths/resolutions.
+
+## 2026-11-05 — Stage 1 bounded execution and current gate disposition
+
+### VAE reconstruction and condition gap
+
+The first-case capacity pilot passed, followed by **58/58 supported crop cases** under the previously frozen full protocol. Full run: `/home/hugo/Projects/VSR_/runs/vae_crop_full_20261105T114559Z`, summary SHA256 `c8923195f4989d3f9346cef63cce5c9a5d2d55cf7e08d3677b125cd50782f7a8`, execution wall 81.419 s. Independent JSON-only review verified all result/complete/status seals. The pilot and full run's first case have identical input records, stored metrics and latent statistics. There were zero parameter updates, no DiT/T5/DINO model and no binary latent output.
+
+Each HQ cell below is mean ± sample SD across the eight selected sources, not training-seed variation. The two REDS sources are reported separately in `docs/stage1_audit_20261105/vae_crop_summary.md` and CSVs.
+
+| HQ frames / stride | Latent positions | RGB PSNR dB | LPIPS Alex0.1 | Normalized LR−HR latent RMSE |
+| --- | ---: | --- | --- | --- |
+| 9 / 1 | 3 | 29.993 ± 2.802 | 0.01535 ± 0.00565 | 0.4975 ± 0.0506 |
+| 9 / 4 | 3 | 28.585 ± 2.511 | 0.02235 ± 0.00639 | 0.4760 ± 0.0553 |
+| 17 / 1 | 5 | 30.273 ± 2.880 | 0.01420 ± 0.00496 | 0.5427 ± 0.0569 |
+| 17 / 4 | 5 | 28.488 ± 2.339 | 0.02222 ± 0.00586 | 0.5149 ± 0.0646 |
+| 33 / 1 | 9 | 30.160 ± 2.920 | 0.01481 ± 0.00518 | 0.5691 ± 0.0632 |
+| 33 / 4 | 9 | 28.314 ± 2.061 | 0.02354 ± 0.00791 | 0.5374 ± 0.0708 |
+
+Stride1 covers different source frames/time spans from stride4, despite sharing the start and crop. These differences are VAE diagnostic observations on a fixed small subset, not isolated causal stride effects or SR-model improvements. Shared-prefix RGB PSNR/SSIM/MSE values are exactly equal for matched short/long cases; maximum per-frame LPIPS difference is about 1.12e−8. Different clip-wide means must not be presented as degradation of already-covered frames. Pixel tensors were not retained for an independent bitwise-prefix comparison.
+
+T1.2 is complete within this declared sample: raw and normalized per-channel/per-latent-time statistics and distances are in `channel_gap.csv`; per-frame errors are in `per_frame.csv`. Mean within-clip population SD is labeled accordingly, not treated as a pooled dataset SD. Wan's normalization constants are retained; this audit neither changes them nor treats the HR VAE as the method's teacher. T1.1 remains partial because the named E*warp/tLPIPS implementations and the encoding-tiling comparison are incomplete.
+
+### Zero-update resource diagnostic
+
+Run `/home/hugo/Projects/VSR_/runs/profile_protocol_resources_20261105T114931Z` passed all declared checks; summary SHA256 `0678eb7b152779b721c4da24d846bb6c31471967c891df10bd5feddcc669d36b`. The six conditions ran 24 forward/backward cycles (six excluded warmups and 18 timed cycles), with 12 additional no-grad forwards in the extra-forward conditions. Parameters retained identical identities/versions and trainable SHA256 before/after, and gradients/features were cleared. Optimizer steps and parameter updates: **0**.
+
+| Nominal frames / latent positions | Base cycle seconds, mean ± SD | Extra-forward + Base cycle seconds, mean ± SD | Extra-forward ratio | Max allocated GiB including extra forward |
+| --- | --- | --- | ---: | ---: |
+| 9 / 3 | 0.143702 ± 0.001235 | 0.224949 ± 0.081070 | 1.5654× | 2.8469 |
+| 17 / 5 | 0.162595 ± 0.000042 | 0.214272 ± 0.000686 | 1.3178× | 2.9085 |
+| 33 / 9 | 0.288841 ± 0.000633 | 0.379086 ± 0.000193 | 1.3124× | 3.0600 |
+
+These are synthetic synchronized forward/backward/zero-grad cycles in the same train-mode Base, with one no-grad output retained through backward. They omit optimizer, gradient clipping, data/metric overhead, actual EMA state swapping, feature projector and alignment loss. The 9-frame second timed cycle (0.318560 s) is retained and accounts for its higher SD; no outlier was removed. No formal RE time, full-training-memory guarantee, actual EMA overhead or G3 verdict follows. T1.3 remains partial. Independent details are in `resource_profile.{json,md,csv}`.
+
+### Native-resolution attempt — STOPPED on capacity failure
+
+Run `/home/hugo/Projects/VSR_/runs/vae_full_resolution_20261105T115318Z` preserved its failure; SHA256 `6f8f09a09eee4fff204a7d87e3d05a57d559af2c9dd5024ad13eb476f44c3dc1`. The FP32 native720p untiled encode completed (3.526 s, peak allocated 12.682 GiB). The first common **untiled decoder** then failed in the native later-temporal-chunk path at `F.pad`, requesting a further 1.99 GiB with only about 660 MiB free. Failed-phase peak allocated was 13.592 GiB. No tiled encode, finished reconstruction, metric or difference table was reached; `completed_encode_decode_paths=0` is correct.
+
+Read-only traceback/source review found the expected native encoder and decoder cache cleanup, no accidental second model/autograd graph, and no prior retained reconstruction. This is a capacity boundary of this specific untiled FP32 execution path, not a rejection of A2 or proof that every decoder policy fails. No precision/size/tiling fallback or automatic retry was attempted. Further GPU work is stopped under the declared failure rule. Details are in `full_resolution_attempt.{json,md}`.
+
+### Proposal and gates
+
+`DECISIONS.md` now marks D1–D4 **PROPOSED**, never SETTLED: prefer 33 contiguous training frames/9 latent positions, matched future stride1, initial zero-based student9/teacher21, NoRef and trainable-only EMA0.999, with protocol-matched Base seeds before method continuations. Explicit LPIPS/TecoGAN tLP100 metric candidates are proposed for human acceptance. Integer mask ratios/support still require prospective implementation tests; the crop/resource results do not select a best A2 method.
+
+Current completion: T0.1/T0.2/T0.5 and sample-scoped T1.2/T1.4 are done. T0.4 is partial (internal statistics done, external coverage missing); T0.3 is unfinished; T1.1 and T1.3 are partial as labeled. **G0 and G1 have not passed. No new training run or parameter update has occurred.** Stop and await the human's D1–D4 decisions rather than beginning Stage 2 or retrying the failed protocol.
+
+### External completion coverage and cost — plan only, no queue started
+
+The new read-only `external_completion_plan.{json,md,csv}` inventories all 16 checkpoints × 44 original external sequences = 704 model/sequence rows. NoRef rows have two restores; HRI rows have four (two seeds × reference on/off), for 2112 restores total. The existing 116 completion markers correspond to 232 restores and are not newly accepted by this metadata-only plan. If those artifacts later pass strict verification, at least 588 rows / 1880 restores / 52,488 tile-restores remain, plus 704 HRI reference encodes. Otherwise more work is needed.
+
+The two successfully reproduced NoRef REDS4/000 restores calibrate about 7.43646 seconds per tile at the fixed20-step protocol. Applying that **NoRef rate** to all remaining tile-restores gives a recovery-compute-only optimistic extrapolation of about **108.424 hours**. It excludes or cannot model HRI attention/reference-encoding differences, CPU metrics, PNG/I/O, cold starts, prior-artifact acceptance and possible fresh reruns. It is not a forecast interval or completion-date guarantee. It must not be shortened by silently changing steps, precision, frame spacing or resolution.
+
+This plan does not start an evaluator, GPU queue or automation. A future Stage0 continuation must first review the existing artifacts, freeze a new all-16 cohort contract distinct from the old all-eight outer seal, and use fresh output directories while preserving the original prefix protocol. The pending human decision should consider this substantial cost and its priority relative to the proposed NoRef self-distillation line.

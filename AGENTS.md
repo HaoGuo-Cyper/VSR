@@ -37,6 +37,8 @@ The comparison that matters most is against **C1**: the same corruption used as 
 
 **Not done yet:** EMA self-distillation, per-frame-timestep models, VAE-latent alignment, one-step distillation.
 
+**Continuation audit, 2026-11-05.** T0.2 now passed a fresh NoRef Base / REDS4 / 000 reproduction: 34 saved PNG files byte-identical across both sampler seeds. Internal statistics (including a separate crossed training-seed/source bootstrap) and all 16 final-run loss diagnostics are recorded in `docs/stage0_analysis_20261105/`; external coverage is still incomplete. Stage 1 completed 58 supported VAE crop cases and condition-gap measurements plus six synthetic no-parameter-update resource cases. The independent native720p VAE attempt stopped with OOM in its common untiled decoder, before a tiled-path comparison. Reports are in `docs/stage1_audit_20261105/`. **D1–D4 are PROPOSED, not SETTLED. GPU work is stopped awaiting the human; no training run or optimizer update has occurred.**
+
 ## Where things are
 
 Verified by read-only inspection on 2026-11-05. The new source root is `/home/hugo/Projects/VSR_`; the original `/home/hugo/Projects/VSR` remains the read-only asset and historical-results source. Existing configs retain their original paths and hashes. Do not redirect outputs into the historical runs.
@@ -66,7 +68,7 @@ All checkpoint paths below are relative to `/home/hugo/Projects/VSR/runs/`; appe
 | HRI / 20261103 | `formal_hq_v2_reference_repeat_seed20261103_20261102T214631.884279Z` | Base, Align |
 | HRI / 20261104 | `formal_hq_v2_reference_repeat_seed20261104_20261102T225815.432804Z` | Base, Align |
 
-The 2026-11-05 T0.1 evidence is in `DECISIONS.md`. D1–D4 remain OPEN; no new training has been authorized by this audit.
+The 2026-11-05 T0.1 evidence and bounded Stage 1 proposals are in `DECISIONS.md`. D1–D4 are PROPOSED and await human settlement; this audit does not authorize new training. New read-only-audit outputs are under `/home/hugo/Projects/VSR_/runs/{stage0_reproduction_20261105T113721Z,vae_crop_full_20261105T114559Z,profile_protocol_resources_20261105T114931Z,vae_full_resolution_20261105T115318Z}/`.
 
 ## Working rules
 

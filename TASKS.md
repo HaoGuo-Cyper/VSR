@@ -15,7 +15,7 @@ Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
   *Done when:* all paths are filled in, and D1–D3 in `DECISIONS.md` have code-level evidence (file and line references).
 - [x] **T0.2 Freeze the inference protocol.** (2026-11-05: fresh NoRef Base / REDS4 / 000 reproduction passed for seeds42/43; all 34 PNG files byte-identical and all original metric pools, bicubic baseline and seed mean match fixed tolerances; see `reproduction_summary.json` in `docs/stage0_analysis_20261105/`.) Record the protocol used for the finished REDS4 and YouHQ40 runs: sampler, steps, sampler seed, tiling, temporal window and overlap. Put it in `RESULTS.md`.
   *Done when:* re-running one sequence with one checkpoint reproduces the stored numbers.
-- [!] **T0.3 Finish external evaluation.** (2026-11-05: blocked pending a fresh-output continuation plan: old worker is fresh-only after user pause; frozen testing is first-17-frame prefixes with stride 1 versus training stride 4, and covers 8 original checkpoints rather than all 16.) Run the remaining Relation sequences and all Both sequences, in both families, with the frozen protocol.
+- [!] **T0.3 Finish external evaluation.** (2026-11-05: read-only 16-checkpoint/704-row completion plan prepared; at least 1880 restores remain if 116 old markers later pass strict review. NoRef-rate recovery-only extrapolation is about108.4h, with HRI/metrics/I/O costs additional or unknown. No queue started; a new cohort/fresh-output plan needs human review, and GPU work is stopped after the separate Stage1 OOM.) Run the remaining Relation sequences and all Both sequences, in both families, with the frozen protocol.
   *Done when:* all 16 checkpoints have per-clip REDS4 and YouHQ40 metrics saved as CSV.
 - [~] **T0.4 Statistics.** (2026-11-05: internal val32 three-seed and frozen test211 single-seed tables completed, with paired source-cluster and separate crossed seed/source bootstrap; external coverage remains incomplete.) For each family:
   - mean ± std over seeds for Base and Align;
@@ -33,18 +33,22 @@ Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
 
 2026-11-05 continuation: the human instructed "continue" after publication. Proceed with existing-score/loss consolidation and one fresh, bounded T0.2 reproduction (NoRef Base / REDS4 / 000, seeds 42/43) under the unchanged historical numerical protocol. Do not resume the old partial run. This continuation does not settle D1–D4 or start a training stage. T0.5 is now complete; T0.4 remains partial.
 
+Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complete, T0.4 remains partial and the new T0.3 coverage/cost plan is not an execution result. **G0 remains unclosed.** No old marker has been newly accepted merely because it exists.
+
 ## Stage 1. Protocol and VAE audit (start now, no training)
 
-- [~] **T1.1 VAE reconstruction audit.** (2026-11-05: preparing a separate frozen VAE-only protocol and deterministic eligible subset; no measurements yet. REDS4 33/stride4 is ineligible because it needs 129 source frames; named E*warp/tLPIPS implementations remain to be fixed.) Use the HQ-VSR validation split and a REDS4 subset. Encode and decode at stride 1 vs stride 4, with clip lengths 9, 17 and 33. Measure PSNR, SSIM, LPIPS, E*warp, tLPIPS and error per frame index. Also compare tiled vs untiled encoding at full resolution.
+- [~] **T1.1 VAE reconstruction audit.** (2026-11-05: all 58 supported crop cases passed; two REDS33/stride4 cells unsupported. Native720p attempt stopped during untiled decoding with OOM, so tiling differences remain unmeasured; E*warp/tLPIPS definitions remain pending. See `docs/stage1_audit_20261105/`.) Use the HQ-VSR validation split and a REDS4 subset. Encode and decode at stride 1 vs stride 4, with clip lengths 9, 17 and 33. Measure PSNR, SSIM, LPIPS, E*warp, tLPIPS and error per frame index. Also compare tiled vs untiled encoding at full resolution.
   *Done when:* the results table is in `RESULTS.md`.
-- [ ] **T1.2 Condition gap.** Measure the per-channel distance between E(upsampled LR) and E(HR). Compare latent mean and std on your data with Wan's normalization constants.
-- [ ] **T1.3 Resource profile.** At 128×224, profile the current protocol (9 frames, stride 4) and contiguous 17 and 33 frames. For each, record peak VRAM and seconds per update for Base training, and for Base plus one no-gradient teacher forward pass.
+- [x] **T1.2 Condition gap.** (2026-11-05: raw/normalized per-channel and per-latent-time LR–HR distances and mean/population-SD comparisons measured on the fixed 58 crop cases; scope is the selected 8HQ+2REDS sources, not a dataset-wide estimate.) Measure the per-channel distance between E(upsampled LR) and E(HR). Compare latent mean and std on your data with Wan's normalization constants.
+- [~] **T1.3 Resource profile.** (2026-11-05: six synthetic no-update cases passed with parameter hashes unchanged; forward/backward-cycle peaks/time and extra-forward ratios recorded. Full optimizer-update/actual-EMA costs remain unmeasured; no new training was started.) At 128×224, profile the current protocol (9 frames, stride 4) and contiguous 17 and 33 frames. For each, record peak VRAM and seconds per update for Base training, and for Base plus one no-gradient teacher forward pass.
   *Done when:* hours per RE are known for each protocol.
-- [ ] **T1.4 Protocol proposal.** Write a recommendation for D1 and D2 with the evidence, and mark them PROPOSED in `DECISIONS.md`. Then **stop and wait** for the human to settle D1–D4.
+- [x] **T1.4 Protocol proposal.** (2026-11-05: D1–D4 marked PROPOSED with explicit partial-audit limits, preferring 33 contiguous frames; GPU work stopped after the native-resolution OOM, awaiting human decisions. No proposal is SETTLED.) Write a recommendation for D1 and D2 with the evidence, and mark them PROPOSED in `DECISIONS.md`. Then **stop and wait** for the human to settle D1–D4.
 
 **Gate G1:** the human has settled D1–D4.
 
 2026-11-05 audit: **not passed**; Stage 1 measurements are not run, and D1–D4 have not been settled by the human.
+
+2026-11-05 continuation: bounded crop/gap and no-update resource measurements are now recorded; T1.1 and T1.3 remain partial as described above. **G1 is still not passed.** Native untiled decoding exceeded capacity and was not retried. Stop further GPU work and await human settlement of the proposals in `DECISIONS.md`; T2.1 and all later training tasks remain unstarted.
 
 ## Stage 2. Baseline and test sets
 

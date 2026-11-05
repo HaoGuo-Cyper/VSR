@@ -2,7 +2,7 @@
 
 ## 当前入口（2026-11-05）
 
-新阶段是 EMA 时间自蒸馏 VSR。请先阅读 [AGENTS.md](AGENTS.md)、[DECISIONS.md](DECISIONS.md)、[TASKS.md](TASKS.md) 和 [Stage 0 代码审计](docs/stage0-code-audit-20261105.md)。D1–D4 尚未由用户 SETTLED；本次只整理代码与审计，没有启动训练或 GPU 评价。新目录为 `/home/hugo/Projects/VSR_`，旧 `/home/hugo/Projects/VSR` 提供原始资产，安装与本地链接说明见 [setup](docs/setup-20261105.md)。
+新阶段是 EMA 时间自蒸馏 VSR。请先阅读 [AGENTS.md](AGENTS.md)、[DECISIONS.md](DECISIONS.md)、[TASKS.md](TASKS.md) 和 [Stage 0 代码审计](docs/stage0-code-audit-20261105.md)。D1–D4 目前为 PROPOSED，尚未由用户 SETTLED。已有结果和损失已重新汇总；单条外评复现的 34 张 PNG 与旧结果逐字节一致；58 个 VAE crop 审计和零参数更新资源诊断已完成。原生720p的 untiled decoder 对照因 OOM 停止，未降精度或换协议重试。没有启动新训练或 optimizer 更新，GPU 工作已停止等待用户决定。详细记录见 [RESULTS.md](RESULTS.md)、[Stage 0 汇总](docs/stage0_analysis_20261105/statistics.md) 和 [Stage 1 审计](docs/stage1_audit_20261105/vae_crop_summary.md)。新目录为 `/home/hugo/Projects/VSR_`，旧 `/home/hugo/Projects/VSR` 提供原始资产，安装与本地链接说明见 [setup](docs/setup-20261105.md)。
 
 以下内容保留为旧实验阶段记录；其中“正在训练”“未测 test”等状态以新交接文件和审计记录为准。
 

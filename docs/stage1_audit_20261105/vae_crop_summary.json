@@ -1,0 +1,5940 @@
+{
+  "schema": "vsr_vae_crop_json_summary_v1",
+  "date": "2026-11-05",
+  "read_scope": "JSON files only; no image/pt access, no metric recomputation, no GPU",
+  "full_run": "/home/hugo/Projects/VSR_/runs/vae_crop_full_20261105T114559Z",
+  "full_summary_sha256": "c8923195f4989d3f9346cef63cce5c9a5d2d55cf7e08d3677b125cd50782f7a8",
+  "full_protocol_sha256": "3055426bf39b14ec01d053cac7d6c861ab97e9963d66bee5d704bd8f3ace4cfe",
+  "full_status_sha256": "4d6c78a190785e08fb2e0f6dd18a8ac6232601132aff76804eaaf708ee814234",
+  "wall_seconds_recorded": 81.41866861004382,
+  "validation": {
+    "expected_cases": 58,
+    "verified_result_and_complete_and_status_seals": 58,
+    "protocol_and_case_contracts_match": true,
+    "all_recorded_floats_finite": true,
+    "8_unique_HQ_validation_sources": true,
+    "REDS_sequences": [
+      "000",
+      "011"
+    ],
+    "unsupported_cells": [
+      {
+        "dataset": "REDS4",
+        "record_id": "000",
+        "frames": 33,
+        "stride": 4,
+        "required_source_frames": 129,
+        "available_source_frames": 100,
+        "status": "unsupported_source_too_short",
+        "padding_or_wrap_used": false
+      },
+      {
+        "dataset": "REDS4",
+        "record_id": "011",
+        "frames": 33,
+        "stride": 4,
+        "required_source_frames": 129,
+        "available_source_frames": 100,
+        "status": "unsupported_source_too_short",
+        "padding_or_wrap_used": false
+      }
+    ],
+    "source_pixels_weights_and_environment_not_reverified_by_this_JSON_only_pass": true
+  },
+  "statistics": {
+    "unit": "one clip/source per condition; equal clip weight",
+    "spread": "sample standard deviation across the 8 HQ sources or 2 REDS sequences; ddof=1",
+    "training_seed_statistics": "not applicable: frozen deterministic VAE without training or sampling seeds",
+    "inference": "descriptive pilot audit; no p-values, generalization CI or training-effect claim",
+    "different_datasets_pooled": false,
+    "PSNR_aggregation": "mean of recorded per-frame PSNR within each clip, then equal-clip mean; not PSNR of pooled MSE",
+    "latent_gap_aggregation": "per-clip all-channel RMSE = sqrt(mean(channel_gap_rmse**2)); condition values are equal-clip mean and sample SD",
+    "channel_distribution_aggregation": "means/sample SD across per-clip channel means or population stds; mean of population stds is not a pooled global std",
+    "normalization_reference": "Wan constants define the affine normalization. Data channel means need not be zero and stds need not equal one; no forced moment matching is justified",
+    "temporal_metric_caveat": "TecoGAN tLP/tOF depend on frame intervals and selected content; comparisons across stride/length are descriptive and not duration-normalized"
+  },
+  "conditions": [
+    {
+      "dataset": "HQ-VSR",
+      "frames": 9,
+      "stride": 1,
+      "n_clips": 8,
+      "latent_positions": 3,
+      "source_span_frames": 9,
+      "source_fps_range": [
+        23.976,
+        29.97
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 8,
+          "mean": 29.993179615446515,
+          "sample_sd": 2.80200964918226
+        },
+        "ssim_rgb": {
+          "n": 8,
+          "mean": 0.9099217628439268,
+          "sample_sd": 0.05696719830507833
+        },
+        "mse_rgb_01": {
+          "n": 8,
+          "mean": 0.0011968097691799156,
+          "sample_sd": 0.0007078263456948209
+        },
+        "lpips_alex_v0_1": {
+          "n": 8,
+          "mean": 0.015353420930397179,
+          "sample_sd": 0.005647819404987793
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.00288897630161955,
+          "sample_sd": 0.0017926452366926384
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.288897630161955,
+          "sample_sd": 0.17926452366926385
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.11434117902535945,
+          "sample_sd": 0.060832565090824894
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.9611608750487294,
+          "sample_sd": 0.10374069048610812
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.49746829307981033,
+          "sample_sd": 0.050575263017771196
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 8,
+          "mean": 0.04233699582896971,
+          "sample_sd": 0.047644785912686685
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 8,
+          "mean": -0.04488717851179848,
+          "sample_sd": 0.04982672184198838
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.530495038536931,
+          "sample_sd": 0.06289950324915616
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.5872629985669825,
+          "sample_sd": 0.055798255029420214
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 8,
+          "mean": 0.6378640542679932,
+          "sample_sd": 0.06396182805745604
+        },
+        "encode_hr_seconds": {
+          "n": 8,
+          "mean": 0.1498882476153085,
+          "sample_sd": 0.04843380210951577
+        },
+        "decode_hr_seconds": {
+          "n": 8,
+          "mean": 0.20609860400145408,
+          "sample_sd": 0.0011877522730442977
+        },
+        "encode_up_lr_seconds": {
+          "n": 8,
+          "mean": 0.1331660259893397,
+          "sample_sd": 0.0005031846955481909
+        },
+        "metric_cpu_seconds": {
+          "n": 8,
+          "mean": 0.0848561653692741,
+          "sample_sd": 0.0031084291391813893
+        },
+        "cuda_peak_allocated_max_bytes": 1103563264,
+        "cuda_peak_reserved_max_bytes": 1201668096
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 9,
+      "stride": 4,
+      "n_clips": 8,
+      "latent_positions": 3,
+      "source_span_frames": 33,
+      "source_fps_range": [
+        23.976,
+        29.97
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 8,
+          "mean": 28.58466564491682,
+          "sample_sd": 2.510811436449614
+        },
+        "ssim_rgb": {
+          "n": 8,
+          "mean": 0.889780273867978,
+          "sample_sd": 0.05476023279937639
+        },
+        "mse_rgb_01": {
+          "n": 8,
+          "mean": 0.0016018286303004859,
+          "sample_sd": 0.0007986571397658159
+        },
+        "lpips_alex_v0_1": {
+          "n": 8,
+          "mean": 0.02235440197142048,
+          "sample_sd": 0.0063913635421390955
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.004125905470573343,
+          "sample_sd": 0.0022268912029357844
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.41259054705733433,
+          "sample_sd": 0.22268912029357846
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.22931583877652884,
+          "sample_sd": 0.20954373181484953
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.9164953745362208,
+          "sample_sd": 0.11491316524419859
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.4759766864266316,
+          "sample_sd": 0.055292687827238673
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 8,
+          "mean": 0.05994581271311077,
+          "sample_sd": 0.04926743494938501
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 8,
+          "mean": -0.020018328246264247,
+          "sample_sd": 0.056652808140187076
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.5232997669897577,
+          "sample_sd": 0.06283094892672851
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.5692261979792447,
+          "sample_sd": 0.05965743201102173
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 8,
+          "mean": 0.6243119534774451,
+          "sample_sd": 0.03840159599566243
+        },
+        "encode_hr_seconds": {
+          "n": 8,
+          "mean": 0.13282146048732102,
+          "sample_sd": 0.0004003997851640163
+        },
+        "decode_hr_seconds": {
+          "n": 8,
+          "mean": 0.20601611597521696,
+          "sample_sd": 0.0007433643679086875
+        },
+        "encode_up_lr_seconds": {
+          "n": 8,
+          "mean": 0.13271621400781441,
+          "sample_sd": 0.0004042417897385969
+        },
+        "metric_cpu_seconds": {
+          "n": 8,
+          "mean": 0.08344807451067027,
+          "sample_sd": 0.000941910410061051
+        },
+        "cuda_peak_allocated_max_bytes": 1103563264,
+        "cuda_peak_reserved_max_bytes": 1201668096
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 17,
+      "stride": 1,
+      "n_clips": 8,
+      "latent_positions": 5,
+      "source_span_frames": 17,
+      "source_fps_range": [
+        23.976,
+        29.97
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 8,
+          "mean": 30.272600499095862,
+          "sample_sd": 2.8804316548603786
+        },
+        "ssim_rgb": {
+          "n": 8,
+          "mean": 0.9134648227516342,
+          "sample_sd": 0.054456418493019895
+        },
+        "mse_rgb_01": {
+          "n": 8,
+          "mean": 0.0011299294659385354,
+          "sample_sd": 0.0006613124078279398
+        },
+        "lpips_alex_v0_1": {
+          "n": 8,
+          "mean": 0.01420278791406685,
+          "sample_sd": 0.0049626411044826615
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.0021517931527341716,
+          "sample_sd": 0.0008592703172324012
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.21517931527341716,
+          "sample_sd": 0.08592703172324014
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.0888633542926982,
+          "sample_sd": 0.04296043683593857
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 1.055693943802571,
+          "sample_sd": 0.11574353004800937
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.5427131870103389,
+          "sample_sd": 0.05685212168676534
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 8,
+          "mean": 0.05389169824400885,
+          "sample_sd": 0.05704266003749054
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 8,
+          "mean": -0.05220478958622732,
+          "sample_sd": 0.06131580021823157
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.5791586652757826,
+          "sample_sd": 0.07220385535331961
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.6536178516127571,
+          "sample_sd": 0.06572593582877144
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 8,
+          "mean": 1.125354185263859,
+          "sample_sd": 0.033547999805804384
+        },
+        "encode_hr_seconds": {
+          "n": 8,
+          "mean": 0.23908363736700267,
+          "sample_sd": 0.00041186425591855985
+        },
+        "decode_hr_seconds": {
+          "n": 8,
+          "mean": 0.3744098392489832,
+          "sample_sd": 0.0005242043723458722
+        },
+        "encode_up_lr_seconds": {
+          "n": 8,
+          "mean": 0.23996983162942342,
+          "sample_sd": 0.0005489775172993419
+        },
+        "metric_cpu_seconds": {
+          "n": 8,
+          "mean": 0.18961796913936269,
+          "sample_sd": 0.0012989025816949385
+        },
+        "cuda_peak_allocated_max_bytes": 1106487808,
+        "cuda_peak_reserved_max_bytes": 1222639616
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 17,
+      "stride": 4,
+      "n_clips": 8,
+      "latent_positions": 5,
+      "source_span_frames": 65,
+      "source_fps_range": [
+        23.976,
+        29.97
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 8,
+          "mean": 28.487831159623163,
+          "sample_sd": 2.3385749629463377
+        },
+        "ssim_rgb": {
+          "n": 8,
+          "mean": 0.8893715752398267,
+          "sample_sd": 0.054668131624881496
+        },
+        "mse_rgb_01": {
+          "n": 8,
+          "mean": 0.0016085666505704689,
+          "sample_sd": 0.0007362628461486829
+        },
+        "lpips_alex_v0_1": {
+          "n": 8,
+          "mean": 0.022215394104611787,
+          "sample_sd": 0.005859503619406563
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.00456592436239589,
+          "sample_sd": 0.0020621692622693906
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.456592436239589,
+          "sample_sd": 0.2062169262269391
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.2400044318443785,
+          "sample_sd": 0.20061029702769362
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.9961053133872122,
+          "sample_sd": 0.1369769254023341
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.5149115034639323,
+          "sample_sd": 0.06464510723500994
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 8,
+          "mean": 0.07613794255729651,
+          "sample_sd": 0.056633133612780495
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 8,
+          "mean": -0.01950560310242377,
+          "sample_sd": 0.06585678131241109
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.5709680680239629,
+          "sample_sd": 0.07222906373843796
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.6336093193779073,
+          "sample_sd": 0.06985155235018257
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 8,
+          "mean": 1.1366213992441772,
+          "sample_sd": 0.03471489952938476
+        },
+        "encode_hr_seconds": {
+          "n": 8,
+          "mean": 0.23915233537263703,
+          "sample_sd": 0.0005631039523371402
+        },
+        "decode_hr_seconds": {
+          "n": 8,
+          "mean": 0.3742877841286827,
+          "sample_sd": 0.0009497235432101268
+        },
+        "encode_up_lr_seconds": {
+          "n": 8,
+          "mean": 0.23987584789574612,
+          "sample_sd": 0.0008579330505371563
+        },
+        "metric_cpu_seconds": {
+          "n": 8,
+          "mean": 0.18912309235020075,
+          "sample_sd": 0.0009148073583962833
+        },
+        "cuda_peak_allocated_max_bytes": 1106487808,
+        "cuda_peak_reserved_max_bytes": 1222639616
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 33,
+      "stride": 1,
+      "n_clips": 8,
+      "latent_positions": 9,
+      "source_span_frames": 33,
+      "source_fps_range": [
+        23.976,
+        29.97
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 8,
+          "mean": 30.159620564387428,
+          "sample_sd": 2.920173319516304
+        },
+        "ssim_rgb": {
+          "n": 8,
+          "mean": 0.9122607881824175,
+          "sample_sd": 0.054046879109956966
+        },
+        "mse_rgb_01": {
+          "n": 8,
+          "mean": 0.0011602755718009856,
+          "sample_sd": 0.0006695087507869427
+        },
+        "lpips_alex_v0_1": {
+          "n": 8,
+          "mean": 0.014814647293833055,
+          "sample_sd": 0.005179750892894458
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.0021858320911373346,
+          "sample_sd": 0.0009166760759157662
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.21858320911373347,
+          "sample_sd": 0.09166760759157665
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.08785777613853238,
+          "sample_sd": 0.040406241633209564
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 1.1101857394973007,
+          "sample_sd": 0.12797564240887474
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.5691306339266619,
+          "sample_sd": 0.06318131792932512
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 8,
+          "mean": 0.06507309072379189,
+          "sample_sd": 0.06468970269281724
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 8,
+          "mean": -0.052308445234575666,
+          "sample_sd": 0.07160252891717739
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.6054892774343782,
+          "sample_sd": 0.0804014299818604
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.6881645414550279,
+          "sample_sd": 0.07445106608755175
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 8,
+          "mean": 2.1484959812369198,
+          "sample_sd": 0.035091749145780365
+        },
+        "encode_hr_seconds": {
+          "n": 8,
+          "mean": 0.45188479700300377,
+          "sample_sd": 0.000719017870407849
+        },
+        "decode_hr_seconds": {
+          "n": 8,
+          "mean": 0.7113849151210161,
+          "sample_sd": 0.00142962722744492
+        },
+        "encode_up_lr_seconds": {
+          "n": 8,
+          "mean": 0.45329267097986303,
+          "sample_sd": 0.0005631238854226304
+        },
+        "metric_cpu_seconds": {
+          "n": 8,
+          "mean": 0.4020551162393531,
+          "sample_sd": 0.002378490575883507
+        },
+        "cuda_peak_allocated_max_bytes": 1112336896,
+        "cuda_peak_reserved_max_bytes": 1243611136
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 33,
+      "stride": 4,
+      "n_clips": 8,
+      "latent_positions": 9,
+      "source_span_frames": 129,
+      "source_fps_range": [
+        23.976,
+        29.97
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 8,
+          "mean": 28.31356376232103,
+          "sample_sd": 2.0609181002738137
+        },
+        "ssim_rgb": {
+          "n": 8,
+          "mean": 0.8857376331632787,
+          "sample_sd": 0.06247001209029868
+        },
+        "mse_rgb_01": {
+          "n": 8,
+          "mean": 0.0016527686005050131,
+          "sample_sd": 0.0006809378715219916
+        },
+        "lpips_alex_v0_1": {
+          "n": 8,
+          "mean": 0.02354075078443257,
+          "sample_sd": 0.007912540072922521
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.00459290875109478,
+          "sample_sd": 0.002020583916692145
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.459290875109478,
+          "sample_sd": 0.2020583916692145
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 8,
+          "mean": 0.2584242039759244,
+          "sample_sd": 0.20780811748395636
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 1.0410285710749672,
+          "sample_sd": 0.15205543889581297
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.5373685037129637,
+          "sample_sd": 0.0707537584989182
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 8,
+          "mean": 0.08897600259091719,
+          "sample_sd": 0.05899371578382252
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 8,
+          "mean": -0.016031597581252655,
+          "sample_sd": 0.06599739298682186
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.6040215579629522,
+          "sample_sd": 0.07902748724448885
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.6754883282106103,
+          "sample_sd": 0.06819832025238462
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 8,
+          "mean": 2.1706305553670973,
+          "sample_sd": 0.03624630825755781
+        },
+        "encode_hr_seconds": {
+          "n": 8,
+          "mean": 0.45189802038657945,
+          "sample_sd": 0.0009526551869189437
+        },
+        "decode_hr_seconds": {
+          "n": 8,
+          "mean": 0.7118601870315615,
+          "sample_sd": 0.0013290049180677583
+        },
+        "encode_up_lr_seconds": {
+          "n": 8,
+          "mean": 0.45329981787654106,
+          "sample_sd": 0.0008714103467358621
+        },
+        "metric_cpu_seconds": {
+          "n": 8,
+          "mean": 0.40059137072239537,
+          "sample_sd": 0.00150370689049104
+        },
+        "cuda_peak_allocated_max_bytes": 1112336896,
+        "cuda_peak_reserved_max_bytes": 1243611136
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 9,
+      "stride": 1,
+      "n_clips": 2,
+      "latent_positions": 3,
+      "source_span_frames": 9,
+      "source_fps_range": [
+        30.0,
+        30.0
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 2,
+          "mean": 25.790382621957775,
+          "sample_sd": 1.4151240931584061
+        },
+        "ssim_rgb": {
+          "n": 2,
+          "mean": 0.8439203500747681,
+          "sample_sd": 0.06115774648971288
+        },
+        "mse_rgb_01": {
+          "n": 2,
+          "mean": 0.0027672974394782716,
+          "sample_sd": 0.0009151664061633639
+        },
+        "lpips_alex_v0_1": {
+          "n": 2,
+          "mean": 0.036731352408727005,
+          "sample_sd": 0.022431899135158567
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.005448342009913176,
+          "sample_sd": 0.002020847625823045
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.5448342009913176,
+          "sample_sd": 0.20208476258230448
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.32739090267568827,
+          "sample_sd": 0.33453731074723636
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.9824665406446086,
+          "sample_sd": 0.062254302369326324
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.5044440395943078,
+          "sample_sd": 0.01387485491082431
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 2,
+          "mean": 0.07600161058577479,
+          "sample_sd": 0.008324561397291652
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 2,
+          "mean": -0.01375432952623965,
+          "sample_sd": 0.029558354242568474
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.5123746425690545,
+          "sample_sd": 0.0006707454088813114
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.5560774051095045,
+          "sample_sd": 0.04323490640423215
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 2,
+          "mean": 0.7192829889827408,
+          "sample_sd": 0.0004315401824959645
+        },
+        "encode_hr_seconds": {
+          "n": 2,
+          "mean": 0.1327637514914386,
+          "sample_sd": 8.675558334681796e-05
+        },
+        "decode_hr_seconds": {
+          "n": 2,
+          "mean": 0.2065411529620178,
+          "sample_sd": 0.0005057708255273957
+        },
+        "encode_up_lr_seconds": {
+          "n": 2,
+          "mean": 0.13362609199248254,
+          "sample_sd": 0.0007308217433673466
+        },
+        "metric_cpu_seconds": {
+          "n": 2,
+          "mean": 0.08213446993613616,
+          "sample_sd": 0.0004422458112899856
+        },
+        "cuda_peak_allocated_max_bytes": 1103563264,
+        "cuda_peak_reserved_max_bytes": 1201668096
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 9,
+      "stride": 4,
+      "n_clips": 2,
+      "latent_positions": 3,
+      "source_span_frames": 33,
+      "source_fps_range": [
+        30.0,
+        30.0
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 2,
+          "mean": 23.135809815253197,
+          "sample_sd": 0.4619111169631754
+        },
+        "ssim_rgb": {
+          "n": 2,
+          "mean": 0.7278693351480696,
+          "sample_sd": 0.05860029913698769
+        },
+        "mse_rgb_01": {
+          "n": 2,
+          "mean": 0.005178999533921303,
+          "sample_sd": 0.0004877022599547964
+        },
+        "lpips_alex_v0_1": {
+          "n": 2,
+          "mean": 0.07910519579632415,
+          "sample_sd": 0.03231013363375272
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.013402060605585575,
+          "sample_sd": 0.002458124060255793
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": 1.3402060605585575,
+          "sample_sd": 0.24581240602557927
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.7652734406292439,
+          "sample_sd": 0.24857367787919477
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.8543335206051086,
+          "sample_sd": 0.024309432688085636
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.44541817416968094,
+          "sample_sd": 0.0006979769649275853
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 2,
+          "mean": 0.12805993540679994,
+          "sample_sd": 0.0009716413504935664
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 2,
+          "mean": 0.055961979048997065,
+          "sample_sd": 0.005088462869940197
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.5037258395370293,
+          "sample_sd": 0.013123498783047206
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.5335798336778766,
+          "sample_sd": 0.008569057632382892
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 2,
+          "mean": 0.7202032034983858,
+          "sample_sd": 0.002456097883440857
+        },
+        "encode_hr_seconds": {
+          "n": 2,
+          "mean": 0.1320252895820886,
+          "sample_sd": 0.0003987538033034734
+        },
+        "decode_hr_seconds": {
+          "n": 2,
+          "mean": 0.2067173199611716,
+          "sample_sd": 0.0002484150891664159
+        },
+        "encode_up_lr_seconds": {
+          "n": 2,
+          "mean": 0.13278898398857564,
+          "sample_sd": 0.0006345306824991294
+        },
+        "metric_cpu_seconds": {
+          "n": 2,
+          "mean": 0.08430607849732041,
+          "sample_sd": 0.003019309842086728
+        },
+        "cuda_peak_allocated_max_bytes": 1103563264,
+        "cuda_peak_reserved_max_bytes": 1201668096
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 17,
+      "stride": 1,
+      "n_clips": 2,
+      "latent_positions": 5,
+      "source_span_frames": 17,
+      "source_fps_range": [
+        30.0,
+        30.0
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 2,
+          "mean": 25.607932705390773,
+          "sample_sd": 1.6492389992586909
+        },
+        "ssim_rgb": {
+          "n": 2,
+          "mean": 0.8371504387434792,
+          "sample_sd": 0.07040523693242465
+        },
+        "mse_rgb_01": {
+          "n": 2,
+          "mean": 0.0029115236730663917,
+          "sample_sd": 0.0011191087275829454
+        },
+        "lpips_alex_v0_1": {
+          "n": 2,
+          "mean": 0.04007570500321248,
+          "sample_sd": 0.02614462991305837
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.0055282435108286645,
+          "sample_sd": 0.0026387481936195048
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.5528243510828663,
+          "sample_sd": 0.26387481936195045
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.3168197164001564,
+          "sample_sd": 0.32758591445995666
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 1.0614180238892934,
+          "sample_sd": 0.08112426120577737
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.5406773373244556,
+          "sample_sd": 0.021844865414499665
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 2,
+          "mean": 0.10370300024988097,
+          "sample_sd": 0.021547648568016286
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 2,
+          "mean": -0.004308739292702932,
+          "sample_sd": 0.04785068065218553
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.5524749399231719,
+          "sample_sd": 0.005253111649130542
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.6170012526207034,
+          "sample_sd": 0.04920248383207939
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 2,
+          "mean": 1.3496658799704164,
+          "sample_sd": 0.0017196016266843503
+        },
+        "encode_hr_seconds": {
+          "n": 2,
+          "mean": 0.2391070350422524,
+          "sample_sd": 4.932918186914406e-05
+        },
+        "decode_hr_seconds": {
+          "n": 2,
+          "mean": 0.37551852798787877,
+          "sample_sd": 0.0007830274476473592
+        },
+        "encode_up_lr_seconds": {
+          "n": 2,
+          "mean": 0.2396548335091211,
+          "sample_sd": 0.00018406771747466242
+        },
+        "metric_cpu_seconds": {
+          "n": 2,
+          "mean": 0.18801640899619088,
+          "sample_sd": 0.0006080199031954595
+        },
+        "cuda_peak_allocated_max_bytes": 1106487808,
+        "cuda_peak_reserved_max_bytes": 1222639616
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 17,
+      "stride": 4,
+      "n_clips": 2,
+      "latent_positions": 5,
+      "source_span_frames": 65,
+      "source_fps_range": [
+        30.0,
+        30.0
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 2,
+          "mean": 23.045893471113075,
+          "sample_sd": 0.5437741452522005
+        },
+        "ssim_rgb": {
+          "n": 2,
+          "mean": 0.7186651405166178,
+          "sample_sd": 0.05133529287165953
+        },
+        "mse_rgb_01": {
+          "n": 2,
+          "mean": 0.005192473691187337,
+          "sample_sd": 0.0006139809678587367
+        },
+        "lpips_alex_v0_1": {
+          "n": 2,
+          "mean": 0.08089265210882707,
+          "sample_sd": 0.03387732716218622
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.011109552501390377,
+          "sample_sd": 0.0020407813564893643
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": 1.1109552501390378,
+          "sample_sd": 0.2040781356489365
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.7840167731046677,
+          "sample_sd": 0.23176770457305404
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.9082307229044795,
+          "sample_sd": 0.05815913119448209
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.47268894549082285,
+          "sample_sd": 0.018243153714473114
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 2,
+          "mean": 0.1528110085090857,
+          "sample_sd": 0.0007890856615350436
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 2,
+          "mean": 0.07324975009388103,
+          "sample_sd": 0.015284171042860659
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.5246444013757597,
+          "sample_sd": 0.024963873007379594
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.5739445936323262,
+          "sample_sd": 0.003435678899709218
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 2,
+          "mean": 1.34586138848681,
+          "sample_sd": 0.0022224826765926543
+        },
+        "encode_hr_seconds": {
+          "n": 2,
+          "mean": 0.23965162748936564,
+          "sample_sd": 0.000731835078729005
+        },
+        "decode_hr_seconds": {
+          "n": 2,
+          "mean": 0.3746799075161107,
+          "sample_sd": 0.00042865032455880934
+        },
+        "encode_up_lr_seconds": {
+          "n": 2,
+          "mean": 0.2406687239999883,
+          "sample_sd": 0.00013028307041869775
+        },
+        "metric_cpu_seconds": {
+          "n": 2,
+          "mean": 0.18632354302098975,
+          "sample_sd": 0.0018504220694215618
+        },
+        "cuda_peak_allocated_max_bytes": 1106487808,
+        "cuda_peak_reserved_max_bytes": 1222639616
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 33,
+      "stride": 1,
+      "n_clips": 2,
+      "latent_positions": 9,
+      "source_span_frames": 33,
+      "source_fps_range": [
+        30.0,
+        30.0
+      ],
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 2,
+          "mean": 25.295273839086363,
+          "sample_sd": 1.0860305517442068
+        },
+        "ssim_rgb": {
+          "n": 2,
+          "mean": 0.8250932241931106,
+          "sample_sd": 0.050967075314390604
+        },
+        "mse_rgb_01": {
+          "n": 2,
+          "mean": 0.003076980153745674,
+          "sample_sd": 0.000784649967101616
+        },
+        "lpips_alex_v0_1": {
+          "n": 2,
+          "mean": 0.04259693145639065,
+          "sample_sd": 0.019412539125616857
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.004660005789316659,
+          "sample_sd": 0.0012704192249751024
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.4660005789316659,
+          "sample_sd": 0.12704192249751026
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 2,
+          "mean": 0.33577539286177077,
+          "sample_sd": 0.2981927969507128
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 1.0900527153769155,
+          "sample_sd": 0.057286742807128255
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.556538547143244,
+          "sample_sd": 0.011871535968934555
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 2,
+          "mean": 0.12642609916149145,
+          "sample_sd": 0.015231048858275281
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 2,
+          "mean": 0.01079706089830066,
+          "sample_sd": 0.03383541436660423
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.5650113555232151,
+          "sample_sd": 0.0056375859840441115
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.6441910307589781,
+          "sample_sd": 0.030686360391248047
+        }
+      },
+      "resources": {
+        "case_wall_seconds": {
+          "n": 2,
+          "mean": 2.6088769659982063,
+          "sample_sd": 0.0028522381705463375
+        },
+        "encode_hr_seconds": {
+          "n": 2,
+          "mean": 0.452930350555107,
+          "sample_sd": 0.0005337546042592958
+        },
+        "decode_hr_seconds": {
+          "n": 2,
+          "mean": 0.7115756755229086,
+          "sample_sd": 0.0005297806174258741
+        },
+        "encode_up_lr_seconds": {
+          "n": 2,
+          "mean": 0.4538272659992799,
+          "sample_sd": 0.00019692489349432653
+        },
+        "metric_cpu_seconds": {
+          "n": 2,
+          "mean": 0.3988851944450289,
+          "sample_sd": 0.00013016922453688024
+        },
+        "cuda_peak_allocated_max_bytes": 1112336896,
+        "cuda_peak_reserved_max_bytes": 1243611136
+      }
+    }
+  ],
+  "matched_stride_comparisons": [
+    {
+      "dataset": "HQ-VSR",
+      "frames": 9,
+      "n_matched_clips": 8,
+      "delta_definition": "stride1 minus stride4 for same clip/common start/spatial crop, different covered source frames and elapsed time",
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 8,
+          "mean": 1.4085139705296914,
+          "sample_sd": 0.8576886350773841,
+          "positive_count": 8,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "ssim_rgb": {
+          "n": 8,
+          "mean": 0.02014148897594875,
+          "sample_sd": 0.01614048342688333,
+          "positive_count": 8,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "mse_rgb_01": {
+          "n": 8,
+          "mean": -0.00040501886112057024,
+          "sample_sd": 0.00026678973428942947,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "lpips_alex_v0_1": {
+          "n": 8,
+          "mean": -0.0070009810410233,
+          "sample_sd": 0.003227047005741844,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": -0.0012369291689537931,
+          "sample_sd": 0.0011633679326636791,
+          "positive_count": 2,
+          "negative_count": 6,
+          "zero_count": 0
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": -0.12369291689537931,
+          "sample_sd": 0.11633679326636791,
+          "positive_count": 2,
+          "negative_count": 6,
+          "zero_count": 0
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 8,
+          "mean": -0.11497465975116938,
+          "sample_sd": 0.19157958465160912,
+          "positive_count": 1,
+          "negative_count": 7,
+          "zero_count": 0
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.04466550051250867,
+          "sample_sd": 0.04051887917822517,
+          "positive_count": 8,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.021491606653178688,
+          "sample_sd": 0.01947775216181812,
+          "positive_count": 8,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 8,
+          "mean": -0.01760881688414107,
+          "sample_sd": 0.015289421575601614,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 8,
+          "mean": -0.024868850265534228,
+          "sample_sd": 0.020407341572079466,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.007195271547173358,
+          "sample_sd": 0.00801523376408229,
+          "positive_count": 7,
+          "negative_count": 1,
+          "zero_count": 0
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.01803680058773785,
+          "sample_sd": 0.018738082531406325,
+          "positive_count": 7,
+          "negative_count": 1,
+          "zero_count": 0
+        }
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 17,
+      "n_matched_clips": 8,
+      "delta_definition": "stride1 minus stride4 for same clip/common start/spatial crop, different covered source frames and elapsed time",
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 8,
+          "mean": 1.7847693394726996,
+          "sample_sd": 0.846688473576848,
+          "positive_count": 8,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "ssim_rgb": {
+          "n": 8,
+          "mean": 0.024093247511807622,
+          "sample_sd": 0.020068461096417533,
+          "positive_count": 8,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "mse_rgb_01": {
+          "n": 8,
+          "mean": -0.0004786371846319335,
+          "sample_sd": 0.00024234188506648197,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "lpips_alex_v0_1": {
+          "n": 8,
+          "mean": -0.008012606190544936,
+          "sample_sd": 0.0034554836015115997,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": -0.0024141312096617185,
+          "sample_sd": 0.0015551781876202363,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": -0.24141312096617185,
+          "sample_sd": 0.15551781876202364,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 8,
+          "mean": -0.1511410775516803,
+          "sample_sd": 0.16965852052459865,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.05958863041535885,
+          "sample_sd": 0.05689512254369785,
+          "positive_count": 8,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.027801683546406587,
+          "sample_sd": 0.026741530087030074,
+          "positive_count": 8,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 8,
+          "mean": -0.022246244313287675,
+          "sample_sd": 0.016869097695330848,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 8,
+          "mean": -0.032699186483803544,
+          "sample_sd": 0.024741894613963825,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.008190597251819684,
+          "sample_sd": 0.010064639003692878,
+          "positive_count": 6,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.020008532234849746,
+          "sample_sd": 0.025710816806745352,
+          "positive_count": 6,
+          "negative_count": 2,
+          "zero_count": 0
+        }
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 33,
+      "n_matched_clips": 8,
+      "delta_definition": "stride1 minus stride4 for same clip/common start/spatial crop, different covered source frames and elapsed time",
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 8,
+          "mean": 1.8460568020663972,
+          "sample_sd": 1.2556701419092668,
+          "positive_count": 8,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "ssim_rgb": {
+          "n": 8,
+          "mean": 0.026523155019138794,
+          "sample_sd": 0.031218428396597574,
+          "positive_count": 8,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "mse_rgb_01": {
+          "n": 8,
+          "mean": -0.0004924930287040274,
+          "sample_sd": 0.0003106561392806385,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "lpips_alex_v0_1": {
+          "n": 8,
+          "mean": -0.008726103490599515,
+          "sample_sd": 0.005392417151939104,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": -0.0024070766599574456,
+          "sample_sd": 0.0017822243880247376,
+          "positive_count": 1,
+          "negative_count": 7,
+          "zero_count": 0
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 8,
+          "mean": -0.24070766599574456,
+          "sample_sd": 0.17822243880247374,
+          "positive_count": 1,
+          "negative_count": 7,
+          "zero_count": 0
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 8,
+          "mean": -0.17056642783739204,
+          "sample_sd": 0.17344578093735982,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.06915716842233358,
+          "sample_sd": 0.07456032260577797,
+          "positive_count": 7,
+          "negative_count": 1,
+          "zero_count": 0
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 8,
+          "mean": 0.03176213021369807,
+          "sample_sd": 0.03535810834927169,
+          "positive_count": 7,
+          "negative_count": 1,
+          "zero_count": 0
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 8,
+          "mean": -0.0239029118671253,
+          "sample_sd": 0.023230095077137206,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 8,
+          "mean": -0.036276847653323015,
+          "sample_sd": 0.03175947081976655,
+          "positive_count": 0,
+          "negative_count": 8,
+          "zero_count": 0
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.001467719471425967,
+          "sample_sd": 0.02050994991077102,
+          "positive_count": 4,
+          "negative_count": 4,
+          "zero_count": 0
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 8,
+          "mean": 0.012676213244417575,
+          "sample_sd": 0.029395533946896223,
+          "positive_count": 6,
+          "negative_count": 2,
+          "zero_count": 0
+        }
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 9,
+      "n_matched_clips": 2,
+      "delta_definition": "stride1 minus stride4 for same clip/common start/spatial crop, different covered source frames and elapsed time",
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 2,
+          "mean": 2.6545728067045786,
+          "sample_sd": 0.9532129761952308,
+          "positive_count": 2,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "ssim_rgb": {
+          "n": 2,
+          "mean": 0.11605101492669845,
+          "sample_sd": 0.002557447352725193,
+          "positive_count": 2,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "mse_rgb_01": {
+          "n": 2,
+          "mean": -0.0024117020944430315,
+          "sample_sd": 0.00042746414620856756,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "lpips_alex_v0_1": {
+          "n": 2,
+          "mean": -0.04237384338759714,
+          "sample_sd": 0.009878234498594157,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": -0.007953718595672399,
+          "sample_sd": 0.00043727643443274803,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": -0.7953718595672399,
+          "sample_sd": 0.0437276434432748,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 2,
+          "mean": -0.4378825379535556,
+          "sample_sd": 0.08596363286804162,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.12813302003949995,
+          "sample_sd": 0.03794486968124069,
+          "positive_count": 2,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.0590258654246269,
+          "sample_sd": 0.013176877945896724,
+          "positive_count": 2,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 2,
+          "mean": -0.052058324821025154,
+          "sample_sd": 0.009296202747785217,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 2,
+          "mean": -0.06971630857523671,
+          "sample_sd": 0.02446989137262828,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.008648803032025226,
+          "sample_sd": 0.013794244191928517,
+          "positive_count": 1,
+          "negative_count": 1,
+          "zero_count": 0
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.022497571431627894,
+          "sample_sd": 0.03466584877184926,
+          "positive_count": 1,
+          "negative_count": 1,
+          "zero_count": 0
+        }
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 17,
+      "n_matched_clips": 2,
+      "delta_definition": "stride1 minus stride4 for same clip/common start/spatial crop, different covered source frames and elapsed time",
+      "metrics": {
+        "psnr_rgb_db": {
+          "n": 2,
+          "mean": 2.5620392342777,
+          "sample_sd": 1.1054648540064902,
+          "positive_count": 2,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "ssim_rgb": {
+          "n": 2,
+          "mean": 0.11848529822686138,
+          "sample_sd": 0.019069944060765117,
+          "positive_count": 2,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "mse_rgb_01": {
+          "n": 2,
+          "mean": -0.002280950018120945,
+          "sample_sd": 0.0005051277597242087,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "lpips_alex_v0_1": {
+          "n": 2,
+          "mean": -0.04081694710561458,
+          "sample_sd": 0.007732697249127847,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "tLP_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": -0.005581308990561713,
+          "sample_sd": 0.0005979668371301406,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "n": 2,
+          "mean": -0.5581308990561714,
+          "sample_sd": 0.05979668371301393,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "n": 2,
+          "mean": -0.4671970567045113,
+          "sample_sd": 0.09581820988690268,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "raw_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.15318730098481392,
+          "sample_sd": 0.022965130011295277,
+          "positive_count": 2,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "normalized_gap_rmse_all_channels": {
+          "n": 2,
+          "mean": 0.06798839183363262,
+          "sample_sd": 0.003601711700026551,
+          "positive_count": 2,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "mean_of_channel_hr_normalized_means": {
+          "n": 2,
+          "mean": -0.049108008259204715,
+          "sample_sd": 0.020758562906481242,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "mean_of_channel_up_lr_normalized_means": {
+          "n": 2,
+          "mean": -0.07755848938658397,
+          "sample_sd": 0.03256650960932487,
+          "positive_count": 0,
+          "negative_count": 2,
+          "zero_count": 0
+        },
+        "mean_of_channel_hr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.027830538547412076,
+          "sample_sd": 0.030216984656510137,
+          "positive_count": 2,
+          "negative_count": 0,
+          "zero_count": 0
+        },
+        "mean_of_channel_up_lr_normalized_population_stds": {
+          "n": 2,
+          "mean": 0.04305665898837718,
+          "sample_sd": 0.052638162731788604,
+          "positive_count": 2,
+          "negative_count": 0,
+          "zero_count": 0
+        }
+      }
+    }
+  ],
+  "sample_index0_vs_later": [
+    {
+      "dataset": "HQ-VSR",
+      "frames": 9,
+      "stride": 1,
+      "n_clips": 8,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 29.141973316994783,
+            "sample_sd": 2.925661868792771
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 30.09958040275298,
+            "sample_sd": 2.7931392422614687
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.957607085758196,
+            "sample_sd": 0.5916823314934517
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.889416940510273,
+            "sample_sd": 0.07650580610656953
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.9124848656356335,
+            "sample_sd": 0.0546336384471315
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.02306792512536049,
+            "sample_sd": 0.02429024858091271
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.0014563847767007229,
+            "sample_sd": 0.0008440949799958549
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.0011643628932398145,
+            "sample_sd": 0.0006924049632164803
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 0.0002920218834609083,
+            "sample_sd": 0.0002087377574566138
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.019766509300097823,
+            "sample_sd": 0.007990527230893064
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.014801784884184599,
+            "sample_sd": 0.005492715355563206
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 0.004964724415913224,
+            "sample_sd": 0.004515862662191055
+          }
+        }
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 9,
+      "stride": 4,
+      "n_clips": 8,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 29.141973316994783,
+            "sample_sd": 2.925661868792771
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 28.515002185907075,
+            "sample_sd": 2.481898197313139
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 0.6269711310877075,
+            "sample_sd": 1.1126724789981541
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.889416940510273,
+            "sample_sd": 0.07650580610656953
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.8898256905376911,
+            "sample_sd": 0.05297039994321849
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.0004087500274181366,
+            "sample_sd": 0.038417232407729325
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.0014563847767007229,
+            "sample_sd": 0.0008440949799958549
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.0016200091120004562,
+            "sample_sd": 0.000801901968185267
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.00016362433529973323,
+            "sample_sd": 0.0003615457841326848
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.019766509300097823,
+            "sample_sd": 0.007990527230893064
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.022677888555335812,
+            "sample_sd": 0.006679250102405147
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.002911379255237989,
+            "sample_sd": 0.007729136964214715
+          }
+        }
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 17,
+      "stride": 1,
+      "n_clips": 8,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 29.141973316994783,
+            "sample_sd": 2.925661868792771
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 30.343264697977183,
+            "sample_sd": 2.880587687110592
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -1.2012913809823975,
+            "sample_sd": 0.5424992278727873
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.889416940510273,
+            "sample_sd": 0.07650580610656953
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.9149678153917193,
+            "sample_sd": 0.05316386572995116
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.02555087488144636,
+            "sample_sd": 0.02652038703994009
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.0014563847767007229,
+            "sample_sd": 0.0008440949799958549
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.0011095260090158985,
+            "sample_sd": 0.0006505762710728401
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 0.00034685876768482426,
+            "sample_sd": 0.0002300465119779553
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.019766509300097823,
+            "sample_sd": 0.007990527230893064
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.013855055327439914,
+            "sample_sd": 0.004845915763440961
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 0.00591145397265791,
+            "sample_sd": 0.004712599297641001
+          }
+        }
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 17,
+      "stride": 4,
+      "n_clips": 8,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 29.141973316994783,
+            "sample_sd": 2.925661868792771
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 28.446947274787437,
+            "sample_sd": 2.314375985206283
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 0.6950260422073455,
+            "sample_sd": 1.1702912612355345
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.889416940510273,
+            "sample_sd": 0.07650580610656953
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.8893687399104238,
+            "sample_sd": 0.05400536279940195
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 4.820059984922409e-05,
+            "sample_sd": 0.042651321665057015
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.0014563847767007229,
+            "sample_sd": 0.0008440949799958549
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.001618078017687328,
+            "sample_sd": 0.0007345597713671381
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.00016169324098660505,
+            "sample_sd": 0.00037212973005211215
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.019766509300097823,
+            "sample_sd": 0.007990527230893064
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.02236844940489391,
+            "sample_sd": 0.006011744511180912
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.0026019401047960855,
+            "sample_sd": 0.007879297812387626
+          }
+        }
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 33,
+      "stride": 1,
+      "n_clips": 8,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 29.141973316994783,
+            "sample_sd": 2.925661868792771
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 30.19142204086845,
+            "sample_sd": 2.921310021874593
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -1.049448723873665,
+            "sample_sd": 0.5022038788609976
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.889416940510273,
+            "sample_sd": 0.07650580610656953
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.9129746584221721,
+            "sample_sd": 0.05339583932861998
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.02355771791189909,
+            "sample_sd": 0.026746355742547117
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.0014563847767007229,
+            "sample_sd": 0.0008440949799958549
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.0011510221591478687,
+            "sample_sd": 0.0006644104423815689
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 0.00030536261755285406,
+            "sample_sd": 0.00021929017198109386
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.019766509300097823,
+            "sample_sd": 0.007990527230893064
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.014659901606137282,
+            "sample_sd": 0.005133392535914134
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 0.005106607693960541,
+            "sample_sd": 0.004732676619784684
+          }
+        }
+      }
+    },
+    {
+      "dataset": "HQ-VSR",
+      "frames": 33,
+      "stride": 4,
+      "n_clips": 8,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 29.141973316994783,
+            "sample_sd": 2.925661868792771
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 28.287675963737478,
+            "sample_sd": 2.0446082807355768
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 0.8542973532573064,
+            "sample_sd": 1.4957187238534233
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.889416940510273,
+            "sample_sd": 0.07650580610656953
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.8856226548086852,
+            "sample_sd": 0.06261249368255178
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": 0.003794285701587796,
+            "sample_sd": 0.050987428180353955
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.0014563847767007229,
+            "sample_sd": 0.0008440949799958549
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.0016589055949988972,
+            "sample_sd": 0.0006798303830660283
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.0002025208182981744,
+            "sample_sd": 0.0004548223987835265
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 8,
+            "mean": 0.019766509300097823,
+            "sample_sd": 0.007990527230893064
+          },
+          "mean_of_later_sample_indices": {
+            "n": 8,
+            "mean": 0.023658695830818033,
+            "sample_sd": 0.008073640817959684
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 8,
+            "mean": -0.0038921865307202097,
+            "sample_sd": 0.009287987880942624
+          }
+        }
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 9,
+      "stride": 1,
+      "n_clips": 2,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 25.944560874673414,
+            "sample_sd": 1.0579775681698391
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 25.771110340368317,
+            "sample_sd": 1.724261800824435
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": 0.17345053430509338,
+            "sample_sd": 2.7822393689942744
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.8586777746677399,
+            "sample_sd": 0.002855322546067538
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.8420756720006466,
+            "sample_sd": 0.06844554948266861
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": 0.016602102667093277,
+            "sample_sd": 0.06559022693660106
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.0025819962162650367,
+            "sample_sd": 0.0006228474754936212
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.0027904600923799256,
+            "sample_sd": 0.0011074181413704871
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": -0.00020846387611488885,
+            "sample_sd": 0.0017302656168641085
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.03382663428783417,
+            "sample_sd": 0.005417850935529895
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.037094442173838615,
+            "sample_sd": 0.02455865516011215
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": -0.003267807886004448,
+            "sample_sd": 0.019140804224582256
+          }
+        }
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 9,
+      "stride": 4,
+      "n_clips": 2,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 25.944560874673414,
+            "sample_sd": 1.0579775681698391
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 22.78471593282567,
+            "sample_sd": 0.6518972026048003
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": 3.1598449418477443,
+            "sample_sd": 1.7098747707746396
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.8586777746677399,
+            "sample_sd": 0.002855322546067538
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.7115182802081108,
+            "sample_sd": 0.06556842121085274
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": 0.14715949445962906,
+            "sample_sd": 0.06271309866478521
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.0025819962162650367,
+            "sample_sd": 0.0006228474754936212
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.005503624948628337,
+            "sample_sd": 0.0006265209768858489
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": -0.0029216287323633,
+            "sample_sd": 0.00124936845237947
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.03382663428783417,
+            "sample_sd": 0.005417850935529895
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.0847650159848854,
+            "sample_sd": 0.03567166897103058
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": -0.05093838169705123,
+            "sample_sd": 0.03025381803550068
+          }
+        }
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 17,
+      "stride": 1,
+      "n_clips": 2,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 25.944560874673414,
+            "sample_sd": 1.0579775681698391
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 25.58689344481061,
+            "sample_sd": 1.8184400347229757
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": 0.3576674298628024,
+            "sample_sd": 2.876417602892815
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.8586777746677399,
+            "sample_sd": 0.002855322546067538
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.8358049802482128,
+            "sample_sd": 0.07462710658157197
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": 0.022872794419527054,
+            "sample_sd": 0.07177178403550442
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.0025819962162650367,
+            "sample_sd": 0.0006228474754936212
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.0029321191391164765,
+            "sample_sd": 0.001227980990275231
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": -0.0003501229228514394,
+            "sample_sd": 0.0018508284657688522
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.03382663428783417,
+            "sample_sd": 0.005417850935529895
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.040466271922923625,
+            "sample_sd": 0.027440053599153903
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": -0.006639637635089457,
+            "sample_sd": 0.022022202663624008
+          }
+        }
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 17,
+      "stride": 4,
+      "n_clips": 2,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 25.944560874673414,
+            "sample_sd": 1.0579775681698391
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 22.864726758390553,
+            "sample_sd": 0.6438836273410808
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": 3.079834116282859,
+            "sample_sd": 1.70186119551092
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.8586777746677399,
+            "sample_sd": 0.002855322546067538
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.7099143508821726,
+            "sample_sd": 0.05436529101700907
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": 0.14876342378556728,
+            "sample_sd": 0.05150996847094154
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.0025819962162650367,
+            "sample_sd": 0.0006228474754936212
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.005355628533369981,
+            "sample_sd": 0.0006912827455682594
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": -0.0027736323171049437,
+            "sample_sd": 0.0013141302210618805
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.03382663428783417,
+            "sample_sd": 0.005417850935529895
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.08383427822263911,
+            "sample_sd": 0.03565604442635224
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": -0.050007643934804946,
+            "sample_sd": 0.030238193490822348
+          }
+        }
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "frames": 33,
+      "stride": 1,
+      "n_clips": 2,
+      "metrics": {
+        "psnr_rgb_db": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 25.944560874673414,
+            "sample_sd": 1.0579775681698391
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 25.274983619224273,
+            "sample_sd": 1.15303080549152
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": 0.6695772554491395,
+            "sample_sd": 2.2110083736613593
+          }
+        },
+        "ssim_rgb": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.8586777746677399,
+            "sample_sd": 0.002855322546067538
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.8240437069907784,
+            "sample_sd": 0.05247056758840069
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": 0.03463406767696142,
+            "sample_sd": 0.04961524504233315
+          }
+        },
+        "mse_rgb_01": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.0025819962162650367,
+            "sample_sd": 0.0006228474754936212
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.0030924484017919446,
+            "sample_sd": 0.0008286342621827171
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": -0.0005104521855269074,
+            "sample_sd": 0.0014514817376763383
+          }
+        },
+        "lpips_alex_v0_1": {
+          "sample_index_0": {
+            "n": 2,
+            "mean": 0.03382663428783417,
+            "sample_sd": 0.005417850935529895
+          },
+          "mean_of_later_sample_indices": {
+            "n": 2,
+            "mean": 0.042871003242908046,
+            "sample_sd": 0.019849873131557078
+          },
+          "paired_index0_minus_later_mean": {
+            "n": 2,
+            "mean": -0.009044368955073878,
+            "sample_sd": 0.014432022196027183
+          }
+        }
+      }
+    }
+  ],
+  "first_sample_metric_checks": [
+    {
+      "dataset": "HQ-VSR",
+      "record_id": "0iapjPp_zog_5_16to334",
+      "conditions": 6,
+      "stored_first_sample_spatial_metrics_exactly_equal": true
+    },
+    {
+      "dataset": "HQ-VSR",
+      "record_id": "1bnkXt9MpGs_50_0to136",
+      "conditions": 6,
+      "stored_first_sample_spatial_metrics_exactly_equal": true
+    },
+    {
+      "dataset": "HQ-VSR",
+      "record_id": "GbXT5VrjAQg_0_0to287",
+      "conditions": 6,
+      "stored_first_sample_spatial_metrics_exactly_equal": true
+    },
+    {
+      "dataset": "HQ-VSR",
+      "record_id": "ONjoUxdLrZ4_17_0to679",
+      "conditions": 6,
+      "stored_first_sample_spatial_metrics_exactly_equal": true
+    },
+    {
+      "dataset": "HQ-VSR",
+      "record_id": "hU16Zn46S58_134_83to290",
+      "conditions": 6,
+      "stored_first_sample_spatial_metrics_exactly_equal": true
+    },
+    {
+      "dataset": "HQ-VSR",
+      "record_id": "rKxrwXc_KEU_8_21to196",
+      "conditions": 6,
+      "stored_first_sample_spatial_metrics_exactly_equal": true
+    },
+    {
+      "dataset": "HQ-VSR",
+      "record_id": "tR5QXi7zNes_11_21to261",
+      "conditions": 6,
+      "stored_first_sample_spatial_metrics_exactly_equal": true
+    },
+    {
+      "dataset": "HQ-VSR",
+      "record_id": "zEMEgyAd9to_24_0to137",
+      "conditions": 6,
+      "stored_first_sample_spatial_metrics_exactly_equal": true
+    },
+    {
+      "dataset": "REDS4",
+      "record_id": "000",
+      "conditions": 5,
+      "stored_first_sample_spatial_metrics_exactly_equal": true
+    },
+    {
+      "dataset": "REDS4",
+      "record_id": "011",
+      "conditions": 5,
+      "stored_first_sample_spatial_metrics_exactly_equal": true
+    }
+  ],
+  "shared_prefix_metric_checks": [
+    {
+      "dataset": "HQ-VSR",
+      "stride": 1,
+      "shorter_frames": 9,
+      "longer_frames": 17,
+      "shared_prefix_frames": 9,
+      "n_clips": 8,
+      "max_abs_stored_spatial_metric_difference": {
+        "psnr_rgb_db": 0.0,
+        "ssim_rgb": 0.0,
+        "mse_rgb_01": 0.0,
+        "lpips_alex_v0_1": 5.587935447692871e-09
+      },
+      "clips_with_exactly_equal_stored_prefix_spatial_metrics": 2,
+      "pixel_equality_tested": false
+    },
+    {
+      "dataset": "HQ-VSR",
+      "stride": 1,
+      "shorter_frames": 9,
+      "longer_frames": 33,
+      "shared_prefix_frames": 9,
+      "n_clips": 8,
+      "max_abs_stored_spatial_metric_difference": {
+        "psnr_rgb_db": 0.0,
+        "ssim_rgb": 0.0,
+        "mse_rgb_01": 0.0,
+        "lpips_alex_v0_1": 5.587935447692871e-09
+      },
+      "clips_with_exactly_equal_stored_prefix_spatial_metrics": 2,
+      "pixel_equality_tested": false
+    },
+    {
+      "dataset": "HQ-VSR",
+      "stride": 1,
+      "shorter_frames": 17,
+      "longer_frames": 33,
+      "shared_prefix_frames": 17,
+      "n_clips": 8,
+      "max_abs_stored_spatial_metric_difference": {
+        "psnr_rgb_db": 0.0,
+        "ssim_rgb": 0.0,
+        "mse_rgb_01": 0.0,
+        "lpips_alex_v0_1": 5.587935447692871e-09
+      },
+      "clips_with_exactly_equal_stored_prefix_spatial_metrics": 1,
+      "pixel_equality_tested": false
+    },
+    {
+      "dataset": "HQ-VSR",
+      "stride": 4,
+      "shorter_frames": 9,
+      "longer_frames": 17,
+      "shared_prefix_frames": 9,
+      "n_clips": 8,
+      "max_abs_stored_spatial_metric_difference": {
+        "psnr_rgb_db": 0.0,
+        "ssim_rgb": 0.0,
+        "mse_rgb_01": 0.0,
+        "lpips_alex_v0_1": 3.725290298461914e-09
+      },
+      "clips_with_exactly_equal_stored_prefix_spatial_metrics": 2,
+      "pixel_equality_tested": false
+    },
+    {
+      "dataset": "HQ-VSR",
+      "stride": 4,
+      "shorter_frames": 9,
+      "longer_frames": 33,
+      "shared_prefix_frames": 9,
+      "n_clips": 8,
+      "max_abs_stored_spatial_metric_difference": {
+        "psnr_rgb_db": 0.0,
+        "ssim_rgb": 0.0,
+        "mse_rgb_01": 0.0,
+        "lpips_alex_v0_1": 3.725290298461914e-09
+      },
+      "clips_with_exactly_equal_stored_prefix_spatial_metrics": 2,
+      "pixel_equality_tested": false
+    },
+    {
+      "dataset": "HQ-VSR",
+      "stride": 4,
+      "shorter_frames": 17,
+      "longer_frames": 33,
+      "shared_prefix_frames": 17,
+      "n_clips": 8,
+      "max_abs_stored_spatial_metric_difference": {
+        "psnr_rgb_db": 0.0,
+        "ssim_rgb": 0.0,
+        "mse_rgb_01": 0.0,
+        "lpips_alex_v0_1": 1.1175870895385742e-08
+      },
+      "clips_with_exactly_equal_stored_prefix_spatial_metrics": 0,
+      "pixel_equality_tested": false
+    },
+    {
+      "dataset": "REDS4",
+      "stride": 1,
+      "shorter_frames": 9,
+      "longer_frames": 17,
+      "shared_prefix_frames": 9,
+      "n_clips": 2,
+      "max_abs_stored_spatial_metric_difference": {
+        "psnr_rgb_db": 0.0,
+        "ssim_rgb": 0.0,
+        "mse_rgb_01": 0.0,
+        "lpips_alex_v0_1": 1.862645149230957e-09
+      },
+      "clips_with_exactly_equal_stored_prefix_spatial_metrics": 1,
+      "pixel_equality_tested": false
+    },
+    {
+      "dataset": "REDS4",
+      "stride": 1,
+      "shorter_frames": 9,
+      "longer_frames": 33,
+      "shared_prefix_frames": 9,
+      "n_clips": 2,
+      "max_abs_stored_spatial_metric_difference": {
+        "psnr_rgb_db": 0.0,
+        "ssim_rgb": 0.0,
+        "mse_rgb_01": 0.0,
+        "lpips_alex_v0_1": 1.862645149230957e-09
+      },
+      "clips_with_exactly_equal_stored_prefix_spatial_metrics": 1,
+      "pixel_equality_tested": false
+    },
+    {
+      "dataset": "REDS4",
+      "stride": 1,
+      "shorter_frames": 17,
+      "longer_frames": 33,
+      "shared_prefix_frames": 17,
+      "n_clips": 2,
+      "max_abs_stored_spatial_metric_difference": {
+        "psnr_rgb_db": 0.0,
+        "ssim_rgb": 0.0,
+        "mse_rgb_01": 0.0,
+        "lpips_alex_v0_1": 5.587935447692871e-09
+      },
+      "clips_with_exactly_equal_stored_prefix_spatial_metrics": 0,
+      "pixel_equality_tested": false
+    },
+    {
+      "dataset": "REDS4",
+      "stride": 4,
+      "shorter_frames": 9,
+      "longer_frames": 17,
+      "shared_prefix_frames": 9,
+      "n_clips": 2,
+      "max_abs_stored_spatial_metric_difference": {
+        "psnr_rgb_db": 0.0,
+        "ssim_rgb": 0.0,
+        "mse_rgb_01": 0.0,
+        "lpips_alex_v0_1": 7.450580596923828e-09
+      },
+      "clips_with_exactly_equal_stored_prefix_spatial_metrics": 1,
+      "pixel_equality_tested": false
+    }
+  ],
+  "pilot_full_determinism_check": {
+    "pilot_run": "/home/hugo/Projects/VSR_/runs/vae_crop_pilot_20261105T114357Z",
+    "pilot_summary_sha256": "1897e631a6c9fbeeb3463f193cc881573c671e42f8f797f0adcbdda366c4e4f7",
+    "pilot_protocol_sha256": "d852a450342c9c59f434a72460727e112f2bb938cadf6e83cae9309a63bb4a7d",
+    "case_id": "HQVSR_00_T9_s1",
+    "equal_fields": {
+      "case": true,
+      "inputs": true,
+      "metrics": true,
+      "latent_statistics": true,
+      "posterior": true,
+      "no_training_or_sampler_seed": true,
+      "binary_latents_saved": true
+    },
+    "resources_and_timestamps_excluded": true,
+    "scope": "one repeated case; exact stored input hashes and recorded metric/latent-statistic values, not proof over all sources/hardware or pixel equality"
+  },
+  "resources": {
+    "peak_allocated_max_bytes": 1112336896,
+    "peak_reserved_max_bytes": 1243611136,
+    "scope": "frozen VAE plus current crop tensors, no DiT/T5/teacher/optimizer; CPU metric model excluded from CUDA peak"
+  },
+  "per_case_metrics": [
+    {
+      "case_id": "HQVSR_00_T9_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "tR5QXi7zNes_11_21to261",
+      "frames": 9,
+      "stride": 1,
+      "source_start": 19,
+      "source_indices": [
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 32.551151928108816,
+        "ssim_rgb": 0.9617245660887824,
+        "mse_rgb_01": 0.0005660149926202374,
+        "lpips_alex_v0_1": 0.011577581779824363,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0038121307734400034,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.38121307734400034,
+        "tOF_Farneback_TecoGAN_crop": 0.08542349189519882,
+        "raw_gap_rmse_all_channels": 0.8111278707641075,
+        "normalized_gap_rmse_all_channels": 0.42696539752526946,
+        "mean_of_channel_hr_normalized_means": -0.03922158581234178,
+        "mean_of_channel_up_lr_normalized_means": -0.11354635763046922,
+        "mean_of_channel_hr_normalized_population_stds": 0.5928120884439244,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.623440840502352
+      }
+    },
+    {
+      "case_id": "HQVSR_00_T9_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "tR5QXi7zNes_11_21to261",
+      "frames": 9,
+      "stride": 4,
+      "source_start": 19,
+      "source_indices": [
+        19,
+        23,
+        27,
+        31,
+        35,
+        39,
+        43,
+        47,
+        51
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 32.08782048758574,
+        "ssim_rgb": 0.9533095624711778,
+        "mse_rgb_01": 0.0006426548197912611,
+        "lpips_alex_v0_1": 0.016921904869377613,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.003085644741076976,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.3085644741076976,
+        "tOF_Farneback_TecoGAN_crop": 0.10795163735747337,
+        "raw_gap_rmse_all_channels": 0.7851752273732934,
+        "normalized_gap_rmse_all_channels": 0.4135658054023979,
+        "mean_of_channel_hr_normalized_means": -0.02563919365727317,
+        "mean_of_channel_up_lr_normalized_means": -0.10090341076372444,
+        "mean_of_channel_hr_normalized_population_stds": 0.5886932451699074,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6164707058987805
+      }
+    },
+    {
+      "case_id": "HQVSR_00_T17_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "tR5QXi7zNes_11_21to261",
+      "frames": 17,
+      "stride": 1,
+      "source_start": 19,
+      "source_indices": [
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 33.5331950565278,
+        "ssim_rgb": 0.9656907670638141,
+        "mse_rgb_01": 0.0004618308376372621,
+        "lpips_alex_v0_1": 0.009341947159127277,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.002537033098633401,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.2537033098633401,
+        "tOF_Farneback_TecoGAN_crop": 0.06091771274805069,
+        "raw_gap_rmse_all_channels": 0.8933747653683098,
+        "normalized_gap_rmse_all_channels": 0.4664621677719944,
+        "mean_of_channel_hr_normalized_means": -0.04505614203823589,
+        "mean_of_channel_up_lr_normalized_means": -0.14156223478649302,
+        "mean_of_channel_hr_normalized_population_stds": 0.6471344936149319,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6940736361021956
+      }
+    },
+    {
+      "case_id": "HQVSR_00_T17_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "tR5QXi7zNes_11_21to261",
+      "frames": 17,
+      "stride": 4,
+      "source_start": 19,
+      "source_indices": [
+        19,
+        23,
+        27,
+        31,
+        35,
+        39,
+        43,
+        47,
+        51,
+        55,
+        59,
+        63,
+        67,
+        71,
+        75,
+        79,
+        83
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 31.790970569127072,
+        "ssim_rgb": 0.949833540355458,
+        "mse_rgb_01": 0.0006922558432977302,
+        "lpips_alex_v0_1": 0.017575798282290205,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.006600492187620451,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.6600492187620451,
+        "tOF_Farneback_TecoGAN_crop": 0.23261523495117822,
+        "raw_gap_rmse_all_channels": 0.8575228980082757,
+        "normalized_gap_rmse_all_channels": 0.4497766117278441,
+        "mean_of_channel_hr_normalized_means": -0.02420388717885285,
+        "mean_of_channel_up_lr_normalized_means": -0.11607641294805443,
+        "mean_of_channel_hr_normalized_population_stds": 0.6413863798086296,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6849501889952168
+      }
+    },
+    {
+      "case_id": "HQVSR_00_T33_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "tR5QXi7zNes_11_21to261",
+      "frames": 33,
+      "stride": 1,
+      "source_start": 19,
+      "source_indices": [
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 33.4796590308633,
+        "ssim_rgb": 0.965116414156827,
+        "mse_rgb_01": 0.00047138356986990584,
+        "lpips_alex_v0_1": 0.00996497342588775,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.001948581004398875,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.1948581004398875,
+        "tOF_Farneback_TecoGAN_crop": 0.06841920535745365,
+        "raw_gap_rmse_all_channels": 0.9342622219246912,
+        "normalized_gap_rmse_all_channels": 0.4874223862329437,
+        "mean_of_channel_hr_normalized_means": -0.04640228177596783,
+        "mean_of_channel_up_lr_normalized_means": -0.15593297685869523,
+        "mean_of_channel_hr_normalized_population_stds": 0.6774779945146066,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.7275419562277318
+      }
+    },
+    {
+      "case_id": "HQVSR_00_T33_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "tR5QXi7zNes_11_21to261",
+      "frames": 33,
+      "stride": 4,
+      "source_start": 19,
+      "source_indices": [
+        19,
+        23,
+        27,
+        31,
+        35,
+        39,
+        43,
+        47,
+        51,
+        55,
+        59,
+        63,
+        67,
+        71,
+        75,
+        79,
+        83,
+        87,
+        91,
+        95,
+        99,
+        103,
+        107,
+        111,
+        115,
+        119,
+        123,
+        127,
+        131,
+        135,
+        139,
+        143,
+        147
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 31.44689050214161,
+        "ssim_rgb": 0.9469733310468269,
+        "mse_rgb_01": 0.0007459580867576545,
+        "lpips_alex_v0_1": 0.018465304719001957,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.005105863998843623,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.5105863998843623,
+        "tOF_Farneback_TecoGAN_crop": 0.23321471682616643,
+        "raw_gap_rmse_all_channels": 0.8958632780402526,
+        "normalized_gap_rmse_all_channels": 0.47015260751574023,
+        "mean_of_channel_hr_normalized_means": -0.014580287120420884,
+        "mean_of_channel_up_lr_normalized_means": -0.11736346905899703,
+        "mean_of_channel_hr_normalized_population_stds": 0.6730433423438509,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.7223862623295602
+      }
+    },
+    {
+      "case_id": "HQVSR_01_T9_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "zEMEgyAd9to_24_0to137",
+      "frames": 9,
+      "stride": 1,
+      "source_start": 2,
+      "source_indices": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 27.539645833923384,
+        "ssim_rgb": 0.9532864292462667,
+        "mse_rgb_01": 0.001765631369467087,
+        "lpips_alex_v0_1": 0.014471123408940103,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.002552761696279049,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.2552761696279049,
+        "tOF_Farneback_TecoGAN_crop": 0.08227793872356415,
+        "raw_gap_rmse_all_channels": 0.8303849450757658,
+        "normalized_gap_rmse_all_channels": 0.43083427850164296,
+        "mean_of_channel_hr_normalized_means": 0.0767464110415515,
+        "mean_of_channel_up_lr_normalized_means": 0.009048680910728635,
+        "mean_of_channel_hr_normalized_population_stds": 0.5645595052447023,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5808376660193145
+      }
+    },
+    {
+      "case_id": "HQVSR_01_T9_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "zEMEgyAd9to_24_0to137",
+      "frames": 9,
+      "stride": 4,
+      "source_start": 2,
+      "source_indices": [
+        2,
+        6,
+        10,
+        14,
+        18,
+        22,
+        26,
+        30,
+        34
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 25.87914871985524,
+        "ssim_rgb": 0.934078057607015,
+        "mse_rgb_01": 0.0025950843432865685,
+        "lpips_alex_v0_1": 0.022046867964996233,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.003703158348798752,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.3703158348798752,
+        "tOF_Farneback_TecoGAN_crop": 0.1378271896392107,
+        "raw_gap_rmse_all_channels": 0.73440789259856,
+        "normalized_gap_rmse_all_channels": 0.38493001512734903,
+        "mean_of_channel_hr_normalized_means": 0.11997871881117342,
+        "mean_of_channel_up_lr_normalized_means": 0.06611684149799528,
+        "mean_of_channel_hr_normalized_population_stds": 0.5532986405162958,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5470859182070711
+      }
+    },
+    {
+      "case_id": "HQVSR_01_T17_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "zEMEgyAd9to_24_0to137",
+      "frames": 17,
+      "stride": 1,
+      "source_start": 2,
+      "source_indices": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 27.60621661772908,
+        "ssim_rgb": 0.9549729157896603,
+        "mse_rgb_01": 0.001737770791173852,
+        "lpips_alex_v0_1": 0.013973486007136457,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0026179500855505466,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.26179500855505466,
+        "tOF_Farneback_TecoGAN_crop": 0.07374916256715854,
+        "raw_gap_rmse_all_channels": 0.9041149383944304,
+        "normalized_gap_rmse_all_channels": 0.46423165722327675,
+        "mean_of_channel_hr_normalized_means": 0.09751859283687903,
+        "mean_of_channel_up_lr_normalized_means": 0.01530888191499413,
+        "mean_of_channel_hr_normalized_population_stds": 0.6210076162929882,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.644899291333465
+      }
+    },
+    {
+      "case_id": "HQVSR_01_T17_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "zEMEgyAd9to_24_0to137",
+      "frames": 17,
+      "stride": 4,
+      "source_start": 2,
+      "source_indices": [
+        2,
+        6,
+        10,
+        14,
+        18,
+        22,
+        26,
+        30,
+        34,
+        38,
+        42,
+        46,
+        50,
+        54,
+        58,
+        62,
+        66
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 26.035725367802375,
+        "ssim_rgb": 0.9387511681107914,
+        "mse_rgb_01": 0.002510377115783074,
+        "lpips_alex_v0_1": 0.021031489705338198,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0036692951495448747,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.3669295149544875,
+        "tOF_Farneback_TecoGAN_crop": 0.12851735825339952,
+        "raw_gap_rmse_all_channels": 0.7754202710091329,
+        "normalized_gap_rmse_all_channels": 0.40500672665482157,
+        "mean_of_channel_hr_normalized_means": 0.1397096502036022,
+        "mean_of_channel_up_lr_normalized_means": 0.08126621044725647,
+        "mean_of_channel_hr_normalized_population_stds": 0.6124057895765518,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6084594253815496
+      }
+    },
+    {
+      "case_id": "HQVSR_01_T33_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "zEMEgyAd9to_24_0to137",
+      "frames": 33,
+      "stride": 1,
+      "source_start": 2,
+      "source_indices": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 27.49862056646964,
+        "ssim_rgb": 0.9561035596963131,
+        "mse_rgb_01": 0.0017812271649682045,
+        "lpips_alex_v0_1": 0.014005720304946104,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.002833619048552854,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.2833619048552854,
+        "tOF_Farneback_TecoGAN_crop": 0.07027791906148195,
+        "raw_gap_rmse_all_channels": 0.9390203349789678,
+        "normalized_gap_rmse_all_channels": 0.4796534732079308,
+        "mean_of_channel_hr_normalized_means": 0.11014443562562484,
+        "mean_of_channel_up_lr_normalized_means": 0.023031532848038883,
+        "mean_of_channel_hr_normalized_population_stds": 0.6625692460627454,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6864549395134338
+      }
+    },
+    {
+      "case_id": "HQVSR_01_T33_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "zEMEgyAd9to_24_0to137",
+      "frames": 33,
+      "stride": 4,
+      "source_start": 2,
+      "source_indices": [
+        2,
+        6,
+        10,
+        14,
+        18,
+        22,
+        26,
+        30,
+        34,
+        38,
+        42,
+        46,
+        50,
+        54,
+        58,
+        62,
+        66,
+        70,
+        74,
+        78,
+        82,
+        86,
+        90,
+        94,
+        98,
+        102,
+        106,
+        110,
+        114,
+        118,
+        122,
+        126,
+        130
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 27.297237196683195,
+        "ssim_rgb": 0.9476999116666389,
+        "mse_rgb_01": 0.0019658921494566683,
+        "lpips_alex_v0_1": 0.017496765083210034,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0034107229273234096,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.34107229273234096,
+        "tOF_Farneback_TecoGAN_crop": 0.10909452422388963,
+        "raw_gap_rmse_all_channels": 0.820372204485703,
+        "normalized_gap_rmse_all_channels": 0.4270034529168593,
+        "mean_of_channel_hr_normalized_means": 0.12867187061830904,
+        "mean_of_channel_up_lr_normalized_means": 0.06213489497244327,
+        "mean_of_channel_hr_normalized_population_stds": 0.6624627366566146,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6620941883626705
+      }
+    },
+    {
+      "case_id": "HQVSR_02_T9_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "0iapjPp_zog_5_16to334",
+      "frames": 9,
+      "stride": 1,
+      "source_start": 111,
+      "source_indices": [
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119
+      ],
+      "source_fps": 29.97,
+      "sampled_fps": 29.97,
+      "values": {
+        "psnr_rgb_db": 31.48677994987311,
+        "ssim_rgb": 0.9307024081548055,
+        "mse_rgb_01": 0.0007210259501587186,
+        "lpips_alex_v0_1": 0.012038901034328673,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0014212543901521713,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.14212543901521713,
+        "tOF_Farneback_TecoGAN_crop": 0.06286085303872824,
+        "raw_gap_rmse_all_channels": 0.982531352925564,
+        "normalized_gap_rmse_all_channels": 0.5110844189681861,
+        "mean_of_channel_hr_normalized_means": 0.0553026080543018,
+        "mean_of_channel_up_lr_normalized_means": -0.048097976242925854,
+        "mean_of_channel_hr_normalized_population_stds": 0.5688309831241991,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6596513001369056
+      }
+    },
+    {
+      "case_id": "HQVSR_02_T9_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "0iapjPp_zog_5_16to334",
+      "frames": 9,
+      "stride": 4,
+      "source_start": 111,
+      "source_indices": [
+        111,
+        115,
+        119,
+        123,
+        127,
+        131,
+        135,
+        139,
+        143
+      ],
+      "source_fps": 29.97,
+      "sampled_fps": 7.4925,
+      "values": {
+        "psnr_rgb_db": 29.84102971388538,
+        "ssim_rgb": 0.9159216615888808,
+        "mse_rgb_01": 0.0010545908008153778,
+        "lpips_alex_v0_1": 0.017859392902917333,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.004222156014293432,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.4222156014293432,
+        "tOF_Farneback_TecoGAN_crop": 0.19828637316823006,
+        "raw_gap_rmse_all_channels": 0.9692477565391302,
+        "normalized_gap_rmse_all_channels": 0.5052236790465054,
+        "mean_of_channel_hr_normalized_means": 0.06316825121072914,
+        "mean_of_channel_up_lr_normalized_means": -0.03686035081497836,
+        "mean_of_channel_hr_normalized_population_stds": 0.566629889477435,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6495130190624266
+      }
+    },
+    {
+      "case_id": "HQVSR_02_T17_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "0iapjPp_zog_5_16to334",
+      "frames": 17,
+      "stride": 1,
+      "source_start": 111,
+      "source_indices": [
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127
+      ],
+      "source_fps": 29.97,
+      "sampled_fps": 29.97,
+      "values": {
+        "psnr_rgb_db": 31.636912605017216,
+        "ssim_rgb": 0.9336413145065308,
+        "mse_rgb_01": 0.0006934004377210234,
+        "lpips_alex_v0_1": 0.010933044092620121,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0011005774334383507,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.11005774334383507,
+        "tOF_Farneback_TecoGAN_crop": 0.054309519628683724,
+        "raw_gap_rmse_all_channels": 1.0673699462700987,
+        "normalized_gap_rmse_all_channels": 0.5514289400446953,
+        "mean_of_channel_hr_normalized_means": 0.06604015013374444,
+        "mean_of_channel_up_lr_normalized_means": -0.05459425606314536,
+        "mean_of_channel_hr_normalized_population_stds": 0.6230438690419875,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.7385517632686549
+      }
+    },
+    {
+      "case_id": "HQVSR_02_T17_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "0iapjPp_zog_5_16to334",
+      "frames": 17,
+      "stride": 4,
+      "source_start": 111,
+      "source_indices": [
+        111,
+        115,
+        119,
+        123,
+        127,
+        131,
+        135,
+        139,
+        143,
+        147,
+        151,
+        155,
+        159,
+        163,
+        167,
+        171,
+        175
+      ],
+      "source_fps": 29.97,
+      "sampled_fps": 7.4925,
+      "values": {
+        "psnr_rgb_db": 29.46378258059721,
+        "ssim_rgb": 0.9120939233723808,
+        "mse_rgb_01": 0.0011487384189920156,
+        "lpips_alex_v0_1": 0.019514980999862448,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0039423970350374775,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.39423970350374776,
+        "tOF_Farneback_TecoGAN_crop": 0.2040954182545344,
+        "raw_gap_rmse_all_channels": 1.0452072344083612,
+        "normalized_gap_rmse_all_channels": 0.5428744028004044,
+        "mean_of_channel_hr_normalized_means": 0.07814374275108496,
+        "mean_of_channel_up_lr_normalized_means": -0.037437680342502895,
+        "mean_of_channel_hr_normalized_population_stds": 0.6215691556372603,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.726750287076289
+      }
+    },
+    {
+      "case_id": "HQVSR_02_T33_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "0iapjPp_zog_5_16to334",
+      "frames": 33,
+      "stride": 1,
+      "source_start": 111,
+      "source_indices": [
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143
+      ],
+      "source_fps": 29.97,
+      "sampled_fps": 29.97,
+      "values": {
+        "psnr_rgb_db": 31.293047072554447,
+        "ssim_rgb": 0.9309506289886705,
+        "mse_rgb_01": 0.0007497519547944454,
+        "lpips_alex_v0_1": 0.011650926631056902,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0012388916885746376,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.12388916885746377,
+        "tOF_Farneback_TecoGAN_crop": 0.06131230214876788,
+        "raw_gap_rmse_all_channels": 1.1179337829365315,
+        "normalized_gap_rmse_all_channels": 0.576343164428412,
+        "mean_of_channel_hr_normalized_means": 0.07839798061878564,
+        "mean_of_channel_up_lr_normalized_means": -0.05378309199305487,
+        "mean_of_channel_hr_normalized_population_stds": 0.6521767915500902,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.782854550171198
+      }
+    },
+    {
+      "case_id": "HQVSR_02_T33_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "0iapjPp_zog_5_16to334",
+      "frames": 33,
+      "stride": 4,
+      "source_start": 111,
+      "source_indices": [
+        111,
+        115,
+        119,
+        123,
+        127,
+        131,
+        135,
+        139,
+        143,
+        147,
+        151,
+        155,
+        159,
+        163,
+        167,
+        171,
+        175,
+        179,
+        183,
+        187,
+        191,
+        195,
+        199,
+        203,
+        207,
+        211,
+        215,
+        219,
+        223,
+        227,
+        231,
+        235,
+        239
+      ],
+      "source_fps": 29.97,
+      "sampled_fps": 7.4925,
+      "values": {
+        "psnr_rgb_db": 28.90251154205686,
+        "ssim_rgb": 0.9055053013743777,
+        "mse_rgb_01": 0.0013121210678403506,
+        "lpips_alex_v0_1": 0.022640861796610283,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.005830250248046858,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.5830250248046858,
+        "tOF_Farneback_TecoGAN_crop": 0.2736546274806772,
+        "raw_gap_rmse_all_channels": 1.08491965361581,
+        "normalized_gap_rmse_all_channels": 0.5629047290402948,
+        "mean_of_channel_hr_normalized_means": 0.0885007028015036,
+        "mean_of_channel_up_lr_normalized_means": -0.03307216934283558,
+        "mean_of_channel_hr_normalized_population_stds": 0.6539755060123454,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.7730590350599358
+      }
+    },
+    {
+      "case_id": "HQVSR_03_T9_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "rKxrwXc_KEU_8_21to196",
+      "frames": 9,
+      "stride": 1,
+      "source_start": 7,
+      "source_indices": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 34.24618099076872,
+        "ssim_rgb": 0.91997096935908,
+        "mse_rgb_01": 0.00037782354317315403,
+        "lpips_alex_v0_1": 0.00944418605003092,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0015424815937876701,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.154248159378767,
+        "tOF_Farneback_TecoGAN_crop": 0.19424193911254406,
+        "raw_gap_rmse_all_channels": 0.9429664459228326,
+        "normalized_gap_rmse_all_channels": 0.5063971828895071,
+        "mean_of_channel_hr_normalized_means": -0.007046592672209727,
+        "mean_of_channel_up_lr_normalized_means": -0.08826695278032516,
+        "mean_of_channel_hr_normalized_population_stds": 0.5042771772219975,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5254943028281742
+      }
+    },
+    {
+      "case_id": "HQVSR_03_T9_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "rKxrwXc_KEU_8_21to196",
+      "frames": 9,
+      "stride": 4,
+      "source_start": 7,
+      "source_indices": [
+        7,
+        11,
+        15,
+        19,
+        23,
+        27,
+        31,
+        35,
+        39
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 31.970433659285764,
+        "ssim_rgb": 0.894915415181054,
+        "mse_rgb_01": 0.000656043397724744,
+        "lpips_alex_v0_1": 0.01586163126760059,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0027317525818943977,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.2731752581894398,
+        "tOF_Farneback_TecoGAN_crop": 0.22400551661849022,
+        "raw_gap_rmse_all_channels": 0.872624411026583,
+        "normalized_gap_rmse_all_channels": 0.47360101181972813,
+        "mean_of_channel_hr_normalized_means": 0.011701173618616188,
+        "mean_of_channel_up_lr_normalized_means": -0.056443062429962804,
+        "mean_of_channel_hr_normalized_population_stds": 0.482906752292739,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.47879456003116094
+      }
+    },
+    {
+      "case_id": "HQVSR_03_T17_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "rKxrwXc_KEU_8_21to196",
+      "frames": 17,
+      "stride": 1,
+      "source_start": 7,
+      "source_indices": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 34.51941170866104,
+        "ssim_rgb": 0.9209035705117619,
+        "mse_rgb_01": 0.00035525442613663525,
+        "lpips_alex_v0_1": 0.009257819887031527,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0013788992073386908,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.13788992073386908,
+        "tOF_Farneback_TecoGAN_crop": 0.13770541983346143,
+        "raw_gap_rmse_all_channels": 1.0297133363315891,
+        "normalized_gap_rmse_all_channels": 0.5491544547362704,
+        "mean_of_channel_hr_normalized_means": -0.006078110831869715,
+        "mean_of_channel_up_lr_normalized_means": -0.10803356571096799,
+        "mean_of_channel_hr_normalized_population_stds": 0.5436740255096582,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5753518914382052
+      }
+    },
+    {
+      "case_id": "HQVSR_03_T17_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "rKxrwXc_KEU_8_21to196",
+      "frames": 17,
+      "stride": 4,
+      "source_start": 7,
+      "source_indices": [
+        7,
+        11,
+        15,
+        19,
+        23,
+        27,
+        31,
+        35,
+        39,
+        43,
+        47,
+        51,
+        55,
+        59,
+        63,
+        67,
+        71
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 31.823556068681388,
+        "ssim_rgb": 0.8989818341591779,
+        "mse_rgb_01": 0.0006733798917565737,
+        "lpips_alex_v0_1": 0.016023724613820806,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0023383963853120804,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.23383963853120804,
+        "tOF_Farneback_TecoGAN_crop": 0.227431308478117,
+        "raw_gap_rmse_all_channels": 0.9150300948605123,
+        "normalized_gap_rmse_all_channels": 0.49388586459358513,
+        "mean_of_channel_hr_normalized_means": 0.018662026833531385,
+        "mean_of_channel_up_lr_normalized_means": -0.06613991542697631,
+        "mean_of_channel_hr_normalized_population_stds": 0.5228830613568425,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5194954786535393
+      }
+    },
+    {
+      "case_id": "HQVSR_03_T33_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "rKxrwXc_KEU_8_21to196",
+      "frames": 33,
+      "stride": 1,
+      "source_start": 7,
+      "source_indices": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 34.69031796227333,
+        "ssim_rgb": 0.92148131312746,
+        "mse_rgb_01": 0.00034115506728919293,
+        "lpips_alex_v0_1": 0.00958385109675653,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0012132513469883374,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.12132513469883374,
+        "tOF_Farneback_TecoGAN_crop": 0.11786572608564581,
+        "raw_gap_rmse_all_channels": 1.080225583569507,
+        "normalized_gap_rmse_all_channels": 0.5734608476740987,
+        "mean_of_channel_hr_normalized_means": -0.005288136368382731,
+        "mean_of_channel_up_lr_normalized_means": -0.12396992184141703,
+        "mean_of_channel_hr_normalized_population_stds": 0.5528340605645604,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5845581868493249
+      }
+    },
+    {
+      "case_id": "HQVSR_03_T33_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "rKxrwXc_KEU_8_21to196",
+      "frames": 33,
+      "stride": 4,
+      "source_start": 7,
+      "source_indices": [
+        7,
+        11,
+        15,
+        19,
+        23,
+        27,
+        31,
+        35,
+        39,
+        43,
+        47,
+        51,
+        55,
+        59,
+        63,
+        67,
+        71,
+        75,
+        79,
+        83,
+        87,
+        91,
+        95,
+        99,
+        103,
+        107,
+        111,
+        115,
+        119,
+        123,
+        127,
+        131,
+        135
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 31.164452274002073,
+        "ssim_rgb": 0.9096349965442311,
+        "mse_rgb_01": 0.0007980892666025616,
+        "lpips_alex_v0_1": 0.017831670769462078,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0024969628346817835,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.24969628346817835,
+        "tOF_Farneback_TecoGAN_crop": 0.27201741880604197,
+        "raw_gap_rmse_all_channels": 0.903686360195506,
+        "normalized_gap_rmse_all_channels": 0.486141918103724,
+        "mean_of_channel_hr_normalized_means": 0.025390560601300544,
+        "mean_of_channel_up_lr_normalized_means": -0.06331014624482355,
+        "mean_of_channel_hr_normalized_population_stds": 0.5818807932603375,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5793025662099913
+      }
+    },
+    {
+      "case_id": "HQVSR_04_T9_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "1bnkXt9MpGs_50_0to136",
+      "frames": 9,
+      "stride": 1,
+      "source_start": 1,
+      "source_indices": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 25.0,
+      "values": {
+        "psnr_rgb_db": 31.11750721456896,
+        "ssim_rgb": 0.9082411593861051,
+        "mse_rgb_01": 0.0007748032943197896,
+        "lpips_alex_v0_1": 0.01568567980494764,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.001994731370359659,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.19947313703596592,
+        "tOF_Farneback_TecoGAN_crop": 0.15655052661895752,
+        "raw_gap_rmse_all_channels": 1.091938550895258,
+        "normalized_gap_rmse_all_channels": 0.560769224200077,
+        "mean_of_channel_hr_normalized_means": 0.02734569040804546,
+        "mean_of_channel_up_lr_normalized_means": -0.06700962623010806,
+        "mean_of_channel_hr_normalized_population_stds": 0.5340401730959917,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6431427863793412
+      }
+    },
+    {
+      "case_id": "HQVSR_04_T9_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "1bnkXt9MpGs_50_0to136",
+      "frames": 9,
+      "stride": 4,
+      "source_start": 1,
+      "source_indices": [
+        1,
+        5,
+        9,
+        13,
+        17,
+        21,
+        25,
+        29,
+        33
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 6.25,
+      "values": {
+        "psnr_rgb_db": 28.56457270485425,
+        "ssim_rgb": 0.8526643315951029,
+        "mse_rgb_01": 0.001428775100102464,
+        "lpips_alex_v0_1": 0.02883803264962302,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.003582160919904709,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.3582160919904709,
+        "tOF_Farneback_TecoGAN_crop": 0.7351791858673096,
+        "raw_gap_rmse_all_channels": 0.9864957766543886,
+        "normalized_gap_rmse_all_channels": 0.5093813955383008,
+        "mean_of_channel_hr_normalized_means": 0.06416903344464307,
+        "mean_of_channel_up_lr_normalized_means": -0.018642773292621796,
+        "mean_of_channel_hr_normalized_population_stds": 0.5197959685038304,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6043864268205499
+      }
+    },
+    {
+      "case_id": "HQVSR_04_T17_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "1bnkXt9MpGs_50_0to136",
+      "frames": 17,
+      "stride": 1,
+      "source_start": 1,
+      "source_indices": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 25.0,
+      "values": {
+        "psnr_rgb_db": 30.955180072426803,
+        "ssim_rgb": 0.9065067277235144,
+        "mse_rgb_01": 0.0008045550414474079,
+        "lpips_alex_v0_1": 0.016296694274334347,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0019551432536294064,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.19551432536294064,
+        "tOF_Farneback_TecoGAN_crop": 0.16335355614622435,
+        "raw_gap_rmse_all_channels": 1.197791034122278,
+        "normalized_gap_rmse_all_channels": 0.6148224242179264,
+        "mean_of_channel_hr_normalized_means": 0.038565241088646826,
+        "mean_of_channel_up_lr_normalized_means": -0.07888272130731809,
+        "mean_of_channel_hr_normalized_population_stds": 0.5859828357201592,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.7192645294012858
+      }
+    },
+    {
+      "case_id": "HQVSR_04_T17_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "1bnkXt9MpGs_50_0to136",
+      "frames": 17,
+      "stride": 4,
+      "source_start": 1,
+      "source_indices": [
+        1,
+        5,
+        9,
+        13,
+        17,
+        21,
+        25,
+        29,
+        33,
+        37,
+        41,
+        45,
+        49,
+        53,
+        57,
+        61,
+        65
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 6.25,
+      "values": {
+        "psnr_rgb_db": 28.097282683334154,
+        "ssim_rgb": 0.8351085115881527,
+        "mse_rgb_01": 0.001590884377600834,
+        "lpips_alex_v0_1": 0.030684017521493575,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.005133240173260371,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.513324017326037,
+        "tOF_Farneback_TecoGAN_crop": 0.7185145119825999,
+        "raw_gap_rmse_all_channels": 1.060173528164595,
+        "normalized_gap_rmse_all_channels": 0.5507435471924197,
+        "mean_of_channel_hr_normalized_means": 0.08999821428591483,
+        "mean_of_channel_up_lr_normalized_means": -0.008010207424902046,
+        "mean_of_channel_hr_normalized_population_stds": 0.5605783761960679,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6637156584995716
+      }
+    },
+    {
+      "case_id": "HQVSR_04_T33_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "1bnkXt9MpGs_50_0to136",
+      "frames": 33,
+      "stride": 1,
+      "source_start": 1,
+      "source_indices": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 25.0,
+      "values": {
+        "psnr_rgb_db": 30.669869537345082,
+        "ssim_rgb": 0.9010334538690972,
+        "mse_rgb_01": 0.0008618322680605543,
+        "lpips_alex_v0_1": 0.016775463086863358,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0020976552540170296,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.20976552540170296,
+        "tOF_Farneback_TecoGAN_crop": 0.1678391213395766,
+        "raw_gap_rmse_all_channels": 1.2710402494730648,
+        "normalized_gap_rmse_all_channels": 0.6525320300149512,
+        "mean_of_channel_hr_normalized_means": 0.05148668547914673,
+        "mean_of_channel_up_lr_normalized_means": -0.08088934246860024,
+        "mean_of_channel_hr_normalized_population_stds": 0.6158465537336538,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.7607151163474644
+      }
+    },
+    {
+      "case_id": "HQVSR_04_T33_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "1bnkXt9MpGs_50_0to136",
+      "frames": 33,
+      "stride": 4,
+      "source_start": 1,
+      "source_indices": [
+        1,
+        5,
+        9,
+        13,
+        17,
+        21,
+        25,
+        29,
+        33,
+        37,
+        41,
+        45,
+        49,
+        53,
+        57,
+        61,
+        65,
+        69,
+        73,
+        77,
+        81,
+        85,
+        89,
+        93,
+        97,
+        101,
+        105,
+        109,
+        113,
+        117,
+        121,
+        125,
+        129
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 6.25,
+      "values": {
+        "psnr_rgb_db": 27.231486392309417,
+        "ssim_rgb": 0.7990452484651045,
+        "mse_rgb_01": 0.0019774365375349683,
+        "lpips_alex_v0_1": 0.03575990140212305,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0059219275468162125,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.5921927546816212,
+        "tOF_Farneback_TecoGAN_crop": 0.7368208382810865,
+        "raw_gap_rmse_all_channels": 1.1007564408172281,
+        "normalized_gap_rmse_all_channels": 0.5757444751519477,
+        "mean_of_channel_hr_normalized_means": 0.12703893075622766,
+        "mean_of_channel_up_lr_normalized_means": 0.019506691294803244,
+        "mean_of_channel_hr_normalized_population_stds": 0.57103419348264,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6813841254829602
+      }
+    },
+    {
+      "case_id": "HQVSR_05_T9_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "hU16Zn46S58_134_83to290",
+      "frames": 9,
+      "stride": 1,
+      "source_start": 28,
+      "source_indices": [
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 25.0,
+      "values": {
+        "psnr_rgb_db": 26.43633344142693,
+        "ssim_rgb": 0.8540910681088766,
+        "mse_rgb_01": 0.0022917042299179504,
+        "lpips_alex_v0_1": 0.025245354200402897,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.006908847019076347,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.6908847019076347,
+        "tOF_Farneback_TecoGAN_crop": 0.20468677952885628,
+        "raw_gap_rmse_all_channels": 0.9527056345956768,
+        "normalized_gap_rmse_all_channels": 0.4842962901847121,
+        "mean_of_channel_hr_normalized_means": 0.10831116225264072,
+        "mean_of_channel_up_lr_normalized_means": 0.03196884714407471,
+        "mean_of_channel_hr_normalized_population_stds": 0.5439178939471263,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6018320796924421
+      }
+    },
+    {
+      "case_id": "HQVSR_05_T9_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "hU16Zn46S58_134_83to290",
+      "frames": 9,
+      "stride": 4,
+      "source_start": 28,
+      "source_indices": [
+        28,
+        32,
+        36,
+        40,
+        44,
+        48,
+        52,
+        56,
+        60
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 6.25,
+      "values": {
+        "psnr_rgb_db": 25.77207526048581,
+        "ssim_rgb": 0.8436225718922086,
+        "mse_rgb_01": 0.002670903460084698,
+        "lpips_alex_v0_1": 0.03402596422367626,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.009333570895250887,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.9333570895250887,
+        "tOF_Farneback_TecoGAN_crop": 0.2026461772620678,
+        "raw_gap_rmse_all_channels": 0.9418487474124545,
+        "normalized_gap_rmse_all_channels": 0.47878995220472514,
+        "mean_of_channel_hr_normalized_means": 0.11188310799885245,
+        "mean_of_channel_up_lr_normalized_means": 0.03810484462020101,
+        "mean_of_channel_hr_normalized_population_stds": 0.5467064530039321,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.604228640306244
+      }
+    },
+    {
+      "case_id": "HQVSR_05_T17_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "hU16Zn46S58_134_83to290",
+      "frames": 17,
+      "stride": 1,
+      "source_start": 28,
+      "source_indices": [
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 25.0,
+      "values": {
+        "psnr_rgb_db": 26.96247778598755,
+        "ssim_rgb": 0.8668840667780708,
+        "mse_rgb_01": 0.0020398257647865803,
+        "lpips_alex_v0_1": 0.021533289157292423,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0036457758105825633,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.36457758105825633,
+        "tOF_Farneback_TecoGAN_crop": 0.11008301967134078,
+        "raw_gap_rmse_all_channels": 1.061773652309512,
+        "normalized_gap_rmse_all_channels": 0.5351789333894321,
+        "mean_of_channel_hr_normalized_means": 0.13054787763906714,
+        "mean_of_channel_up_lr_normalized_means": 0.03656368295349636,
+        "mean_of_channel_hr_normalized_population_stds": 0.5969584740893958,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6733371328897769
+      }
+    },
+    {
+      "case_id": "HQVSR_05_T17_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "hU16Zn46S58_134_83to290",
+      "frames": 17,
+      "stride": 4,
+      "source_start": 28,
+      "source_indices": [
+        28,
+        32,
+        36,
+        40,
+        44,
+        48,
+        52,
+        56,
+        60,
+        64,
+        68,
+        72,
+        76,
+        80,
+        84,
+        88,
+        92
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 6.25,
+      "values": {
+        "psnr_rgb_db": 25.958002179594008,
+        "ssim_rgb": 0.8493460311609156,
+        "mse_rgb_01": 0.0025604622078932463,
+        "lpips_alex_v0_1": 0.03142509445109788,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.008479318853157261,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.8479318853157262,
+        "tOF_Farneback_TecoGAN_crop": 0.2020005906621615,
+        "raw_gap_rmse_all_channels": 1.0460126281335917,
+        "normalized_gap_rmse_all_channels": 0.5290807389637835,
+        "mean_of_channel_hr_normalized_means": 0.13859398776517753,
+        "mean_of_channel_up_lr_normalized_means": 0.04858623235066894,
+        "mean_of_channel_hr_normalized_population_stds": 0.6002679913561578,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6751335819688787
+      }
+    },
+    {
+      "case_id": "HQVSR_05_T33_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "hU16Zn46S58_134_83to290",
+      "frames": 33,
+      "stride": 1,
+      "source_start": 28,
+      "source_indices": [
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 25.0,
+      "values": {
+        "psnr_rgb_db": 26.834570175378467,
+        "ssim_rgb": 0.8656531969706217,
+        "mse_rgb_01": 0.002093004087873444,
+        "lpips_alex_v0_1": 0.02360306770512552,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.003958675607074318,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.39586756070743184,
+        "tOF_Farneback_TecoGAN_crop": 0.10801921705050128,
+        "raw_gap_rmse_all_channels": 1.1182001800786248,
+        "normalized_gap_rmse_all_channels": 0.5626703695834908,
+        "mean_of_channel_hr_normalized_means": 0.15497687309198574,
+        "mean_of_channel_up_lr_normalized_means": 0.05225226568758105,
+        "mean_of_channel_hr_normalized_population_stds": 0.6255325885981073,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.7091483050560878
+      }
+    },
+    {
+      "case_id": "HQVSR_05_T33_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "hU16Zn46S58_134_83to290",
+      "frames": 33,
+      "stride": 4,
+      "source_start": 28,
+      "source_indices": [
+        28,
+        32,
+        36,
+        40,
+        44,
+        48,
+        52,
+        56,
+        60,
+        64,
+        68,
+        72,
+        76,
+        80,
+        84,
+        88,
+        92,
+        96,
+        100,
+        104,
+        108,
+        112,
+        116,
+        120,
+        124,
+        128,
+        132,
+        136,
+        140,
+        144,
+        148,
+        152,
+        156
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 6.25,
+      "values": {
+        "psnr_rgb_db": 25.62744612913933,
+        "ssim_rgb": 0.84471062819163,
+        "mse_rgb_01": 0.0027660680752855773,
+        "lpips_alex_v0_1": 0.03578775974385666,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.008194274185890598,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.8194274185890598,
+        "tOF_Farneback_TecoGAN_crop": 0.24125332358692372,
+        "raw_gap_rmse_all_channels": 1.1001806163761652,
+        "normalized_gap_rmse_all_channels": 0.5559361432104095,
+        "mean_of_channel_hr_normalized_means": 0.1660504760332888,
+        "mean_of_channel_up_lr_normalized_means": 0.06832271441426345,
+        "mean_of_channel_hr_normalized_population_stds": 0.6344092699655679,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.7189196019040961
+      }
+    },
+    {
+      "case_id": "HQVSR_06_T9_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "GbXT5VrjAQg_0_0to287",
+      "frames": 9,
+      "stride": 1,
+      "source_start": 21,
+      "source_indices": [
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 29.36059910772153,
+        "ssim_rgb": 0.9536368383301629,
+        "mse_rgb_01": 0.0011660137163172412,
+        "lpips_alex_v0_1": 0.011811310839321878,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.002123591024428606,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.2123591024428606,
+        "tOF_Farneback_TecoGAN_crop": 0.06991913542151451,
+        "raw_gap_rmse_all_channels": 0.9854308227399201,
+        "normalized_gap_rmse_all_channels": 0.49830805816708934,
+        "mean_of_channel_hr_normalized_means": 0.07165460757119273,
+        "mean_of_channel_up_lr_normalized_means": -0.014710779957492533,
+        "mean_of_channel_hr_normalized_population_stds": 0.5465959123269811,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5627806785319676
+      }
+    },
+    {
+      "case_id": "HQVSR_06_T9_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "GbXT5VrjAQg_0_0to287",
+      "frames": 9,
+      "stride": 4,
+      "source_start": 21,
+      "source_indices": [
+        21,
+        25,
+        29,
+        33,
+        37,
+        41,
+        45,
+        49,
+        53
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 27.586006067586943,
+        "ssim_rgb": 0.9297481245464749,
+        "mse_rgb_01": 0.0017546137189626142,
+        "lpips_alex_v0_1": 0.018929864797327254,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0021082470193505287,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.21082470193505287,
+        "tOF_Farneback_TecoGAN_crop": 0.12457010895013809,
+        "raw_gap_rmse_all_channels": 0.9506985768967564,
+        "normalized_gap_rmse_all_channels": 0.4814851041236683,
+        "mean_of_channel_hr_normalized_means": 0.08842583081905205,
+        "mean_of_channel_up_lr_normalized_means": 0.01576528263539448,
+        "mean_of_channel_hr_normalized_population_stds": 0.5396791859084937,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5538926882163092
+      }
+    },
+    {
+      "case_id": "HQVSR_06_T17_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "GbXT5VrjAQg_0_0to287",
+      "frames": 17,
+      "stride": 1,
+      "source_start": 21,
+      "source_indices": [
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 29.62765696165253,
+        "ssim_rgb": 0.9548201736281899,
+        "mse_rgb_01": 0.0010958345742695806,
+        "lpips_alex_v0_1": 0.011248078525942914,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0013662086372884612,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.1366208637288461,
+        "tOF_Farneback_TecoGAN_crop": 0.062134080256024994,
+        "raw_gap_rmse_all_channels": 1.0856748757313128,
+        "normalized_gap_rmse_all_channels": 0.5451059421401694,
+        "mean_of_channel_hr_normalized_means": 0.08810015866157692,
+        "mean_of_channel_up_lr_normalized_means": -0.01240557974743636,
+        "mean_of_channel_hr_normalized_population_stds": 0.59820579903438,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6293440746893759
+      }
+    },
+    {
+      "case_id": "HQVSR_06_T17_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "GbXT5VrjAQg_0_0to287",
+      "frames": 17,
+      "stride": 4,
+      "source_start": 21,
+      "source_indices": [
+        21,
+        25,
+        29,
+        33,
+        37,
+        41,
+        45,
+        49,
+        53,
+        57,
+        61,
+        65,
+        69,
+        73,
+        77,
+        81,
+        85
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 27.69288960781645,
+        "ssim_rgb": 0.9307148561758154,
+        "mse_rgb_01": 0.0017114899307594403,
+        "lpips_alex_v0_1": 0.018404332920908928,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0031211923342198133,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.31211923342198133,
+        "tOF_Farneback_TecoGAN_crop": 0.10885604595144589,
+        "raw_gap_rmse_all_channels": 1.066129966630955,
+        "normalized_gap_rmse_all_channels": 0.5336590096956485,
+        "mean_of_channel_hr_normalized_means": 0.10427641757181949,
+        "mean_of_channel_up_lr_normalized_means": 0.012291380925468331,
+        "mean_of_channel_hr_normalized_population_stds": 0.5912817085418051,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6376440491410181
+      }
+    },
+    {
+      "case_id": "HQVSR_06_T33_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "GbXT5VrjAQg_0_0to287",
+      "frames": 33,
+      "stride": 1,
+      "source_start": 21,
+      "source_indices": [
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 23.976,
+      "values": {
+        "psnr_rgb_db": 29.47917704825414,
+        "ssim_rgb": 0.9522548227599172,
+        "mse_rgb_01": 0.0011320511024965193,
+        "lpips_alex_v0_1": 0.01200981062808723,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0016522568933266615,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.16522568933266615,
+        "tOF_Farneback_TecoGAN_crop": 0.06218667354966913,
+        "raw_gap_rmse_all_channels": 1.1495120545416768,
+        "normalized_gap_rmse_all_channels": 0.5732478027323779,
+        "mean_of_channel_hr_normalized_means": 0.1014660925071767,
+        "mean_of_channel_up_lr_normalized_means": -0.005947794756294886,
+        "mean_of_channel_hr_normalized_population_stds": 0.6276514893580778,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6737438889783518
+      }
+    },
+    {
+      "case_id": "HQVSR_06_T33_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "GbXT5VrjAQg_0_0to287",
+      "frames": 33,
+      "stride": 4,
+      "source_start": 21,
+      "source_indices": [
+        21,
+        25,
+        29,
+        33,
+        37,
+        41,
+        45,
+        49,
+        53,
+        57,
+        61,
+        65,
+        69,
+        73,
+        77,
+        81,
+        85,
+        89,
+        93,
+        97,
+        101,
+        105,
+        109,
+        113,
+        117,
+        121,
+        125,
+        129,
+        133,
+        137,
+        141,
+        145,
+        149
+      ],
+      "source_fps": 23.976,
+      "sampled_fps": 5.994,
+      "values": {
+        "psnr_rgb_db": 27.87797195868112,
+        "ssim_rgb": 0.9325045058221528,
+        "mse_rgb_01": 0.001638023920416894,
+        "lpips_alex_v0_1": 0.016964913712758007,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.003376315098388919,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.3376315098388919,
+        "tOF_Farneback_TecoGAN_crop": 0.10245137368994099,
+        "raw_gap_rmse_all_channels": 1.155124855145454,
+        "normalized_gap_rmse_all_channels": 0.5748629840873872,
+        "mean_of_channel_hr_normalized_means": 0.11191833446744688,
+        "mean_of_channel_up_lr_normalized_means": 0.004384276096026545,
+        "mean_of_channel_hr_normalized_population_stds": 0.6248578512527304,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6878750378046101
+      }
+    },
+    {
+      "case_id": "HQVSR_07_T9_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "ONjoUxdLrZ4_17_0to679",
+      "frames": 9,
+      "stride": 1,
+      "source_start": 337,
+      "source_indices": [
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 25.0,
+      "values": {
+        "psnr_rgb_db": 27.207238457180654,
+        "ssim_rgb": 0.7977206640773349,
+        "mse_rgb_01": 0.0019114610574651459,
+        "lpips_alex_v0_1": 0.022553230325380962,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0027560125454328954,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.27560125454328954,
+        "tOF_Farneback_TecoGAN_crop": 0.05876876786351204,
+        "raw_gap_rmse_all_channels": 1.0922013774707104,
+        "normalized_gap_rmse_all_channels": 0.5610914942019983,
+        "mean_of_channel_hr_normalized_means": 0.04560366578857695,
+        "mean_of_channel_up_lr_normalized_means": -0.06848326330787033,
+        "mean_of_channel_hr_normalized_population_stds": 0.3889265748905259,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5009243344453628
+      }
+    },
+    {
+      "case_id": "HQVSR_07_T9_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "ONjoUxdLrZ4_17_0to679",
+      "frames": 9,
+      "stride": 4,
+      "source_start": 337,
+      "source_indices": [
+        337,
+        341,
+        345,
+        349,
+        353,
+        357,
+        361,
+        365,
+        369
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 6.25,
+      "values": {
+        "psnr_rgb_db": 26.97623854579545,
+        "ssim_rgb": 0.79398246606191,
+        "mse_rgb_01": 0.0020119634016361587,
+        "lpips_alex_v0_1": 0.02435155709584554,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.004240553244017065,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.42405532440170646,
+        "tOF_Farneback_TecoGAN_crop": 0.10406052134931087,
+        "raw_gap_rmse_all_channels": 1.0914646077885999,
+        "normalized_gap_rmse_all_channels": 0.5608365281503782,
+        "mean_of_channel_hr_normalized_means": 0.04587957945909306,
+        "mean_of_channel_up_lr_normalized_means": -0.06728399742241735,
+        "mean_of_channel_hr_normalized_population_stds": 0.38868800104542817,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.499437625291415
+      }
+    },
+    {
+      "case_id": "HQVSR_07_T17_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "ONjoUxdLrZ4_17_0to679",
+      "frames": 17,
+      "stride": 1,
+      "source_start": 337,
+      "source_indices": [
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345,
+        346,
+        347,
+        348,
+        349,
+        350,
+        351,
+        352,
+        353
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 25.0,
+      "values": {
+        "psnr_rgb_db": 27.339753184764888,
+        "ssim_rgb": 0.804299046011532,
+        "mse_rgb_01": 0.0018509638543359411,
+        "lpips_alex_v0_1": 0.02103794420904973,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0026127576954119527,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.2612757695411953,
+        "tOF_Farneback_TecoGAN_crop": 0.04865436349064112,
+        "raw_gap_rmse_all_channels": 1.2057390018930372,
+        "normalized_gap_rmse_all_channels": 0.6153209765589465,
+        "mean_of_channel_hr_normalized_means": 0.06149581846226203,
+        "mean_of_channel_up_lr_normalized_means": -0.07403252394294821,
+        "mean_of_channel_hr_normalized_population_stds": 0.4172622089027606,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5541204937790974
+      }
+    },
+    {
+      "case_id": "HQVSR_07_T17_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "ONjoUxdLrZ4_17_0to679",
+      "frames": 17,
+      "stride": 4,
+      "source_start": 337,
+      "source_indices": [
+        337,
+        341,
+        345,
+        349,
+        353,
+        357,
+        361,
+        365,
+        369,
+        373,
+        377,
+        381,
+        385,
+        389,
+        393,
+        397,
+        401
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 6.25,
+      "values": {
+        "psnr_rgb_db": 27.04044022003265,
+        "ssim_rgb": 0.8001427369959214,
+        "mse_rgb_01": 0.001980945418480837,
+        "lpips_alex_v0_1": 0.023063714342082247,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0032430627810147903,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.324306278101479,
+        "tOF_Farneback_TecoGAN_crop": 0.09800498622159164,
+        "raw_gap_rmse_all_channels": 1.2033458858822734,
+        "normalized_gap_rmse_all_channels": 0.6142651260829517,
+        "mean_of_channel_hr_normalized_means": 0.06392338822609461,
+        "mean_of_channel_up_lr_normalized_means": -0.07052443240034824,
+        "mean_of_channel_hr_normalized_population_stds": 0.41737208171838897,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5527258853071958
+      }
+    },
+    {
+      "case_id": "HQVSR_07_T33_s1",
+      "dataset": "HQ-VSR",
+      "record_id": "ONjoUxdLrZ4_17_0to679",
+      "frames": 33,
+      "stride": 1,
+      "source_start": 337,
+      "source_indices": [
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345,
+        346,
+        347,
+        348,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        366,
+        367,
+        368,
+        369
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 25.0,
+      "values": {
+        "psnr_rgb_db": 27.331703121961016,
+        "ssim_rgb": 0.8054929158904336,
+        "mse_rgb_01": 0.0018517993590556187,
+        "lpips_alex_v0_1": 0.02092336547194105,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.002543725886165963,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.2543725886165963,
+        "tOF_Farneback_TecoGAN_crop": 0.046942044515162706,
+        "raw_gap_rmse_all_channels": 1.2712915084753427,
+        "normalized_gap_rmse_all_channels": 0.6477149975390898,
+        "mean_of_channel_hr_normalized_means": 0.07580307661196599,
+        "mean_of_channel_up_lr_normalized_means": -0.07322823249416302,
+        "mean_of_channel_hr_normalized_population_stds": 0.4298254950931838,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5802993884966307
+      }
+    },
+    {
+      "case_id": "HQVSR_07_T33_s4",
+      "dataset": "HQ-VSR",
+      "record_id": "ONjoUxdLrZ4_17_0to679",
+      "frames": 33,
+      "stride": 4,
+      "source_start": 337,
+      "source_indices": [
+        337,
+        341,
+        345,
+        349,
+        353,
+        357,
+        361,
+        365,
+        369,
+        373,
+        377,
+        381,
+        385,
+        389,
+        393,
+        397,
+        401,
+        405,
+        409,
+        413,
+        417,
+        421,
+        425,
+        429,
+        433,
+        437,
+        441,
+        445,
+        449,
+        453,
+        457,
+        461,
+        465
+      ],
+      "source_fps": 25.0,
+      "sampled_fps": 6.25,
+      "values": {
+        "psnr_rgb_db": 26.960514103554647,
+        "ssim_rgb": 0.7998271421952681,
+        "mse_rgb_01": 0.0020185597001454304,
+        "lpips_alex_v0_1": 0.023378829048438507,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0024069531687668393,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.2406953168766839,
+        "tOF_Farneback_TecoGAN_crop": 0.0988868089126689,
+        "raw_gap_rmse_all_channels": 1.2673251599236188,
+        "normalized_gap_rmse_all_channels": 0.6462017196773475,
+        "mean_of_channel_hr_normalized_means": 0.07881743256968185,
+        "mean_of_channel_up_lr_normalized_means": -0.0688555727809016,
+        "mean_of_channel_hr_normalized_population_stds": 0.4305087707295309,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5788858085310583
+      }
+    },
+    {
+      "case_id": "REDS4_00_T9_s1",
+      "dataset": "REDS4",
+      "record_id": "000",
+      "frames": 9,
+      "stride": 1,
+      "source_start": 0,
+      "source_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "source_fps": 30.0,
+      "sampled_fps": 30.0,
+      "values": {
+        "psnr_rgb_db": 26.791026464450546,
+        "ssim_rgb": 0.8871654073397318,
+        "mse_rgb_01": 0.0021201770677660345,
+        "lpips_alex_v0_1": 0.020869604415363736,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0040193869499489665,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.40193869499489665,
+        "tOF_Farneback_TecoGAN_crop": 0.09083730168640614,
+        "raw_gap_rmse_all_channels": 1.026486980007997,
+        "normalized_gap_rmse_all_channels": 0.5142550435897312,
+        "mean_of_channel_hr_normalized_means": 0.0701152567713461,
+        "mean_of_channel_up_lr_normalized_means": -0.034655242251873976,
+        "mean_of_channel_hr_normalized_population_stds": 0.5128489311961243,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5866491006119028
+      }
+    },
+    {
+      "case_id": "REDS4_00_T9_s4",
+      "dataset": "REDS4",
+      "record_id": "000",
+      "frames": 9,
+      "stride": 4,
+      "source_start": 0,
+      "source_indices": [
+        0,
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32
+      ],
+      "source_fps": 30.0,
+      "sampled_fps": 7.5,
+      "values": {
+        "psnr_rgb_db": 23.46243029836331,
+        "ssim_rgb": 0.7693060040473938,
+        "mse_rgb_01": 0.004834141958707262,
+        "lpips_alex_v0_1": 0.05625848120285405,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.011663904413580894,
+        "tLP100_alex_v0_1_TecoGAN_crop": 1.1663904413580894,
+        "tOF_Farneback_TecoGAN_crop": 0.5895053073763847,
+        "raw_gap_rmse_all_channels": 0.8715228853056519,
+        "normalized_gap_rmse_all_channels": 0.44591171841469324,
+        "mean_of_channel_hr_normalized_means": 0.1287469895946152,
+        "mean_of_channel_up_lr_normalized_means": 0.05236389244784639,
+        "mean_of_channel_hr_normalized_population_stds": 0.49444612455464326,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5396390724381129
+      }
+    },
+    {
+      "case_id": "REDS4_00_T17_s1",
+      "dataset": "REDS4",
+      "record_id": "000",
+      "frames": 17,
+      "stride": 1,
+      "source_start": 0,
+      "source_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "source_fps": 30.0,
+      "sampled_fps": 30.0,
+      "values": {
+        "psnr_rgb_db": 26.77412078556391,
+        "ssim_rgb": 0.8869344592094421,
+        "mse_rgb_01": 0.0021201943029074423,
+        "lpips_alex_v0_1": 0.02158865990007625,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0036623667692765594,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.36623667692765594,
+        "tOF_Farneback_TecoGAN_crop": 0.08518149486432473,
+        "raw_gap_rmse_all_channels": 1.1187815391066473,
+        "normalized_gap_rmse_all_channels": 0.5561239897931557,
+        "mean_of_channel_hr_normalized_means": 0.08846651182881204,
+        "mean_of_channel_up_lr_normalized_means": -0.03814428006625525,
+        "mean_of_channel_hr_normalized_population_stds": 0.5561894507926021,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6517926625895882
+      }
+    },
+    {
+      "case_id": "REDS4_00_T17_s4",
+      "dataset": "REDS4",
+      "record_id": "000",
+      "frames": 17,
+      "stride": 4,
+      "source_start": 0,
+      "source_indices": [
+        0,
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        40,
+        44,
+        48,
+        52,
+        56,
+        60,
+        64
+      ],
+      "source_fps": 30.0,
+      "sampled_fps": 7.5,
+      "values": {
+        "psnr_rgb_db": 23.430399856654823,
+        "ssim_rgb": 0.7549646742203656,
+        "mse_rgb_01": 0.0047583235852949445,
+        "lpips_alex_v0_1": 0.056937764343969965,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.009666502165297667,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.9666502165297667,
+        "tOF_Farneback_TecoGAN_crop": 0.6201322575410207,
+        "raw_gap_rmse_all_channels": 0.9493554389600158,
+        "normalized_gap_rmse_all_channels": 0.4855888031925554,
+        "mean_of_channel_hr_normalized_means": 0.15225304068687717,
+        "mean_of_channel_up_lr_normalized_means": 0.06244220910465919,
+        "mean_of_channel_hr_normalized_population_stds": 0.5069922774875618,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5715152017843623
+      }
+    },
+    {
+      "case_id": "REDS4_00_T33_s1",
+      "dataset": "REDS4",
+      "record_id": "000",
+      "frames": 33,
+      "stride": 1,
+      "source_start": 0,
+      "source_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ],
+      "source_fps": 30.0,
+      "sampled_fps": 30.0,
+      "values": {
+        "psnr_rgb_db": 26.06321340680046,
+        "ssim_rgb": 0.8611323887651617,
+        "mse_rgb_01": 0.00252214884115032,
+        "lpips_alex_v0_1": 0.0288701934006178,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.0037616837403870057,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.37616837403870057,
+        "tOF_Farneback_TecoGAN_crop": 0.12492124403693847,
+        "raw_gap_rmse_all_channels": 1.1305605596879256,
+        "normalized_gap_rmse_all_channels": 0.5649329907299776,
+        "mean_of_channel_hr_normalized_means": 0.11565612122922138,
+        "mean_of_channel_up_lr_normalized_means": -0.01312819004458192,
+        "mean_of_channel_hr_normalized_population_stds": 0.5610249802443753,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6658895642815639
+      }
+    },
+    {
+      "case_id": "REDS4_01_T9_s1",
+      "dataset": "REDS4",
+      "record_id": "011",
+      "frames": 9,
+      "stride": 1,
+      "source_start": 0,
+      "source_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "source_fps": 30.0,
+      "sampled_fps": 30.0,
+      "values": {
+        "psnr_rgb_db": 24.789738779465,
+        "ssim_rgb": 0.8006752928098043,
+        "mse_rgb_01": 0.0034144178111905083,
+        "lpips_alex_v0_1": 0.05259310040209028,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.006877297069877386,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.6877297069877386,
+        "tOF_Farneback_TecoGAN_crop": 0.5639445036649704,
+        "raw_gap_rmse_all_channels": 0.9384461012812202,
+        "normalized_gap_rmse_all_channels": 0.4946330355988845,
+        "mean_of_channel_hr_normalized_means": 0.08188796440020348,
+        "mean_of_channel_up_lr_normalized_means": 0.007146583199394676,
+        "mean_of_channel_hr_normalized_population_stds": 0.5119003539419849,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5255057096071063
+      }
+    },
+    {
+      "case_id": "REDS4_01_T9_s4",
+      "dataset": "REDS4",
+      "record_id": "011",
+      "frames": 9,
+      "stride": 4,
+      "source_start": 0,
+      "source_indices": [
+        0,
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32
+      ],
+      "source_fps": 30.0,
+      "sampled_fps": 7.5,
+      "values": {
+        "psnr_rgb_db": 22.80918933214308,
+        "ssim_rgb": 0.6864326662487454,
+        "mse_rgb_01": 0.005523857109135344,
+        "lpips_alex_v0_1": 0.10195191038979425,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.015140216797590256,
+        "tLP100_alex_v0_1_TecoGAN_crop": 1.5140216797590256,
+        "tOF_Farneback_TecoGAN_crop": 0.941041573882103,
+        "raw_gap_rmse_all_channels": 0.8371441559045654,
+        "normalized_gap_rmse_all_channels": 0.44492462992466864,
+        "mean_of_channel_hr_normalized_means": 0.12737288121898468,
+        "mean_of_channel_up_lr_normalized_means": 0.05956006565014774,
+        "mean_of_channel_hr_normalized_population_stds": 0.5130055545194154,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5275205949176404
+      }
+    },
+    {
+      "case_id": "REDS4_01_T17_s1",
+      "dataset": "REDS4",
+      "record_id": "011",
+      "frames": 17,
+      "stride": 1,
+      "source_start": 0,
+      "source_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "source_fps": 30.0,
+      "sampled_fps": 30.0,
+      "values": {
+        "psnr_rgb_db": 24.441744625217638,
+        "ssim_rgb": 0.7873664182775161,
+        "mse_rgb_01": 0.003702853043225341,
+        "lpips_alex_v0_1": 0.05856275010634871,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.007394120252380769,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.7394120252380768,
+        "tOF_Farneback_TecoGAN_crop": 0.5484579379359881,
+        "raw_gap_rmse_all_channels": 1.0040545086719395,
+        "normalized_gap_rmse_all_channels": 0.5252306848557553,
+        "mean_of_channel_hr_normalized_means": 0.11893948867094987,
+        "mean_of_channel_up_lr_normalized_means": 0.029526801480849383,
+        "mean_of_channel_hr_normalized_population_stds": 0.5487604290537416,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5822098426518186
+      }
+    },
+    {
+      "case_id": "REDS4_01_T17_s4",
+      "dataset": "REDS4",
+      "record_id": "011",
+      "frames": 17,
+      "stride": 4,
+      "source_start": 0,
+      "source_indices": [
+        0,
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        40,
+        44,
+        48,
+        52,
+        56,
+        60,
+        64
+      ],
+      "source_fps": 30.0,
+      "sampled_fps": 7.5,
+      "values": {
+        "psnr_rgb_db": 22.661387085571324,
+        "ssim_rgb": 0.6823656068128698,
+        "mse_rgb_01": 0.005626623797079729,
+        "lpips_alex_v0_1": 0.10484753987368416,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.012552602837483088,
+        "tLP100_alex_v0_1_TecoGAN_crop": 1.255260283748309,
+        "tOF_Farneback_TecoGAN_crop": 0.9479012886683146,
+        "raw_gap_rmse_all_channels": 0.8671060068489431,
+        "normalized_gap_rmse_all_channels": 0.4597890877890904,
+        "mean_of_channel_hr_normalized_means": 0.15336897633129418,
+        "mean_of_channel_up_lr_normalized_means": 0.08405729108310286,
+        "mean_of_channel_hr_normalized_population_stds": 0.5422965252639577,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.5763739854802902
+      }
+    },
+    {
+      "case_id": "REDS4_01_T33_s1",
+      "dataset": "REDS4",
+      "record_id": "011",
+      "frames": 33,
+      "stride": 1,
+      "source_start": 0,
+      "source_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ],
+      "source_fps": 30.0,
+      "sampled_fps": 30.0,
+      "values": {
+        "psnr_rgb_db": 24.52733427137227,
+        "ssim_rgb": 0.7890540596210596,
+        "mse_rgb_01": 0.0036318114663410283,
+        "lpips_alex_v0_1": 0.056323669512163506,
+        "tLP_alex_v0_1_TecoGAN_crop": 0.005558327838246312,
+        "tLP100_alex_v0_1_TecoGAN_crop": 0.5558327838246312,
+        "tOF_Farneback_TecoGAN_crop": 0.546629541686603,
+        "raw_gap_rmse_all_channels": 1.0495448710659054,
+        "normalized_gap_rmse_all_channels": 0.5481441035565103,
+        "mean_of_channel_hr_normalized_means": 0.13719607709376153,
+        "mean_of_channel_up_lr_normalized_means": 0.03472231184118324,
+        "mean_of_channel_hr_normalized_population_stds": 0.568997730802055,
+        "mean_of_channel_up_lr_normalized_population_stds": 0.6224924972363923
+      }
+    }
+  ],
+  "case_seals": [
+    {
+      "case_id": "HQVSR_00_T9_s1",
+      "result_sha256": "ff950f3a56545d3c4dc34194780d0364ac6d29ff3f09b7f6b8bd90086722abc5",
+      "complete_sha256": "f503dc9153e12832b7b0191d74c27ecb04c8cc409af4412f275e028fd21ff555",
+      "status_sha256": "f503dc9153e12832b7b0191d74c27ecb04c8cc409af4412f275e028fd21ff555"
+    },
+    {
+      "case_id": "HQVSR_00_T9_s4",
+      "result_sha256": "eec29c49347332e520e3e7aee9a7b18e421a20347acfb1a661717aef337772d9",
+      "complete_sha256": "9f934a4be179c67ceae1032dc634a970ca17e5e5d248d316d0b048b4eccb9e96",
+      "status_sha256": "9f934a4be179c67ceae1032dc634a970ca17e5e5d248d316d0b048b4eccb9e96"
+    },
+    {
+      "case_id": "HQVSR_00_T17_s1",
+      "result_sha256": "61ac155d190b25573e5981e52e23b20553cbf9f37c613eb9d9fa8df06c90f653",
+      "complete_sha256": "3ab5434fcee2993676067dab3dccd6e14fa5b511c19d17b1c34cf4e0f54682e6",
+      "status_sha256": "3ab5434fcee2993676067dab3dccd6e14fa5b511c19d17b1c34cf4e0f54682e6"
+    },
+    {
+      "case_id": "HQVSR_00_T17_s4",
+      "result_sha256": "d7e38ebae447b6f77ea0b1fd5b00b1679bc0d0ded48e40e74c97d4c1606694f3",
+      "complete_sha256": "75bea17393aa8e2de6f9f5def241672dd28b7fd97281dc111694337146df1e14",
+      "status_sha256": "75bea17393aa8e2de6f9f5def241672dd28b7fd97281dc111694337146df1e14"
+    },
+    {
+      "case_id": "HQVSR_00_T33_s1",
+      "result_sha256": "7944d625369d7914b5ef9ad827f407742e8ce92a1fadc2c3b676284823011514",
+      "complete_sha256": "7ad50051937f2fcbd7dc07aed945214c09be0024ec1ff1b57451ad8159fe2cec",
+      "status_sha256": "7ad50051937f2fcbd7dc07aed945214c09be0024ec1ff1b57451ad8159fe2cec"
+    },
+    {
+      "case_id": "HQVSR_00_T33_s4",
+      "result_sha256": "bf952262e7dc70efd26532ddb39b7f02cac6938ea788c141e7dd2f65c11623ca",
+      "complete_sha256": "827895d1f784988e24a2d01a8963313d9e60111f9400e23820548c98c3f57043",
+      "status_sha256": "827895d1f784988e24a2d01a8963313d9e60111f9400e23820548c98c3f57043"
+    },
+    {
+      "case_id": "HQVSR_01_T9_s1",
+      "result_sha256": "e039f3862693648bc2f84cbdddc8a1a4e64b4ff362c5ce5461a07041a7031711",
+      "complete_sha256": "b04c892d65eb03c396b3a6c3a342697e7e215ea8651b2840a54c0c0f7736826c",
+      "status_sha256": "b04c892d65eb03c396b3a6c3a342697e7e215ea8651b2840a54c0c0f7736826c"
+    },
+    {
+      "case_id": "HQVSR_01_T9_s4",
+      "result_sha256": "dce06d431e078723fd60a81fe3dfeb3de0c72884927764554e2deb43ffb60218",
+      "complete_sha256": "2d3ad61282d62947abb677c1d173b3a02e73672b00aaeb286a8176800259fe74",
+      "status_sha256": "2d3ad61282d62947abb677c1d173b3a02e73672b00aaeb286a8176800259fe74"
+    },
+    {
+      "case_id": "HQVSR_01_T17_s1",
+      "result_sha256": "58b710f1065597dbb320822952f2af9968d4bb0d81b14983bb1c6da9e39885e9",
+      "complete_sha256": "04d341ec9a2b365525788944fa155148cbf28576b13004e2c77599c28bebf9a0",
+      "status_sha256": "04d341ec9a2b365525788944fa155148cbf28576b13004e2c77599c28bebf9a0"
+    },
+    {
+      "case_id": "HQVSR_01_T17_s4",
+      "result_sha256": "00d15bdb5d3efd31ff473c406a10bbfdda3644a1e9b1161315b92979b19562cf",
+      "complete_sha256": "aaea4a9e28aad03a4040d78ade471691d6086d6cb8c8ab9153ac8999c045242b",
+      "status_sha256": "aaea4a9e28aad03a4040d78ade471691d6086d6cb8c8ab9153ac8999c045242b"
+    },
+    {
+      "case_id": "HQVSR_01_T33_s1",
+      "result_sha256": "2635fe510337290b5b0eb6540004ae1c407f6b769ba8cda23acbca0a5f2002c5",
+      "complete_sha256": "566922fc0d15ac2713af82689bfdd707b0ec880ebd1d2ae91d11fddc72185795",
+      "status_sha256": "566922fc0d15ac2713af82689bfdd707b0ec880ebd1d2ae91d11fddc72185795"
+    },
+    {
+      "case_id": "HQVSR_01_T33_s4",
+      "result_sha256": "97dd0aecfbc116d8cbe108364ddae97d434aa83d0237266a0c58addec822d3d5",
+      "complete_sha256": "eb247dea6bacf260b4f02da616ca0a39b56a5aa6ac14b26a328f52985fd9480a",
+      "status_sha256": "eb247dea6bacf260b4f02da616ca0a39b56a5aa6ac14b26a328f52985fd9480a"
+    },
+    {
+      "case_id": "HQVSR_02_T9_s1",
+      "result_sha256": "ebd99b20846ea62cbe0a34d04ac65663fefb65caf99bf67c3d7756fd7c8507df",
+      "complete_sha256": "fe30dd77517d7e5c162966d7880df6ecd791e562d7906dac75c39838d4cf0edf",
+      "status_sha256": "fe30dd77517d7e5c162966d7880df6ecd791e562d7906dac75c39838d4cf0edf"
+    },
+    {
+      "case_id": "HQVSR_02_T9_s4",
+      "result_sha256": "21fa4039c63475cc269d7f90792fc35d403c26fe465b8a5276249aa12e8b9898",
+      "complete_sha256": "3be861828712d2977a9783c8bc997a50106495443a8c6d2e6d260bc14cd9fa34",
+      "status_sha256": "3be861828712d2977a9783c8bc997a50106495443a8c6d2e6d260bc14cd9fa34"
+    },
+    {
+      "case_id": "HQVSR_02_T17_s1",
+      "result_sha256": "cfc3dd56f7ed737a0f0f87f7dcbcbb60d77f24e9a80ed04bd3ea8d069694bbf9",
+      "complete_sha256": "d9f532655facc0bef6f2f2e48dcea51429de33d6a6b18459249c1f4e6530aa80",
+      "status_sha256": "d9f532655facc0bef6f2f2e48dcea51429de33d6a6b18459249c1f4e6530aa80"
+    },
+    {
+      "case_id": "HQVSR_02_T17_s4",
+      "result_sha256": "222bd288a85b50b6ec5596df0c670c255b7e6dce9dc705fbd5d380c67f1cd6b4",
+      "complete_sha256": "7ab6caff6038ac8a9704eabbe60dbafab3e6133eda543fdeca1c991c6fe0f017",
+      "status_sha256": "7ab6caff6038ac8a9704eabbe60dbafab3e6133eda543fdeca1c991c6fe0f017"
+    },
+    {
+      "case_id": "HQVSR_02_T33_s1",
+      "result_sha256": "1ddd626ed1c707bab610a4220286276b84d199ab40e484b43ee092886bc5d6cb",
+      "complete_sha256": "a5e00cbd1e95a0fda4c74a6a45c0f9a37e364972f56b0839ac990dc37a5883a6",
+      "status_sha256": "a5e00cbd1e95a0fda4c74a6a45c0f9a37e364972f56b0839ac990dc37a5883a6"
+    },
+    {
+      "case_id": "HQVSR_02_T33_s4",
+      "result_sha256": "be207e789f529dc4d3cd8c2808d2dcdf1d04fb5d0e17b74fe6fb877f339defc4",
+      "complete_sha256": "57f436c0500bd38d344e4d70e0a42c5e917a8fb5496480e1462300a6a1a74b94",
+      "status_sha256": "57f436c0500bd38d344e4d70e0a42c5e917a8fb5496480e1462300a6a1a74b94"
+    },
+    {
+      "case_id": "HQVSR_03_T9_s1",
+      "result_sha256": "2d241b217b6e107817bee8e3ef0f5f8fd98ba5210c61decd79025d4aebfc2f39",
+      "complete_sha256": "07301d4a70644dc9f7536a8dd21feb41b9b5ef5f09f41cc3f7d7cff0810fb84f",
+      "status_sha256": "07301d4a70644dc9f7536a8dd21feb41b9b5ef5f09f41cc3f7d7cff0810fb84f"
+    },
+    {
+      "case_id": "HQVSR_03_T9_s4",
+      "result_sha256": "6aa1d6955bf6827a3e839ba078930e6e6f9c4ab0a1f93aa9ff93c8e38e1874a6",
+      "complete_sha256": "dc1542384e53f7cbc7ae4f8c91b25ff42327b2b8891c4dccfd636d875fcb8806",
+      "status_sha256": "dc1542384e53f7cbc7ae4f8c91b25ff42327b2b8891c4dccfd636d875fcb8806"
+    },
+    {
+      "case_id": "HQVSR_03_T17_s1",
+      "result_sha256": "3bc1eadc56f60e8f25e029844acca5aac9d88de4e69d945379db7a4b111fca15",
+      "complete_sha256": "f5dba00a522e1a7a5cb98e5c3596b086d74482730b2dc95f41885588e2c15213",
+      "status_sha256": "f5dba00a522e1a7a5cb98e5c3596b086d74482730b2dc95f41885588e2c15213"
+    },
+    {
+      "case_id": "HQVSR_03_T17_s4",
+      "result_sha256": "31ba1a96f5cda9b9942dc204ef374168920c7b024d9cb2afaee9e9aad922c3da",
+      "complete_sha256": "87fe40fcd4303f977f9506db7b78c374bb1bb603f78f1099b7fef51059513ef0",
+      "status_sha256": "87fe40fcd4303f977f9506db7b78c374bb1bb603f78f1099b7fef51059513ef0"
+    },
+    {
+      "case_id": "HQVSR_03_T33_s1",
+      "result_sha256": "a5557ed75c87895dd0beebca0990283529be12e7f8aefbda592bec023f5f9225",
+      "complete_sha256": "afd743465bcef95b6a83859821faf629617f7e72712bb85cbf43b64654053b3d",
+      "status_sha256": "afd743465bcef95b6a83859821faf629617f7e72712bb85cbf43b64654053b3d"
+    },
+    {
+      "case_id": "HQVSR_03_T33_s4",
+      "result_sha256": "231359c08c5911d6a3b7507b3900d6966d343b4a4efb44ea44c0f6eac75c74d7",
+      "complete_sha256": "861139b5249da9425cf1d58950a55271dce734492140e29fd6801793525bf73a",
+      "status_sha256": "861139b5249da9425cf1d58950a55271dce734492140e29fd6801793525bf73a"
+    },
+    {
+      "case_id": "HQVSR_04_T9_s1",
+      "result_sha256": "5ddac014143a07907a001d464d458e9581ab6907232a4d08b5eaf5d5e4063125",
+      "complete_sha256": "88eaab0106c49037d8acac8bb5005b55a34fd473bf17ebb7c37c186c74efd8e0",
+      "status_sha256": "88eaab0106c49037d8acac8bb5005b55a34fd473bf17ebb7c37c186c74efd8e0"
+    },
+    {
+      "case_id": "HQVSR_04_T9_s4",
+      "result_sha256": "15177dcf52d8e5abc81c50a8d253be8bd0bb5681aae45151a0dc59ba11a71097",
+      "complete_sha256": "d50b2d541ecfd846ec6182fdc530f0aa4c0e2ef56205f5bf961c5798ad7c2fe1",
+      "status_sha256": "d50b2d541ecfd846ec6182fdc530f0aa4c0e2ef56205f5bf961c5798ad7c2fe1"
+    },
+    {
+      "case_id": "HQVSR_04_T17_s1",
+      "result_sha256": "c7346924bf9d3ec824cdc074d94c96046e957bfb6c8e2ee27275acaeccf21737",
+      "complete_sha256": "4159738665026128ad35a112ca8fa7be64bd6db841e1621a7b93738ac10f05cf",
+      "status_sha256": "4159738665026128ad35a112ca8fa7be64bd6db841e1621a7b93738ac10f05cf"
+    },
+    {
+      "case_id": "HQVSR_04_T17_s4",
+      "result_sha256": "0b7d01bf82378383ff6e7d4482ecb615f90695bc92c54dea3dcc5d17b7a5be4a",
+      "complete_sha256": "ebff9d5b6d341be2a91a641a437efb5b34459cbedd7e1ae729c8a7b4a5c9394e",
+      "status_sha256": "ebff9d5b6d341be2a91a641a437efb5b34459cbedd7e1ae729c8a7b4a5c9394e"
+    },
+    {
+      "case_id": "HQVSR_04_T33_s1",
+      "result_sha256": "26fed09c99d179fb60e144a859361c62ca943347d4d01fad852fc7c0e2bae37c",
+      "complete_sha256": "f8c18fd4292d92c3252ba22ce16005fab9dfe09cf861c82a59ab65c01136d9f9",
+      "status_sha256": "f8c18fd4292d92c3252ba22ce16005fab9dfe09cf861c82a59ab65c01136d9f9"
+    },
+    {
+      "case_id": "HQVSR_04_T33_s4",
+      "result_sha256": "a6b2d7509767238de3ea8a9ca739533c51684b5d85a696beadf5416e35d5211f",
+      "complete_sha256": "b8701de43548ec5b69297690001bf97cc16d3dc9c3769272540c7b2d6506bfb0",
+      "status_sha256": "b8701de43548ec5b69297690001bf97cc16d3dc9c3769272540c7b2d6506bfb0"
+    },
+    {
+      "case_id": "HQVSR_05_T9_s1",
+      "result_sha256": "74bdf870768437787bcf071bd4170a4234b8dda846c73926f482efbf941cb025",
+      "complete_sha256": "7fc8a2d2ae9545f2512103eb0a1993f17056ece75003f4cfb9cdc0873446b09f",
+      "status_sha256": "7fc8a2d2ae9545f2512103eb0a1993f17056ece75003f4cfb9cdc0873446b09f"
+    },
+    {
+      "case_id": "HQVSR_05_T9_s4",
+      "result_sha256": "c38f53ae0b2bd94d2a8b284b54c0aebdeec9b6656791699186d92398c0867b70",
+      "complete_sha256": "a73f757c51682308386b3eb56eb5dfc96eeba0590dcf0bcf1cf8c2a366c7bbbd",
+      "status_sha256": "a73f757c51682308386b3eb56eb5dfc96eeba0590dcf0bcf1cf8c2a366c7bbbd"
+    },
+    {
+      "case_id": "HQVSR_05_T17_s1",
+      "result_sha256": "06c24bc2b57337f45eb64560c51d040f5671032ea2e5d81f48581b4b7209de49",
+      "complete_sha256": "fc0d915c1279b1b4ef3bf3fb8787497ea95a345417e89e390c2059384d2f3dde",
+      "status_sha256": "fc0d915c1279b1b4ef3bf3fb8787497ea95a345417e89e390c2059384d2f3dde"
+    },
+    {
+      "case_id": "HQVSR_05_T17_s4",
+      "result_sha256": "d1fd06120ff5274638a43b7f56b6393fea866f92bc28f21cea9297e0ab89fdcb",
+      "complete_sha256": "f76a8eaffc2dbf54a964f0e77e235a4f744d2ab2c4b28007ad8c4915293bd051",
+      "status_sha256": "f76a8eaffc2dbf54a964f0e77e235a4f744d2ab2c4b28007ad8c4915293bd051"
+    },
+    {
+      "case_id": "HQVSR_05_T33_s1",
+      "result_sha256": "ebd151a017883eb9f1351c7554a60f0a1112cd1d2a541af54cdf5c07fd29cfec",
+      "complete_sha256": "635f5d2e9abf524150a788f24b383e1709170e6fd2309212777e8af14bfbd636",
+      "status_sha256": "635f5d2e9abf524150a788f24b383e1709170e6fd2309212777e8af14bfbd636"
+    },
+    {
+      "case_id": "HQVSR_05_T33_s4",
+      "result_sha256": "60c7c6ec33718a6acd8ba11587cb9aa5b527b74b900c847d6c67255e30099ca2",
+      "complete_sha256": "4d1b3ea8f47fa67fa76ff0b19d86898ab1599b8d9b0faa94745ecd150bdfda5b",
+      "status_sha256": "4d1b3ea8f47fa67fa76ff0b19d86898ab1599b8d9b0faa94745ecd150bdfda5b"
+    },
+    {
+      "case_id": "HQVSR_06_T9_s1",
+      "result_sha256": "808edc9d4be2b59f57ecdf1a25be091ea520941d0231e9c98f89095902befd4a",
+      "complete_sha256": "2e8e7e39a93f1a4ca1f31c7f0e543a9fa0f78f0957da55ef8b9652ed20dfe9b5",
+      "status_sha256": "2e8e7e39a93f1a4ca1f31c7f0e543a9fa0f78f0957da55ef8b9652ed20dfe9b5"
+    },
+    {
+      "case_id": "HQVSR_06_T9_s4",
+      "result_sha256": "c60e6984c214f6b2248a8cf4ae793d288edd59ca2ba4af8dddf9771c541ffb5f",
+      "complete_sha256": "36a069b6e5fb65f20ec88ea32d223c31f17bb4698fde28d20960f8d19c774296",
+      "status_sha256": "36a069b6e5fb65f20ec88ea32d223c31f17bb4698fde28d20960f8d19c774296"
+    },
+    {
+      "case_id": "HQVSR_06_T17_s1",
+      "result_sha256": "ad6bc35aa48f97cb4077679ca5835ae62780f4ae6daa31e7bde55d3f8f3d4531",
+      "complete_sha256": "406ec225cbde35fa9831eaec570df0cf5715e8c70befdf4ab3c727e57738dcbe",
+      "status_sha256": "406ec225cbde35fa9831eaec570df0cf5715e8c70befdf4ab3c727e57738dcbe"
+    },
+    {
+      "case_id": "HQVSR_06_T17_s4",
+      "result_sha256": "cc5c2b3e68354d72d0463ace751757d44b10c020efb1de48c037c07edf736151",
+      "complete_sha256": "180b70d6750638611ee78d54b4cf5bd38019439a689705859e0ba118d3261b89",
+      "status_sha256": "180b70d6750638611ee78d54b4cf5bd38019439a689705859e0ba118d3261b89"
+    },
+    {
+      "case_id": "HQVSR_06_T33_s1",
+      "result_sha256": "d46859f4b10c00a95c52cb392d776aa5b93c4c71bde475aa29912c5efbf9dc82",
+      "complete_sha256": "ccef520caa85587d8d0410c56dc797fcc043668b1ee25b4f4fc3fc0e4e5af9e2",
+      "status_sha256": "ccef520caa85587d8d0410c56dc797fcc043668b1ee25b4f4fc3fc0e4e5af9e2"
+    },
+    {
+      "case_id": "HQVSR_06_T33_s4",
+      "result_sha256": "28a116931d64dd5dda4f10f59f7ef9e54dd35dfaa53fcba6c59d48fc98a68009",
+      "complete_sha256": "38fff937f610ef1b86d7b400dd70ad5f3505d926f15efb0a7321bdf5b162340e",
+      "status_sha256": "38fff937f610ef1b86d7b400dd70ad5f3505d926f15efb0a7321bdf5b162340e"
+    },
+    {
+      "case_id": "HQVSR_07_T9_s1",
+      "result_sha256": "23edbfb3f65223a429e16d7ab2cb69a625fa76ec48c3253cf435ebfb5edce4f6",
+      "complete_sha256": "cc76436a8849c10f7d0aa85a6a101c6a7c348ef8892caf0f83e5cefd0a49046f",
+      "status_sha256": "cc76436a8849c10f7d0aa85a6a101c6a7c348ef8892caf0f83e5cefd0a49046f"
+    },
+    {
+      "case_id": "HQVSR_07_T9_s4",
+      "result_sha256": "c8c8205cc6ddcc96299bdae6763e268cb8afb4bf7a1cd7774b7d80848a49353e",
+      "complete_sha256": "73e06294e947155cc012c990691c67de3c517dfb4e7a43976c626d7673f14d07",
+      "status_sha256": "73e06294e947155cc012c990691c67de3c517dfb4e7a43976c626d7673f14d07"
+    },
+    {
+      "case_id": "HQVSR_07_T17_s1",
+      "result_sha256": "0a9e370848a9b2e49e5faa2791d8bc8b59b0a17199a540483b565ab6d5d94707",
+      "complete_sha256": "4c3afdca696d79bf247625ce3daf8bf9d3928538838067dfa066239bff723588",
+      "status_sha256": "4c3afdca696d79bf247625ce3daf8bf9d3928538838067dfa066239bff723588"
+    },
+    {
+      "case_id": "HQVSR_07_T17_s4",
+      "result_sha256": "87740c14eca2d06a7a9d0148636fc1b59a8ed9a20c0ff3857fbe496aeb23de5d",
+      "complete_sha256": "9001d1787243d3e1ae4908ec3825101efccf6655bc04aeb5630728f3e67ccb51",
+      "status_sha256": "9001d1787243d3e1ae4908ec3825101efccf6655bc04aeb5630728f3e67ccb51"
+    },
+    {
+      "case_id": "HQVSR_07_T33_s1",
+      "result_sha256": "110a5f06aa8aace4b017febc81e11beb5db6d01b56a78d58144bdef07f84a983",
+      "complete_sha256": "333ee0555fd81589641ee4ac9b99e36f87c9a536cd961eead8316874eb578c86",
+      "status_sha256": "333ee0555fd81589641ee4ac9b99e36f87c9a536cd961eead8316874eb578c86"
+    },
+    {
+      "case_id": "HQVSR_07_T33_s4",
+      "result_sha256": "10ce9255ae8c97fe84022e7b5b01b408fb6619d7b7566e2e0f21deb4649fa6af",
+      "complete_sha256": "36bee8f29104e3d3c5c70674be7bf62481e508d8edb17bb08ae8bba3bbaecf26",
+      "status_sha256": "36bee8f29104e3d3c5c70674be7bf62481e508d8edb17bb08ae8bba3bbaecf26"
+    },
+    {
+      "case_id": "REDS4_00_T9_s1",
+      "result_sha256": "4b8647194de38a0aaa1a955c901ef465054d0f7b7ca180191f7c270073ded4ab",
+      "complete_sha256": "d8ff687ff8f5cc361ed605f5e46887e3576dd8921a0ab4f6067d661dbefe09ff",
+      "status_sha256": "d8ff687ff8f5cc361ed605f5e46887e3576dd8921a0ab4f6067d661dbefe09ff"
+    },
+    {
+      "case_id": "REDS4_00_T9_s4",
+      "result_sha256": "798f74b47fca5a4e32d2c51f0cf6342fad41babed14e582eca2833fca283c2d2",
+      "complete_sha256": "e3896e301ae8cae6ae040afef0647550b8e80ee622355562f9e8c29d88ef5e0c",
+      "status_sha256": "e3896e301ae8cae6ae040afef0647550b8e80ee622355562f9e8c29d88ef5e0c"
+    },
+    {
+      "case_id": "REDS4_00_T17_s1",
+      "result_sha256": "349a409e52b958510daee369cdde9c1988dea77801d453a2e97dcd59e41b59f9",
+      "complete_sha256": "6bc95328732770722012892ba24a5c906a11bae4f42e73cb18da0db7cc7b314c",
+      "status_sha256": "6bc95328732770722012892ba24a5c906a11bae4f42e73cb18da0db7cc7b314c"
+    },
+    {
+      "case_id": "REDS4_00_T17_s4",
+      "result_sha256": "d4acc87842b4d19a7ace56344a5f812e0e4f8c68a885ea663473a8f251e9f436",
+      "complete_sha256": "b41fd64fc0c84b3cfb4db74ae5e01e6ec6801ee9c4714178c27ccbb07689e4e9",
+      "status_sha256": "b41fd64fc0c84b3cfb4db74ae5e01e6ec6801ee9c4714178c27ccbb07689e4e9"
+    },
+    {
+      "case_id": "REDS4_00_T33_s1",
+      "result_sha256": "efa7cd4a395e95be5280780035ffbcef5c67db9f31f4df83116016a37633893a",
+      "complete_sha256": "0c6364345feacc986ca82fdf911d93596b6c1b495bf3a5ee64121cc9af089ca9",
+      "status_sha256": "0c6364345feacc986ca82fdf911d93596b6c1b495bf3a5ee64121cc9af089ca9"
+    },
+    {
+      "case_id": "REDS4_01_T9_s1",
+      "result_sha256": "67c6af07a6e66159e74aa0e7db59255df0ad39b68bdf37b4d40c9b9572b43568",
+      "complete_sha256": "771e87ae1924dff03ee7fc509f2fb555603f70ba1fa04d567f12f48495e3c7f8",
+      "status_sha256": "771e87ae1924dff03ee7fc509f2fb555603f70ba1fa04d567f12f48495e3c7f8"
+    },
+    {
+      "case_id": "REDS4_01_T9_s4",
+      "result_sha256": "79cdb2766e7f2d7399918c8ff2395f125dbedfc28df17101b7860c4452c7af46",
+      "complete_sha256": "326ba06cce23b7f248aa8ac7c47c311b8c99e6e5d26875f8f55661ba87a19b22",
+      "status_sha256": "326ba06cce23b7f248aa8ac7c47c311b8c99e6e5d26875f8f55661ba87a19b22"
+    },
+    {
+      "case_id": "REDS4_01_T17_s1",
+      "result_sha256": "5b4c4e887c216e563e1c8d092d07b6f36780e276ab48fe4a1b890bff3b471459",
+      "complete_sha256": "4a9886f45ba24a5c2403f70ad3c7b1bc421be245ed3c6e3ec90423861fe359e7",
+      "status_sha256": "4a9886f45ba24a5c2403f70ad3c7b1bc421be245ed3c6e3ec90423861fe359e7"
+    },
+    {
+      "case_id": "REDS4_01_T17_s4",
+      "result_sha256": "44cfcaadf1296dd6d25f0e53b851f403fcee1bfac224ec30c82a8f6a2819fb9d",
+      "complete_sha256": "e840e6557a32ce8876b94820f54f3f2e1a3a75867cf4fe96a17176ecd35d5b76",
+      "status_sha256": "e840e6557a32ce8876b94820f54f3f2e1a3a75867cf4fe96a17176ecd35d5b76"
+    },
+    {
+      "case_id": "REDS4_01_T33_s1",
+      "result_sha256": "293c495bb13eecaa0996561ea3b9f6bbd06f29e6cad731b7769f16b682ae8f6d",
+      "complete_sha256": "2a4f004090d96d530f5029e5467c2a2ab8e94c3453e1f143f40d626cb0598265",
+      "status_sha256": "2a4f004090d96d530f5029e5467c2a2ab8e94c3453e1f143f40d626cb0598265"
+    }
+  ],
+  "pending": [
+    "E*warp with matching weights/operator/protocol",
+    "separately specified tLPIPS",
+    "full-resolution tiled-versus-untiled encoding comparison (separate run)",
+    "T1.3 Base and Base+teacher update resource profile",
+    "human settlement of D1-D4"
+  ],
+  "T1_1_complete": false,
+  "T1_2_scope": "the frozen 58 crop cases only",
+  "recommendation_status": "prioritize investigating contiguous33 if the separate resource profile allows: 9latent positions and original33-source-frame span, versus17 gives5latent; span2 mask occupies22.2% versus40%, requiring an explicit rounding policy for nominal25%; does not settle D1 or prove optimizer/EMA training fits16GB",
+  "shared_prefix_interpretation": {
+    "RGB_PSNR_SSIM_MSE": "exactly equal on every matching prefix frame in every compared clip",
+    "LPIPS_max_abs_delta_all_checks": 1.1175870895385742e-08,
+    "LPIPS_explanation_status": "tiny differences are consistent with batch-dependent floating arithmetic in CPU LPIPS (tail batch size changes with T); no recomputation was performed to establish their cause",
+    "decoded_pixel_equality_tested": false
+  }
+}

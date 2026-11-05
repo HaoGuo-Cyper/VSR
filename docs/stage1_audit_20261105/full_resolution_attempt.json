@@ -1,0 +1,193 @@
+{
+  "schema": "vsr_vae_full_resolution_failed_attempt_review_v1",
+  "date": "2026-11-05",
+  "run": "/home/hugo/Projects/VSR_/runs/vae_full_resolution_20261105T115318Z",
+  "review_scope": "JSON metadata, recorded traceback and exact text source only; no pixel/pt access, GPU invocation, code modification or retry",
+  "artifact_sha256": {
+    "protocol.json": "31dc4f55199794f06fea8658722bf741a9caa3cc3d0bca50b9e672fdde9c6420",
+    "status.json": "0a6edb6141ab5e0124e8991245798b9c972a32a58637166f6c8b3d6749590bdd",
+    "failure.json": "6f8f09a09eee4fff204a7d87e3d05a57d559af2c9dd5024ad13eb476f44c3dc1",
+    "resource_progress.json": "c659272bfddba974cf60172af77ea38787855319fcdb8280d11e6ab22ab01adf",
+    "vae_initialization.json": "2d57fe1ada69c5dd299d28b139a43a953e8acc32986d121b49ee02d062839a7b",
+    "input.json": "f419c3afdb6d83948648a7dcf9883d5cb25066248e77bad0c3a6b32175f1d4b8",
+    "environment.json": "b1e3fd099ca1a538e054b4c415f4c008bace408e446114939c22645db4318b66"
+  },
+  "status": "failed_capacity_at_common_untiled_decode",
+  "protocol_scope": "REDS4_000_T9_stride1_native_encoding_only_comparison",
+  "input": {
+    "dataset": "REDS4",
+    "record_id": "000",
+    "frames": 9,
+    "stride": 1,
+    "source_start": 0,
+    "source_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "source_hw": [
+      720,
+      1280
+    ],
+    "hr_shape": [
+      1,
+      3,
+      9,
+      720,
+      1280
+    ],
+    "raw_latent_shape": [
+      1,
+      16,
+      3,
+      90,
+      160
+    ],
+    "source_role": "GT",
+    "resize": false,
+    "crop": false,
+    "pad": false,
+    "preview_fps": 30.0,
+    "capture_timing_known": false
+  },
+  "input_record": {
+    "source_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "shape": [
+      1,
+      3,
+      9,
+      720,
+      1280
+    ],
+    "hr_rgb_f32_sha256": "5ea3ec0aa6c351936684b2d192f34122aab1025f6422b651a906c4308d8e0c8c",
+    "resize_crop_padding": false
+  },
+  "phase_boundary": {
+    "untiled_encode": "completed; control flow passed expected latent shape and finite guard before entering decode",
+    "raw_latent_shape_expected_and_guarded": [
+      1,
+      16,
+      3,
+      90,
+      160
+    ],
+    "common_untiled_decode": "failed inside a later native decoder temporal chunk (i>0); exact chunk index not recorded",
+    "completed_encode_decode_paths": 0,
+    "native_tiled_encode": "not reached",
+    "second_common_untiled_decode": "not reached",
+    "CPU_metric_model_load_and_scoring": "not reached",
+    "latent_difference_and_reconstruction_region_differences": "not reached",
+    "result_or_complete_marker_written": false
+  },
+  "resources": {
+    "untiled_encode_encode": {
+      "seconds": 3.5260833270149305,
+      "peak_allocated_bytes": 13616806400,
+      "peak_reserved_bytes": 14109638656,
+      "scope": "including resident VAE and current GPU inputs/latents"
+    },
+    "untiled_encode_common_untiled_decode": {
+      "seconds": 2.3902157769771293,
+      "peak_allocated_bytes": 14594624000,
+      "peak_reserved_bytes": 14862516224,
+      "scope": "including resident VAE and current GPU inputs/latents"
+    }
+  },
+  "wall_seconds_to_failure": 9.153193074045703,
+  "OOM": {
+    "type": "OutOfMemoryError",
+    "message": "CUDA out of memory. Tried to allocate 1.99 GiB. GPU 0 has a total capacity of 15.47 GiB of which 660.31 MiB is free. Process 4816 has 64.72 MiB memory in use. Including non-PyTorch memory, this process has 13.85 GiB memory in use. Of the allocated memory 13.25 GiB is allocated by PyTorch, and 261.78 MiB is reserved by PyTorch but unallocated.",
+    "failed_allocation_reported": "1.99 GiB",
+    "GPU_total_reported": "15.47 GiB",
+    "free_at_failure_reported": "660.31 MiB",
+    "this_process_total_reported": "13.85 GiB including non-PyTorch",
+    "PyTorch_allocated_reported": "13.25 GiB",
+    "PyTorch_reserved_but_unallocated_reported": "261.78 MiB",
+    "cuda_memory_after_exception": {
+      "allocated_bytes": 14231504384,
+      "reserved_bytes": 14506000384,
+      "peak_allocated_bytes": 14594624000,
+      "peak_reserved_bytes": 14862516224
+    },
+    "note": "Recorded peaks precede/describe the failed phase; the failed requested allocation was not included as a successful allocation."
+  },
+  "source_review": {
+    "files": [
+      {
+        "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/VSR-sync/scripts/audit_vae_full_resolution.py",
+        "sha256": "a21f32175bec1191c4b9ac786087c2cbede26411cf75a64d40d7713b2f7755cd"
+      },
+      {
+        "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/VSR-sync/scripts/audit_vae_reconstruction.py",
+        "sha256": "81f156b71f4ab98a62d3658758b10fc1aeb9ad8fbe06bca5caa9c48690efce36"
+      }
+    ],
+    "installed_VAE_source": {
+      "path": "/home/hugo/miniconda3/envs/reprvsr-pretrained/lib/python3.12/site-packages/diffusers/models/autoencoders/autoencoder_kl_wan.py",
+      "sha256": "29ea101ecd11d5886e21c75fa6c27cca38b026d48a0cbe8f061db9b77bbfa9dd"
+    },
+    "harness_references": [
+      {
+        "file": "scripts/audit_vae_full_resolution.py",
+        "lines": "240-247",
+        "finding": "one real FP32 frozen VAE, tiling/slicing disabled; no DiT/T5/model teacher/optimizer"
+      },
+      {
+        "file": "scripts/audit_vae_full_resolution.py",
+        "lines": "264-276",
+        "finding": "no_grad and autocast disabled; first untiled encode shape/finite checks and CPU latent copy precede the same untiled decode"
+      },
+      {
+        "file": "scripts/audit_vae_full_resolution.py",
+        "lines": "278-284",
+        "finding": "paths entry and completed-path count only updated after full decode; no prior reconstruction path exists at this failure"
+      },
+      {
+        "file": "scripts/audit_vae_full_resolution.py",
+        "lines": "285-292",
+        "finding": "VAE release/CPU metric model construction only happens after both encode/decode paths, so metrics had not run"
+      }
+    ],
+    "VAE_references": [
+      {
+        "lines": "1137-1162",
+        "finding": "official untiled encoder clears native caches before and after the causal temporal-chunk loop"
+      },
+      {
+        "lines": "1191-1216",
+        "finding": "official untiled decoder clears caches before its loop and retains required decoder feature caches across latent chunks; normal cleanup after the loop is not reached on OOM"
+      },
+      {
+        "lines": "170-177",
+        "finding": "trace ends at native causal-convolution concatenation/padding; failed operation was F.pad at line176"
+      }
+    ],
+    "harness_bug_found": false,
+    "interpretation": "Inspected control flow and traceback are consistent with capacity exhaustion of the specified native FP32 untiled decoder, rather than an accidental second model/graph or encoded-feature-cache retention in the harness. This is a bounded source review, not proof that all possible memory optimizations or other numerical protocols would fail.",
+    "allocator_caveat": "At the reported failure, free device memory plus reserved-but-unallocated PyTorch memory is below the requested1.99GiB. Clearing the reported reserved pool alone is therefore not established as a way to make this unchanged operation fit."
+  },
+  "verdict": {
+    "execution_capacity_boundary": "failed for this exact CUDA FP32 full-resolution encode+common-untiled-decode comparison",
+    "method_hypothesis": "not tested or rejected by this capacity failure",
+    "encoding_quality_or_tiling_difference": "not measured; neither a full reconstruction nor the tiled encoding path completed",
+    "T1_1_complete": false,
+    "automatic_fallback_or_retry": false,
+    "next_action": "Report the capacity boundary and the completed crop evidence to the human; preserve the failed attempt and wait for D1-D4 decisions. No further GPU work performed by this review."
+  }
+}
