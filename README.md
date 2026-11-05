@@ -1,5 +1,11 @@
 # VSR：Wan2.1 条件视频超分独立实验
 
+## 当前入口（2026-11-05）
+
+新阶段是 EMA 时间自蒸馏 VSR。请先阅读 [AGENTS.md](AGENTS.md)、[DECISIONS.md](DECISIONS.md)、[TASKS.md](TASKS.md) 和 [Stage 0 代码审计](docs/stage0-code-audit-20261105.md)。D1–D4 尚未由用户 SETTLED；本次只整理代码与审计，没有启动训练或 GPU 评价。新目录为 `/home/hugo/Projects/VSR_`，旧 `/home/hugo/Projects/VSR` 提供原始资产，安装与本地链接说明见 [setup](docs/setup-20261105.md)。
+
+以下内容保留为旧实验阶段记录；其中“正在训练”“未测 test”等状态以新交接文件和审计记录为准。
+
 本工程已完成真实预检、两片段恢复闭环、64训练/8来源隔离验证的四组4096步pilot及有限权重搜索；正在进行1641训练/32验证的四组8192步正式轮，之后继续可选HRI和冻结协议的最终评价。pilot只提示Both可能改善部分时间指标，尚未确认模块的稳定收益。只读取旧目录中的原始 HQ-VSR 视频与经过官方逐文件校验的预训练模型，不加载旧微调、LoRA、缓存、优化器或旧生成结果。
 
 ## 运行

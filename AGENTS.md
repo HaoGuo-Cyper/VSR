@@ -33,26 +33,40 @@ The comparison that matters most is against **C1**: the same corruption used as 
 
 **Evaluation status**
 - Internal HQ evaluation is done for all 8 configurations. Results were mixed, with no stable overall gain from the auxiliary losses.
-- External REDS4 + YouHQ40 testing is paused. Base and Align finished all sequences, Relation finished part of them, and Both has not been run.
+- External REDS4 + YouHQ40 testing is paused. Only NoRef training seed 20261102 has external outputs: Base and Align each have all 44 sequence summaries; Relation has 28/44; Both has none. These are 17-frame prefixes with sampler seeds 42/43, not full-source-video evaluation. HRI and the other training seeds have no external sequence summaries in this run. Presence of an output is not a fresh reproduction or a passed quality gate.
 
 **Not done yet:** EMA self-distillation, per-frame-timestep models, VAE-latent alignment, one-step distillation.
 
 ## Where things are
 
-Fill this in during task T0.1, then keep it current.
+Verified by read-only inspection on 2026-11-05. The new source root is `/home/hugo/Projects/VSR_`; the original `/home/hugo/Projects/VSR` remains the read-only asset and historical-results source. Existing configs retain their original paths and hashes. Do not redirect outputs into the historical runs.
 
 | Item | Path |
 | --- | --- |
-| Training code | |
-| Evaluation code | |
-| Configs for the 8 existing configurations | |
-| The 16 checkpoints | |
-| HQ-VSR data (train / val split) | |
-| REDS4, YouHQ40 | |
-| Wan2.1-T2V-1.3B weights and VAE | |
-| Cached text embedding, cached DINOv2 features | |
-| Training logs | |
-| Existing evaluation outputs | |
+| Training code | New source: `/home/hugo/Projects/VSR_/vsr/train.py` (NoRef), `/home/hugo/Projects/VSR_/vsr/reference_training.py` (HRI); original copies under `/home/hugo/Projects/VSR/vsr/` |
+| Evaluation code | `/home/hugo/Projects/VSR_/vsr/{evaluate_hq,evaluate_external,frozen_evaluation,inference,evaluation,perceptual_metrics}.py`; original copies under `/home/hugo/Projects/VSR/vsr/` |
+| Configs for the 8 existing configurations | `/home/hugo/Projects/VSR_/configs/formal_hq_v2_noref.json`, `formal_hq_v2_remaining_noref.json`, `formal_hq_v2_reference.json`; Base/Align repeats in `formal_hq_v2_{noref,reference}_repeat_seed2026110{3,4}.json`. Variants share family configs; original immutable copies are in `/home/hugo/Projects/VSR/configs/`. |
+| The 16 checkpoints | `/home/hugo/Projects/VSR/runs/` — exact run directories and variant mapping below; each filename is `checkpoint_008192.pt`. Eight per family: Base ×3, Align ×3, Relation ×1, Both ×1. |
+| HQ-VSR data (train / val split) | Raw `/home/hugo/Projects/ReprVSR-pretrained/data/HQ-VSR/`; split `/home/hugo/Projects/VSR/manifests/hq_vsr.json`; stride-4 eligibility `/home/hugo/Projects/VSR/manifests/hq_temporal_stride4_inventory.json`. Manifest copies are also in the new source root. |
+| REDS4, YouHQ40 | `/home/hugo/Projects/VSR/data/external/{REDS4,YouHQ40}/`, source archives `/home/hugo/Projects/VSR/data/external/archives/`; manifest `/home/hugo/Projects/VSR/manifests/external.json`; provenance `/home/hugo/Projects/VSR/docs/external-data-provenance.json`. |
+| Wan2.1-T2V-1.3B weights and VAE | `/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers/{transformer,vae}/` (official revision recorded in configs); cached tokenizer/text encoder are in the same model root. |
+| Cached text embedding, cached DINOv2 features | `/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/{fresh_text_embeddings.pt,fresh_teacher_features.pt,fresh_training_cache.pt}`. DINO source `/home/hugo/Projects/VSR/vendor/dinov2/`, weights `/home/hugo/Projects/VSR/weights/dinov2_vitb14_pretrain.pth`; shared frozen-cache reuse is validated by `vsr/train.py:97–139`. |
+| Training logs | `/home/hugo/Projects/VSR/runs/<formal-run>/<variant>/training.jsonl`, sibling `summary.json`, `initialization.json` and `evaluation_history.json`; console logs `/home/hugo/Projects/VSR/runs/console_*.log`. |
+| Existing evaluation outputs | Internal `/home/hugo/Projects/VSR/runs/HQ_test_frozen_T1_policy_20261103T022832.538880Z/`; external `/home/hugo/Projects/VSR/runs/external_paired_frozen_20261103T125240.867596Z/external/`; supporting reports `/home/hugo/Projects/VSR/docs/final_evaluation_v1/` and `/home/hugo/Documents/Codex/2026-11-02/files-pasted-by-the-user-wan2/outputs/`. |
+
+All checkpoint paths below are relative to `/home/hugo/Projects/VSR/runs/`; append `/<variant>/checkpoint_008192.pt`. These files remain outside Git.
+
+| Family / training seed | Run directory | Final variants |
+| --- | --- | --- |
+| NoRef / 20261102 | `formal_hq_v2_noref_20261102T142214.588571Z` | Base |
+| NoRef / 20261102 | `formal_hq_v2_remaining_noref_20261102T153108.569879Z` | Align, Relation, Both |
+| NoRef / 20261103 | `formal_hq_v2_noref_repeat_seed20261103_20261102T194730.270735Z` | Base, Align |
+| NoRef / 20261104 | `formal_hq_v2_noref_repeat_seed20261104_20261102T204607.424405Z` | Base, Align |
+| HRI / 20261102 | `formal_hq_v2_reference_20261102T171545.936007Z` | Base, Align, Relation, Both |
+| HRI / 20261103 | `formal_hq_v2_reference_repeat_seed20261103_20261102T214631.884279Z` | Base, Align |
+| HRI / 20261104 | `formal_hq_v2_reference_repeat_seed20261104_20261102T225815.432804Z` | Base, Align |
+
+The 2026-11-05 T0.1 evidence is in `DECISIONS.md`. D1–D4 remain OPEN; no new training has been authorized by this audit.
 
 ## Working rules
 

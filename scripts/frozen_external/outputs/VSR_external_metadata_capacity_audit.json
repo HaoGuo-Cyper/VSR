@@ -1,0 +1,3169 @@
+{
+  "schema": "vsr_external_metadata_capacity_audit_v1",
+  "created_utc": "2026-11-02T18:14:08.611064+00:00",
+  "no_source_images_or_videos_opened": true,
+  "GPU_used": false,
+  "production_code_or_protocol_modified": false,
+  "source_manifest_sha256": "008a958ea42dd41dfb5ec55e1f76b66f15b5c2326861568a4c8f92493fb0454a",
+  "source_stream_report_sha256": "ea4edaf6a5cb923ac0d656f78de29d0f1dbd104374a186419b1e5d8311437b07",
+  "probe_provenance_status": "manifesthashmatches; allcontainerrecordSHA/bytesjoin;REDSgeometryjoin;probecollectedno frames/noGPU/noqualitymetrics",
+  "resource_snapshot": {
+    "RAM_bytes": {
+      "MemTotal": 32160813056,
+      "MemAvailable": 18039169024,
+      "SwapTotal": 8589930496,
+      "SwapFree": 4399923200
+    },
+    "disk_total_bytes": 982240026624,
+    "disk_available_bytes": 753918087168,
+    "disk_mount_shared_for_project_and_workspace": true,
+    "caveat": "snapshot whileHRItrainingactive; recheckexclusiveevaluationstart; memoryavailabilitywillchange"
+  },
+  "fixed_protocol": {
+    "frames": 17,
+    "scale": 4,
+    "tile_hw": [
+      256,
+      448
+    ],
+    "overlap": 64,
+    "sampling_seeds": [
+      42,
+      43
+    ]
+  },
+  "formulas": {
+    "A": "trueSRheight*width",
+    "B": "ceil16height*ceil16width",
+    "U": "204*A =17-frame float32 RGB",
+    "persistent_restore_buffers": "204*A+417*B (upsampled,padded,accumulator,noise,coverage)",
+    "normalization_extra": "204*B plus204*A when spatialcrop requires contiguouscopy",
+    "outer_unpaired_retained": "487.6875*A bytes",
+    "outer_paired_retained": "946.6875*A bytes",
+    "HRIon_extra": "12*A+12*B bytes suppliedclone andpaddedwholeHRI",
+    "exclusions": "tile intermediates, metrics/networkweights/framework workspaces/masks andallocationcache; arithmetic is not measuredpeak or upperbound"
+  },
+  "datasets": {
+    "YouHQ40": {
+      "sequence_count": 40,
+      "LR_geometry_counts": {
+        "270x270": 3,
+        "270x480": 37
+      },
+      "largest_LR_records": [
+        "001",
+        "002",
+        "003",
+        "004",
+        "005",
+        "006",
+        "007",
+        "008",
+        "009",
+        "010",
+        "011",
+        "012",
+        "013",
+        "014",
+        "015",
+        "016",
+        "017",
+        "018",
+        "019",
+        "020",
+        "021",
+        "022",
+        "023",
+        "024",
+        "025",
+        "026",
+        "027",
+        "028",
+        "029",
+        "030",
+        "031",
+        "032",
+        "033",
+        "034",
+        "035",
+        "036",
+        "037"
+      ],
+      "largest_SR_hw": [
+        1080,
+        1920
+      ],
+      "max_known_combined_GiB": 3.870832622051239,
+      "one_SR_output_per_sequence_RGB_payload_bytes": 4091342400,
+      "shared_input_bicubic_RGB_payload_bytes": 8438393700
+    },
+    "VideoLQ": {
+      "sequence_count": 50,
+      "LR_geometry_counts": {
+        "240x320": 11,
+        "360x480": 4,
+        "360x492": 1,
+        "360x640": 6,
+        "362x640": 1,
+        "480x640": 20,
+        "480x720": 2,
+        "512x640": 3,
+        "576x704": 1,
+        "576x720": 1
+      },
+      "largest_LR_records": [
+        "030"
+      ],
+      "largest_SR_hw": [
+        2304,
+        2880
+      ],
+      "max_known_combined_GiB": 8.11215877532959,
+      "one_SR_output_per_sequence_RGB_payload_bytes": 9763981824,
+      "shared_input_bicubic_RGB_payload_bytes": 10374230688
+    },
+    "REDS4": {
+      "sequence_count": 4,
+      "LR_geometry_counts": {
+        "180x320": 4
+      },
+      "largest_LR_records": [
+        "000",
+        "011",
+        "015",
+        "020"
+      ],
+      "largest_SR_hw": [
+        720,
+        1280
+      ],
+      "max_known_combined_GiB": 1.5412509441375732,
+      "one_SR_output_per_sequence_RGB_payload_bytes": 188006400,
+      "shared_input_bicubic_RGB_payload_bytes": 387763200
+    }
+  },
+  "records": [
+    {
+      "dataset": "YouHQ40",
+      "id": "000",
+      "LR_hw": [
+        270,
+        270
+      ],
+      "SR_hw": [
+        1080,
+        1080
+      ],
+      "padded_SR_hw": [
+        1088,
+        1088
+      ],
+      "target_pixels": 1166400,
+      "tiles": 18,
+      "known_restore_buffers_bytes": 731566848,
+      "normalization_additional_live_bytes": 479429376,
+      "outer_retained_CPU_RGB_bytes": 1104216300,
+      "HRIon_extra_reference_RGB_bytes": 28201728,
+      "known_combined_normalization_allocation_bytes": 2343414252,
+      "known_combined_GiB": 2.1824745945632458,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 59486400,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 122690700
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "001",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "002",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "003",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "004",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "005",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "006",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "007",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "008",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "009",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "010",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "011",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "012",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "013",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "014",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "015",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "016",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "017",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "018",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "019",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "020",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "021",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "022",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "023",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "024",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "025",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "026",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "027",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "028",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "029",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "030",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "031",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "032",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "033",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "034",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "035",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "036",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "037",
+      "LR_hw": [
+        270,
+        480
+      ],
+      "SR_hw": [
+        1080,
+        1920
+      ],
+      "padded_SR_hw": [
+        1088,
+        1920
+      ],
+      "target_pixels": 2073600,
+      "tiles": 30,
+      "known_restore_buffers_bytes": 1294110720,
+      "normalization_additional_live_bytes": 849162240,
+      "outer_retained_CPU_RGB_bytes": 1963051200,
+      "HRIon_extra_reference_RGB_bytes": 49950720,
+      "known_combined_normalization_allocation_bytes": 4156274880,
+      "known_combined_GiB": 3.870832622051239,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 105753600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 218116800
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "038",
+      "LR_hw": [
+        270,
+        270
+      ],
+      "SR_hw": [
+        1080,
+        1080
+      ],
+      "padded_SR_hw": [
+        1088,
+        1088
+      ],
+      "target_pixels": 1166400,
+      "tiles": 18,
+      "known_restore_buffers_bytes": 731566848,
+      "normalization_additional_live_bytes": 479429376,
+      "outer_retained_CPU_RGB_bytes": 1104216300,
+      "HRIon_extra_reference_RGB_bytes": 28201728,
+      "known_combined_normalization_allocation_bytes": 2343414252,
+      "known_combined_GiB": 2.1824745945632458,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 59486400,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 122690700
+    },
+    {
+      "dataset": "YouHQ40",
+      "id": "039",
+      "LR_hw": [
+        270,
+        270
+      ],
+      "SR_hw": [
+        1080,
+        1080
+      ],
+      "padded_SR_hw": [
+        1088,
+        1088
+      ],
+      "target_pixels": 1166400,
+      "tiles": 18,
+      "known_restore_buffers_bytes": 731566848,
+      "normalization_additional_live_bytes": 479429376,
+      "outer_retained_CPU_RGB_bytes": 1104216300,
+      "HRIon_extra_reference_RGB_bytes": 28201728,
+      "known_combined_normalization_allocation_bytes": 2343414252,
+      "known_combined_GiB": 2.1824745945632458,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 59486400,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 122690700
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "000",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "001",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "002",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "003",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "004",
+      "LR_hw": [
+        360,
+        492
+      ],
+      "SR_hw": [
+        1440,
+        1968
+      ],
+      "padded_SR_hw": [
+        1440,
+        1968
+      ],
+      "target_pixels": 2833920,
+      "tiles": 40,
+      "known_restore_buffers_bytes": 1759864320,
+      "normalization_additional_live_bytes": 578119680,
+      "outer_retained_CPU_RGB_bytes": 1382067360,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 3720051360,
+      "known_combined_GiB": 3.4645678102970123,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 144529920,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 153563040,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 2790,
+        "total_tokens_including_padded224384_and_CLS": 2984,
+        "one_dense_FP32_6head_attention_matrix_bytes": 213702144,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "005",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "006",
+      "LR_hw": [
+        512,
+        640
+      ],
+      "SR_hw": [
+        2048,
+        2560
+      ],
+      "padded_SR_hw": [
+        2048,
+        2560
+      ],
+      "target_pixels": 5242880,
+      "tiles": 77,
+      "known_restore_buffers_bytes": 3255828480,
+      "normalization_additional_live_bytes": 1069547520,
+      "outer_retained_CPU_RGB_bytes": 2556887040,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6882263040,
+      "known_combined_GiB": 6.40960693359375,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 267386880,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 284098560,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 5120,
+        "total_tokens_including_padded224384_and_CLS": 5314,
+        "one_dense_FP32_6head_attention_matrix_bytes": 677726304,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "007",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "008",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "009",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "010",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "011",
+      "LR_hw": [
+        512,
+        640
+      ],
+      "SR_hw": [
+        2048,
+        2560
+      ],
+      "padded_SR_hw": [
+        2048,
+        2560
+      ],
+      "target_pixels": 5242880,
+      "tiles": 77,
+      "known_restore_buffers_bytes": 3255828480,
+      "normalization_additional_live_bytes": 1069547520,
+      "outer_retained_CPU_RGB_bytes": 2556887040,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6882263040,
+      "known_combined_GiB": 6.40960693359375,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 267386880,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 284098560,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 5120,
+        "total_tokens_including_padded224384_and_CLS": 5314,
+        "one_dense_FP32_6head_attention_matrix_bytes": 677726304,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "012",
+      "LR_hw": [
+        360,
+        640
+      ],
+      "SR_hw": [
+        1440,
+        2560
+      ],
+      "padded_SR_hw": [
+        1440,
+        2560
+      ],
+      "target_pixels": 3686400,
+      "tiles": 56,
+      "known_restore_buffers_bytes": 2289254400,
+      "normalization_additional_live_bytes": 752025600,
+      "outer_retained_CPU_RGB_bytes": 1797811200,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 4839091200,
+      "known_combined_GiB": 4.5067548751831055,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 188006400,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 199756800,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 3600,
+        "total_tokens_including_padded224384_and_CLS": 3794,
+        "one_dense_FP32_6head_attention_matrix_bytes": 345466464,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "013",
+      "LR_hw": [
+        360,
+        640
+      ],
+      "SR_hw": [
+        1440,
+        2560
+      ],
+      "padded_SR_hw": [
+        1440,
+        2560
+      ],
+      "target_pixels": 3686400,
+      "tiles": 56,
+      "known_restore_buffers_bytes": 2289254400,
+      "normalization_additional_live_bytes": 752025600,
+      "outer_retained_CPU_RGB_bytes": 1797811200,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 4839091200,
+      "known_combined_GiB": 4.5067548751831055,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 188006400,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 199756800,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 3600,
+        "total_tokens_including_padded224384_and_CLS": 3794,
+        "one_dense_FP32_6head_attention_matrix_bytes": 345466464,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "014",
+      "LR_hw": [
+        360,
+        480
+      ],
+      "SR_hw": [
+        1440,
+        1920
+      ],
+      "padded_SR_hw": [
+        1440,
+        1920
+      ],
+      "target_pixels": 2764800,
+      "tiles": 40,
+      "known_restore_buffers_bytes": 1716940800,
+      "normalization_additional_live_bytes": 564019200,
+      "outer_retained_CPU_RGB_bytes": 1348358400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 3629318400,
+      "known_combined_GiB": 3.380066156387329,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 141004800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 149817600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 2700,
+        "total_tokens_including_padded224384_and_CLS": 2894,
+        "one_dense_FP32_6head_attention_matrix_bytes": 201005664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "015",
+      "LR_hw": [
+        360,
+        640
+      ],
+      "SR_hw": [
+        1440,
+        2560
+      ],
+      "padded_SR_hw": [
+        1440,
+        2560
+      ],
+      "target_pixels": 3686400,
+      "tiles": 56,
+      "known_restore_buffers_bytes": 2289254400,
+      "normalization_additional_live_bytes": 752025600,
+      "outer_retained_CPU_RGB_bytes": 1797811200,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 4839091200,
+      "known_combined_GiB": 4.5067548751831055,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 188006400,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 199756800,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 3600,
+        "total_tokens_including_padded224384_and_CLS": 3794,
+        "one_dense_FP32_6head_attention_matrix_bytes": 345466464,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "016",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "017",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "018",
+      "LR_hw": [
+        360,
+        640
+      ],
+      "SR_hw": [
+        1440,
+        2560
+      ],
+      "padded_SR_hw": [
+        1440,
+        2560
+      ],
+      "target_pixels": 3686400,
+      "tiles": 56,
+      "known_restore_buffers_bytes": 2289254400,
+      "normalization_additional_live_bytes": 752025600,
+      "outer_retained_CPU_RGB_bytes": 1797811200,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 4839091200,
+      "known_combined_GiB": 4.5067548751831055,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 188006400,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 199756800,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 3600,
+        "total_tokens_including_padded224384_and_CLS": 3794,
+        "one_dense_FP32_6head_attention_matrix_bytes": 345466464,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "019",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "020",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "021",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "022",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "023",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "024",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "025",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "026",
+      "LR_hw": [
+        360,
+        640
+      ],
+      "SR_hw": [
+        1440,
+        2560
+      ],
+      "padded_SR_hw": [
+        1440,
+        2560
+      ],
+      "target_pixels": 3686400,
+      "tiles": 56,
+      "known_restore_buffers_bytes": 2289254400,
+      "normalization_additional_live_bytes": 752025600,
+      "outer_retained_CPU_RGB_bytes": 1797811200,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 4839091200,
+      "known_combined_GiB": 4.5067548751831055,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 188006400,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 199756800,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 3600,
+        "total_tokens_including_padded224384_and_CLS": 3794,
+        "one_dense_FP32_6head_attention_matrix_bytes": 345466464,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "027",
+      "LR_hw": [
+        360,
+        640
+      ],
+      "SR_hw": [
+        1440,
+        2560
+      ],
+      "padded_SR_hw": [
+        1440,
+        2560
+      ],
+      "target_pixels": 3686400,
+      "tiles": 56,
+      "known_restore_buffers_bytes": 2289254400,
+      "normalization_additional_live_bytes": 752025600,
+      "outer_retained_CPU_RGB_bytes": 1797811200,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 4839091200,
+      "known_combined_GiB": 4.5067548751831055,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 188006400,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 199756800,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 3600,
+        "total_tokens_including_padded224384_and_CLS": 3794,
+        "one_dense_FP32_6head_attention_matrix_bytes": 345466464,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "028",
+      "LR_hw": [
+        360,
+        480
+      ],
+      "SR_hw": [
+        1440,
+        1920
+      ],
+      "padded_SR_hw": [
+        1440,
+        1920
+      ],
+      "target_pixels": 2764800,
+      "tiles": 40,
+      "known_restore_buffers_bytes": 1716940800,
+      "normalization_additional_live_bytes": 564019200,
+      "outer_retained_CPU_RGB_bytes": 1348358400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 3629318400,
+      "known_combined_GiB": 3.380066156387329,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 141004800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 149817600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 2700,
+        "total_tokens_including_padded224384_and_CLS": 2894,
+        "one_dense_FP32_6head_attention_matrix_bytes": 201005664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "029",
+      "LR_hw": [
+        360,
+        480
+      ],
+      "SR_hw": [
+        1440,
+        1920
+      ],
+      "padded_SR_hw": [
+        1440,
+        1920
+      ],
+      "target_pixels": 2764800,
+      "tiles": 40,
+      "known_restore_buffers_bytes": 1716940800,
+      "normalization_additional_live_bytes": 564019200,
+      "outer_retained_CPU_RGB_bytes": 1348358400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 3629318400,
+      "known_combined_GiB": 3.380066156387329,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 141004800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 149817600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 2700,
+        "total_tokens_including_padded224384_and_CLS": 2894,
+        "one_dense_FP32_6head_attention_matrix_bytes": 201005664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "030",
+      "LR_hw": [
+        576,
+        720
+      ],
+      "SR_hw": [
+        2304,
+        2880
+      ],
+      "padded_SR_hw": [
+        2304,
+        2880
+      ],
+      "target_pixels": 6635520,
+      "tiles": 96,
+      "known_restore_buffers_bytes": 4120657920,
+      "normalization_additional_live_bytes": 1353646080,
+      "outer_retained_CPU_RGB_bytes": 3236060160,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 8710364160,
+      "known_combined_GiB": 8.11215877532959,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 338411520,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 359562240,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 6480,
+        "total_tokens_including_padded224384_and_CLS": 6674,
+        "one_dense_FP32_6head_attention_matrix_bytes": 1069014624,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "031",
+      "LR_hw": [
+        576,
+        704
+      ],
+      "SR_hw": [
+        2304,
+        2816
+      ],
+      "padded_SR_hw": [
+        2304,
+        2816
+      ],
+      "target_pixels": 6488064,
+      "tiles": 96,
+      "known_restore_buffers_bytes": 4029087744,
+      "normalization_additional_live_bytes": 1323565056,
+      "outer_retained_CPU_RGB_bytes": 3164147712,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 8516800512,
+      "known_combined_GiB": 7.931888580322266,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 330891264,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 351571968,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 6336,
+        "total_tokens_including_padded224384_and_CLS": 6530,
+        "one_dense_FP32_6head_attention_matrix_bytes": 1023381600,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "032",
+      "LR_hw": [
+        480,
+        720
+      ],
+      "SR_hw": [
+        1920,
+        2880
+      ],
+      "padded_SR_hw": [
+        1920,
+        2880
+      ],
+      "target_pixels": 5529600,
+      "tiles": 80,
+      "known_restore_buffers_bytes": 3433881600,
+      "normalization_additional_live_bytes": 1128038400,
+      "outer_retained_CPU_RGB_bytes": 2696716800,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 7258636800,
+      "known_combined_GiB": 6.760132312774658,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 282009600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 299635200,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 5400,
+        "total_tokens_including_padded224384_and_CLS": 5594,
+        "one_dense_FP32_6head_attention_matrix_bytes": 751028064,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "033",
+      "LR_hw": [
+        480,
+        720
+      ],
+      "SR_hw": [
+        1920,
+        2880
+      ],
+      "padded_SR_hw": [
+        1920,
+        2880
+      ],
+      "target_pixels": 5529600,
+      "tiles": 80,
+      "known_restore_buffers_bytes": 3433881600,
+      "normalization_additional_live_bytes": 1128038400,
+      "outer_retained_CPU_RGB_bytes": 2696716800,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 7258636800,
+      "known_combined_GiB": 6.760132312774658,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 282009600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 299635200,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 5400,
+        "total_tokens_including_padded224384_and_CLS": 5594,
+        "one_dense_FP32_6head_attention_matrix_bytes": 751028064,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "034",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "035",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "036",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "037",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "038",
+      "LR_hw": [
+        512,
+        640
+      ],
+      "SR_hw": [
+        2048,
+        2560
+      ],
+      "padded_SR_hw": [
+        2048,
+        2560
+      ],
+      "target_pixels": 5242880,
+      "tiles": 77,
+      "known_restore_buffers_bytes": 3255828480,
+      "normalization_additional_live_bytes": 1069547520,
+      "outer_retained_CPU_RGB_bytes": 2556887040,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6882263040,
+      "known_combined_GiB": 6.40960693359375,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 267386880,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 284098560,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 5120,
+        "total_tokens_including_padded224384_and_CLS": 5314,
+        "one_dense_FP32_6head_attention_matrix_bytes": 677726304,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "039",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "040",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "041",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "042",
+      "LR_hw": [
+        360,
+        480
+      ],
+      "SR_hw": [
+        1440,
+        1920
+      ],
+      "padded_SR_hw": [
+        1440,
+        1920
+      ],
+      "target_pixels": 2764800,
+      "tiles": 40,
+      "known_restore_buffers_bytes": 1716940800,
+      "normalization_additional_live_bytes": 564019200,
+      "outer_retained_CPU_RGB_bytes": 1348358400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 3629318400,
+      "known_combined_GiB": 3.380066156387329,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 141004800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 149817600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 2700,
+        "total_tokens_including_padded224384_and_CLS": 2894,
+        "one_dense_FP32_6head_attention_matrix_bytes": 201005664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "043",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "044",
+      "LR_hw": [
+        362,
+        640
+      ],
+      "SR_hw": [
+        1448,
+        2560
+      ],
+      "padded_SR_hw": [
+        1456,
+        2560
+      ],
+      "target_pixels": 3706880,
+      "tiles": 56,
+      "known_restore_buffers_bytes": 2310512640,
+      "normalization_additional_live_bytes": 1516584960,
+      "outer_retained_CPU_RGB_bytes": 1807799040,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 5634896640,
+      "known_combined_GiB": 5.247906446456909,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 189050880,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 200866560,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 3680,
+        "total_tokens_including_padded224384_and_CLS": 3874,
+        "one_dense_FP32_6head_attention_matrix_bytes": 360189024,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "045",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "046",
+      "LR_hw": [
+        240,
+        320
+      ],
+      "SR_hw": [
+        960,
+        1280
+      ],
+      "padded_SR_hw": [
+        960,
+        1280
+      ],
+      "target_pixels": 1228800,
+      "tiles": 20,
+      "known_restore_buffers_bytes": 763084800,
+      "normalization_additional_live_bytes": 250675200,
+      "outer_retained_CPU_RGB_bytes": 599270400,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 1613030400,
+      "known_combined_GiB": 1.5022516250610352,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 62668800,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 66585600,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 1200,
+        "total_tokens_including_padded224384_and_CLS": 1394,
+        "one_dense_FP32_6head_attention_matrix_bytes": 46637664,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "047",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "048",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "VideoLQ",
+      "id": "049",
+      "LR_hw": [
+        480,
+        640
+      ],
+      "SR_hw": [
+        1920,
+        2560
+      ],
+      "padded_SR_hw": [
+        1920,
+        2560
+      ],
+      "target_pixels": 4915200,
+      "tiles": 70,
+      "known_restore_buffers_bytes": 3052339200,
+      "normalization_additional_live_bytes": 1002700800,
+      "outer_retained_CPU_RGB_bytes": 2397081600,
+      "HRIon_extra_reference_RGB_bytes": 0,
+      "known_combined_normalization_allocation_bytes": 6452121600,
+      "known_combined_GiB": 6.009006500244141,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 250675200,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 266342400,
+      "MUSIQ_shape_estimate": {
+        "native_patch_count": 4800,
+        "total_tokens_including_padded224384_and_CLS": 4994,
+        "one_dense_FP32_6head_attention_matrix_bytes": 598560864,
+        "scope": "shape-derived only; default pinnedMUSIQ has14blocks/6heads, retains native patches, evaluatesbatch1. Multipleattention/mask temporaries andconv/MLP tensors alsoexist; no runtime/peak measurement."
+      }
+    },
+    {
+      "dataset": "REDS4",
+      "id": "000",
+      "LR_hw": [
+        180,
+        320
+      ],
+      "SR_hw": [
+        720,
+        1280
+      ],
+      "padded_SR_hw": [
+        720,
+        1280
+      ],
+      "target_pixels": 921600,
+      "tiles": 16,
+      "known_restore_buffers_bytes": 572313600,
+      "normalization_additional_live_bytes": 188006400,
+      "outer_retained_CPU_RGB_bytes": 872467200,
+      "HRIon_extra_reference_RGB_bytes": 22118400,
+      "known_combined_normalization_allocation_bytes": 1654905600,
+      "known_combined_GiB": 1.5412509441375732,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 47001600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 96940800
+    },
+    {
+      "dataset": "REDS4",
+      "id": "011",
+      "LR_hw": [
+        180,
+        320
+      ],
+      "SR_hw": [
+        720,
+        1280
+      ],
+      "padded_SR_hw": [
+        720,
+        1280
+      ],
+      "target_pixels": 921600,
+      "tiles": 16,
+      "known_restore_buffers_bytes": 572313600,
+      "normalization_additional_live_bytes": 188006400,
+      "outer_retained_CPU_RGB_bytes": 872467200,
+      "HRIon_extra_reference_RGB_bytes": 22118400,
+      "known_combined_normalization_allocation_bytes": 1654905600,
+      "known_combined_GiB": 1.5412509441375732,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 47001600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 96940800
+    },
+    {
+      "dataset": "REDS4",
+      "id": "015",
+      "LR_hw": [
+        180,
+        320
+      ],
+      "SR_hw": [
+        720,
+        1280
+      ],
+      "padded_SR_hw": [
+        720,
+        1280
+      ],
+      "target_pixels": 921600,
+      "tiles": 16,
+      "known_restore_buffers_bytes": 572313600,
+      "normalization_additional_live_bytes": 188006400,
+      "outer_retained_CPU_RGB_bytes": 872467200,
+      "HRIon_extra_reference_RGB_bytes": 22118400,
+      "known_combined_normalization_allocation_bytes": 1654905600,
+      "known_combined_GiB": 1.5412509441375732,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 47001600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 96940800
+    },
+    {
+      "dataset": "REDS4",
+      "id": "020",
+      "LR_hw": [
+        180,
+        320
+      ],
+      "SR_hw": [
+        720,
+        1280
+      ],
+      "padded_SR_hw": [
+        720,
+        1280
+      ],
+      "target_pixels": 921600,
+      "tiles": 16,
+      "known_restore_buffers_bytes": 572313600,
+      "normalization_additional_live_bytes": 188006400,
+      "outer_retained_CPU_RGB_bytes": 872467200,
+      "HRIon_extra_reference_RGB_bytes": 22118400,
+      "known_combined_normalization_allocation_bytes": 1654905600,
+      "known_combined_GiB": 1.5412509441375732,
+      "allocation_scope": "known simultaneous fullsequence buffers; excludes tile/model/metrics/framework/allocator temporaries; not measuredpeak or an upperbound",
+      "one_output_uint8_RGB_payload_bytes": 47001600,
+      "one_output_PNG_files": 17,
+      "input_and_bicubic_uint8_RGB_payload_bytes": 96940800
+    }
+  ],
+  "storage_scenarios": {
+    "one_noRef_plus_one_HRI": {
+      "datasets": {
+        "YouHQ40": {
+          "inference_modes_per_sequence": 3,
+          "sampling_seeds": 2,
+          "output_copies_per_sequence": 6,
+          "raw_RGB_payload_with_shared_inputs_bytes": 32986448100,
+          "PNG_file_count": 6120
+        },
+        "VideoLQ": {
+          "inference_modes_per_sequence": 2,
+          "sampling_seeds": 2,
+          "output_copies_per_sequence": 4,
+          "raw_RGB_payload_with_shared_inputs_bytes": 49430157984,
+          "PNG_file_count": 5100
+        },
+        "REDS4": {
+          "inference_modes_per_sequence": 3,
+          "sampling_seeds": 2,
+          "output_copies_per_sequence": 6,
+          "raw_RGB_payload_with_shared_inputs_bytes": 1515801600,
+          "PNG_file_count": 612
+        }
+      },
+      "raw_RGB_payload_total_bytes": 83932407684,
+      "raw_RGB_payload_total_GiB": 78.16814601793885,
+      "PNG_file_count": 11832,
+      "scope": "uncompressedRGBpayload planningreference, NOT compressedPNGsize or a strictwhole-run upperbound; excludes scanline/filter/header/zlib overhead, previews/blindZIP/checkpoints/metadata."
+    },
+    "all4_noRef_plus_all4_HRI": {
+      "datasets": {
+        "YouHQ40": {
+          "inference_modes_per_sequence": 12,
+          "sampling_seeds": 2,
+          "output_copies_per_sequence": 24,
+          "raw_RGB_payload_with_shared_inputs_bytes": 106630611300,
+          "PNG_file_count": 18360
+        },
+        "VideoLQ": {
+          "inference_modes_per_sequence": 8,
+          "sampling_seeds": 2,
+          "output_copies_per_sequence": 16,
+          "raw_RGB_payload_with_shared_inputs_bytes": 166597939872,
+          "PNG_file_count": 15300
+        },
+        "REDS4": {
+          "inference_modes_per_sequence": 12,
+          "sampling_seeds": 2,
+          "output_copies_per_sequence": 24,
+          "raw_RGB_payload_with_shared_inputs_bytes": 4899916800,
+          "PNG_file_count": 1836
+        }
+      },
+      "raw_RGB_payload_total_bytes": 278128467972,
+      "raw_RGB_payload_total_GiB": 259.0273208655417,
+      "PNG_file_count": 35496,
+      "scope": "uncompressedRGBpayload planningreference, NOT compressedPNGsize or a strictwhole-run upperbound; excludes scanline/filter/header/zlib overhead, previews/blindZIP/checkpoints/metadata."
+    }
+  },
+  "conclusions": [
+    "No current RAM/disk hard blocker demonstrated by metadata accounting: largestVideoLQ030 is LR576x720 ->SR2304x2880,96tiles, knowncombinednormalizationbuffersabout8.11GiB, below currentsnapshotMemAvailableabout16.80GiB. Realpeak remainsunmeasured.",
+    "VideoLQ is larger than the plannednative720x1280valQA. Source030 nativeMUSIQ alone has6674tokens; one dense6headFP32attentionmatrixabout0.996GiB, with14sequentialblocks andadditionalmatrices/masks. Batch1prevents17framesbatchedattention butdoesnotcapnative tokens. Runtime andpeak needinfrastructurepreflight; no automaticresize/tokenlimit/frameskip.",
+    "LargestpairedYouHQ40LR270x480 ->HR1080x1920/padded1088x1920:30tiles. WholeHRI T1VAE andglobalHRIcrossattention dimensions exceed planned720x1280valQA, soGPUfeasibility for thisreferencegeometry isnotyetestablished. Metadata alone doesnotproveOOM orfit.",
+    "Before frozenexternalpixel evaluation, perform predeclaredlargest-shape CPU/MUSIQ andwholeHRI GPUresource checks using syntheticpixels or authorizedHQ-valmaterial; retain anyOOM/cost andnewinfrastructureversion, never silencetruncate/resize or choosequalitysettingsfromtestresults.",
+    "Diskcurrently~702.14GiBfree. UncompressedRGBpayloadreference even forall4noRef+all4HRI/2samplingseeds is farbelowfreecapacity; actualPNGcompression, playback/blindZIP andcheckpoint additionsstillneedbudgeting. No compressedbytepredictionmade."
+  ],
+  "independent_buffer_formula_review": {
+    "status": "consistent",
+    "reviewed_by": "independent_read_only_assistant",
+    "aligned_restore_bytes": "825*A",
+    "aligned_unpaired_combined_bytes": "1312.6875*A",
+    "aligned_paired_combined_bytes": "1771.6875*A",
+    "padded_restore_transient_bytes": "408*A+621*B",
+    "notes": [
+      "Allformulas areknownliveallocationaccounting, notmeasuredpeak/upperbound.",
+      "QuantizationretainsreturnedRGB+uint8+conversion/divisiontemporaries; seedsrunsequentiallysoRAMdoesnotmultiplybyseedcount.",
+      "Saved/scored bicubic/inputbuffers currentlyremainlive throughrestoration; anyfuture releaseoptimizationmustbe separatelybytevalidated beforeexternalexecution, never changeactiveproducer now."
+    ]
+  },
+  "audit_script_sha256": "bcb00707e15b0167e3ec0ad6aa4119bfd02479fa9854f63d84ac5bee5a9e3597",
+  "source_code_sha256": {
+    "vsr/inference.py": "c01b2349d2af7126d23d05202714aef8809a697af0bb81ff8aa8c53c9ac949d6",
+    "vsr/frozen_evaluation.py": "80ded9e065255d73b60fcb8e45a84b34eb89bbfcad4ea8adf68ca3bad34ddece",
+    "vsr/external_data.py": "0a185c08bf158e11f7a424f8304611b841396293b66daf43011aa84ee9f629f1",
+    "vsr/no_reference.py": "60544d481ca794a1773698a6ad92fbd349dcde112763d16e4a9fbb05c550f6b1",
+    "vsr/reference.py": "c46325adb78cb437741c3d268aee80673b0c48384adc1ea536751809ff703fb0",
+    "vendor/musiq_pytorch/musiq_arch.py": "2e53bbc827dce7bf7ed5e9040801432dfe162a83ee6c79597003e857481c4ed7",
+    "vendor/musiq_pytorch/multiscale_trans_util.py": "6d13c02ec4c93112282342a803ca5efca1d4eef3ddd033bf1aad6423c7904133"
+  }
+}

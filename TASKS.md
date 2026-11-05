@@ -7,15 +7,15 @@ Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
 
 ## Stage 0. Consolidate existing results (start now, no training)
 
-- [ ] **T0.1 Map the codebase.** Locate the training code, evaluation code, configs, checkpoints, data and logs, and fill in "Where things are" in `AGENTS.md`. From the code, answer:
+- [x] **T0.1 Map the codebase.** (2026-11-05: code/assets mapped; D1–D3 documented with code evidence; see `docs/stage0-code-audit-20261105.md`.) Locate the training code, evaluation code, configs, checkpoints, data and logs, and fill in "Where things are" in `AGENTS.md`. From the code, answer:
   - how training frames are encoded by the VAE (D1);
   - how test sequences are fed at inference (D2);
   - which blocks the LR branch injects into, and whether it mixes frames before injection (D3).
 
   *Done when:* all paths are filled in, and D1–D3 in `DECISIONS.md` have code-level evidence (file and line references).
-- [ ] **T0.2 Freeze the inference protocol.** Record the protocol used for the finished REDS4 and YouHQ40 runs: sampler, steps, sampler seed, tiling, temporal window and overlap. Put it in `RESULTS.md`.
+- [~] **T0.2 Freeze the inference protocol.** (2026-11-05: historical protocol recovered statically in `RESULTS.md`; no sequence rerun, so reproduction requirement remains open.) Record the protocol used for the finished REDS4 and YouHQ40 runs: sampler, steps, sampler seed, tiling, temporal window and overlap. Put it in `RESULTS.md`.
   *Done when:* re-running one sequence with one checkpoint reproduces the stored numbers.
-- [ ] **T0.3 Finish external evaluation.** Run the remaining Relation sequences and all Both sequences, in both families, with the frozen protocol.
+- [!] **T0.3 Finish external evaluation.** (2026-11-05: blocked pending a fresh-output continuation plan: old worker is fresh-only after user pause; frozen testing is first-17-frame prefixes with stride 1 versus training stride 4, and covers 8 original checkpoints rather than all 16.) Run the remaining Relation sequences and all Both sequences, in both families, with the frozen protocol.
   *Done when:* all 16 checkpoints have per-clip REDS4 and YouHQ40 metrics saved as CSV.
 - [ ] **T0.4 Statistics.** For each family:
   - mean ± std over seeds for Base and Align;
@@ -29,6 +29,8 @@ Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
 
 **Gate G0:** report to the human. Stage 1 can proceed without waiting.
 
+2026-11-05 audit: **not passed**; T0.2 reproduction and T0.3–T0.5 remain unfinished. Contradictions between the handoff and the frozen external protocol are recorded in `RESULTS.md`. Per AGENTS.md rule 8, report them and await the next GPU evaluation/profiling plan; no GPU job was launched.
+
 ## Stage 1. Protocol and VAE audit (start now, no training)
 
 - [ ] **T1.1 VAE reconstruction audit.** Use the HQ-VSR validation split and a REDS4 subset. Encode and decode at stride 1 vs stride 4, with clip lengths 9, 17 and 33. Measure PSNR, SSIM, LPIPS, E*warp, tLPIPS and error per frame index. Also compare tiled vs untiled encoding at full resolution.
@@ -39,6 +41,8 @@ Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
 - [ ] **T1.4 Protocol proposal.** Write a recommendation for D1 and D2 with the evidence, and mark them PROPOSED in `DECISIONS.md`. Then **stop and wait** for the human to settle D1–D4.
 
 **Gate G1:** the human has settled D1–D4.
+
+2026-11-05 audit: **not passed**; Stage 1 measurements are not run, and D1–D4 have not been settled by the human.
 
 ## Stage 2. Baseline and test sets
 
