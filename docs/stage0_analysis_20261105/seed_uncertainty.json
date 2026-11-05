@@ -1,0 +1,803 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "status": "exploratory_internal_validation_supplement",
+  "source_root": "/home/hugo/Projects/VSR",
+  "scope": "Base/Align only; val32 only; all five predeclared contexts",
+  "training_seeds": [
+    20261102,
+    20261103,
+    20261104
+  ],
+  "training_seed_count": 3,
+  "clip_count": 32,
+  "source_group_count": 32,
+  "sampling_seeds_averaged_within_clip": [
+    42,
+    43
+  ],
+  "bootstrap": {
+    "replicates": 10000,
+    "rng_seed": 20261105,
+    "method": "crossed paired training-seed/source-group percentile bootstrap",
+    "draw_order": "draw all training-seed indices, then all source-group indices with one NumPy default_rng",
+    "per_replicate": "draw 3 training seeds with replacement and 32 source groups with replacement; use their Cartesian product, keep Base/Align and all metrics/contexts paired",
+    "source_group_weighting": "retain every clip in each drawn source; equal clip weights, then equal drawn training-seed weights",
+    "confidence": 0.95,
+    "numpy_version": "2.5.2",
+    "p_values_computed": false,
+    "multiplicity_correction": false,
+    "Stage5_significance_decision": false,
+    "limitation": "Only three observed training-seed pairs; exploratory descriptive intervals are coarse and do not reliably characterize a training-seed population."
+  },
+  "original_conditional_interval": {
+    "path": "docs/stage0_analysis_20261105/statistics.json",
+    "definition": "Original statistics report resampled source groups after averaging each clip's three fixed training-seed deltas; it excludes training-seed uncertainty.",
+    "bootstrap": {
+      "method": "paired source-cluster percentile bootstrap of clip-macro deltas",
+      "replicates": 10000,
+      "seed": 20261102,
+      "confidence": 0.95,
+      "training_instances": "fixed; average paired training-seed deltas within clip before source resampling",
+      "training_seed_uncertainty_included": false,
+      "p_values_computed": false,
+      "multiplicity_correction": false
+    }
+  },
+  "audit": {
+    "validation": {
+      "coverage": {
+        "HQ_val32/NoRef/all_frames": {
+          "clips": 32,
+          "sources": 32
+        },
+        "HQ_val32/HRI/ref0/hri_on": {
+          "clips": 32,
+          "sources": 32
+        },
+        "HQ_val32/HRI/ref0/hri_off": {
+          "clips": 32,
+          "sources": 32
+        },
+        "HQ_val32/HRI/ref4/hri_on": {
+          "clips": 32,
+          "sources": 32
+        },
+        "HQ_val32/HRI/ref4/hri_off": {
+          "clips": 32,
+          "sources": 32
+        }
+      },
+      "sampling_and_metric_contracts": {
+        "NoRef": {
+          "sampling": {
+            "seeds": [
+              42,
+              43
+            ],
+            "steps": 20,
+            "cfg": 1.0,
+            "initial_state": "standard_gaussian",
+            "matched_noise_across_modes": true,
+            "inference_inputs": [
+              "LRV latent",
+              "caption embedding"
+            ],
+            "hri": false,
+            "shuffled_rule": "next input clip circularly; same text and noise"
+          },
+          "metric_protocol": {
+            "rgb_range": [
+              0,
+              1
+            ],
+            "border_shave": 0,
+            "frame_aggregation": "arithmetic mean per video",
+            "seed_aggregation": "all seeds arithmetic mean per video; no best-seed selection",
+            "video_aggregation": "equal video weights",
+            "psnr_mse_floor": 1e-12,
+            "psnr_max_db": 120.0,
+            "ssim_implementation": "skimage.metrics.structural_similarity",
+            "ssim_options": {
+              "channel_axis": -1,
+              "data_range": 1.0,
+              "win_size": 7,
+              "gaussian_weights": false,
+              "use_sample_covariance": true
+            },
+            "measurement_source": "lossless float32 RGB tensors; MP4 only for playback"
+          },
+          "perceptual_audit": {
+            "lpips_package": "0.1.4",
+            "lpips_network": "alex",
+            "lpips_version": "0.1",
+            "alexnet_sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02",
+            "linear_sha256": "df73285e35b22355a2df87cdb6b70b343713b667eddbda73e1977e0c860835c0",
+            "tecogan_revision": "bc747a4651c1e08bd0a73bed08c4cb9fac99b4d5",
+            "tecogan_source": "https://github.com/thunil/TecoGAN/blob/bc747a4651c1e08bd0a73bed08c4cb9fac99b4d5/metrics.py",
+            "frozen": true,
+            "network_access": false
+          }
+        },
+        "HRI": {
+          "sampling": {
+            "seeds": [
+              42,
+              43
+            ],
+            "steps": 20,
+            "cfg": 1.0,
+            "matched_noise_across_modes": true,
+            "initial_state": "standard_gaussian",
+            "inference_inputs": [
+              "LRV latent",
+              "caption embedding",
+              "optional supplied HRI latent and known index"
+            ],
+            "frame_count_and_fps": "complete input preserved",
+            "hri_off": "None latent/index with explicit false validity vector"
+          },
+          "metric_protocol": {
+            "primary": "same non-reference frames in hri_on and hri_off; provided frame excluded from both",
+            "provided_reference_frame": "reported separately for each mode",
+            "distance_gain": "abs(original_frame_index-reference_index); distance zero excluded",
+            "first_and_middle_reference": "separate cases; never pool reference choices",
+            "measurement_source": "lossless float32 RGB; full videos saved; MP4 playback only",
+            "rgb_range": [
+              0,
+              1
+            ],
+            "border_shave": 0,
+            "psnr_mse_floor": 1e-12,
+            "ssim": "existing rgb_metrics; skimage SSIM defaults, RGB data_range=1",
+            "aggregation": "all seeds mean per video, then equal video weights"
+          },
+          "perceptual_audit": {
+            "lpips_package": "0.1.4",
+            "lpips_network": "alex",
+            "lpips_version": "0.1",
+            "alexnet_sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02",
+            "linear_sha256": "df73285e35b22355a2df87cdb6b70b343713b667eddbda73e1977e0c860835c0",
+            "tecogan_revision": "bc747a4651c1e08bd0a73bed08c4cb9fac99b4d5",
+            "tecogan_source": "https://github.com/thunil/TecoGAN/blob/bc747a4651c1e08bd0a73bed08c4cb9fac99b4d5/metrics.py",
+            "frozen": true,
+            "network_access": false
+          }
+        }
+      },
+      "target_stored_digest_map_sha256": "db105f117eb6673ee8f957f1558ccc098a45766b8d4774a9b096cf3d012004df",
+      "validation_ids_sha256": "22895d75e5506318c06ce833d81d7547c444837c4179f52eccbee66641f4c6ff",
+      "underlying_target_payload_digests_recomputed": false
+    },
+    "json_file_count": 90,
+    "sorted_json_path_and_sha256_map_fingerprint": "e5a18d1bc42f5dbf3ea8f84553d7654c591edefaf1ca59bb5bb842ccce8ac26b",
+    "script_sha256": "280c8d140f388e8e42a50fc92abb92ce2b9aac9ddc626f34217b7f671b1282b4",
+    "loader_sha256": "19dba4b4d34f6e8d2cf7a3af53da5837f88b6ccaec8bc7935e56f41899ad310f",
+    "checkpoint_rgb_png_video_payloads_read": false,
+    "torch_imported": false,
+    "frozen_test_records_read": false,
+    "synthetic_checks": {
+      "constant_delta_ci95": [
+        2.0,
+        2.0
+      ],
+      "sign_flip_training_seed_deltas": [
+        -1.0,
+        0.0,
+        1.0
+      ],
+      "sign_flip_crossed_ci95": [
+        -1.0,
+        1.0
+      ],
+      "sign_flip_conditional_over_sources_ci95": [
+        0.0,
+        0.0
+      ],
+      "sample_std_ddof1_check": 1.0,
+      "passed": true
+    }
+  },
+  "contexts": {
+    "HQ_val32/HRI/ref0/hri_off": {
+      "primary_reference_context": false,
+      "metrics": {
+        "psnr_rgb_db": {
+          "delta": "Align minus Base",
+          "favorable_direction": "positive",
+          "per_training_seed_delta": {
+            "20261102": -0.0035160703763910117,
+            "20261103": 0.012942402259431551,
+            "20261104": 0.0376509537568388
+          },
+          "mean_delta": 0.015692428546626447,
+          "sample_std_ddof1": 0.020720833777425045,
+          "crossed_training_seed_and_source_ci95": [
+            -0.013895644875627005,
+            0.048424841657772597
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.002483835468863199,
+            0.034218982624609685
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "ssim_rgb": {
+          "delta": "Align minus Base",
+          "favorable_direction": "positive",
+          "per_training_seed_delta": {
+            "20261102": 0.00045113114174455404,
+            "20261103": -4.660175181925297e-05,
+            "20261104": 0.005510679038707167
+          },
+          "mean_delta": 0.0019717361428774893,
+          "sample_std_ddof1": 0.0030749019697042957,
+          "crossed_training_seed_and_source_ci95": [
+            -0.0006365021419090529,
+            0.005279958227765745
+          ],
+          "original_conditional_source_cluster_ci95": [
+            0.0009694768828921952,
+            0.0030176077785048004
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "lpips_alex_v0_1": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.0016195773496292531,
+            "20261103": 0.0005065595978521742,
+            "20261104": -0.004688853376137558
+          },
+          "mean_delta": -0.0019339570426382124,
+          "sample_std_ddof1": 0.0026119350941605566,
+          "crossed_training_seed_and_source_ci95": [
+            -0.00471495902990379,
+            0.0008745583883865031
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.002970005584696385,
+            -0.0009261925055398025
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.013733444166064146,
+            "20261103": 0.014897399705660064,
+            "20261104": -0.011606553471210646
+          },
+          "mean_delta": -0.003480865977204909,
+          "sample_std_ddof1": 0.015951532940110893,
+          "crossed_training_seed_and_source_ci95": [
+            -0.028135447362274135,
+            0.023513567600730294
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.01849626203541751,
+            0.011015995439341465
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.007665077049750835,
+            "20261103": 0.0015429194027092308,
+            "20261104": -0.00046711903996765614
+          },
+          "mean_delta": -0.00219642556233642,
+          "sample_std_ddof1": 0.004841453857402717,
+          "crossed_training_seed_and_source_ci95": [
+            -0.010637534734754202,
+            0.004372199336648917
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.006803835219276758,
+            0.0025925345073725724
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        }
+      }
+    },
+    "HQ_val32/HRI/ref0/hri_on": {
+      "primary_reference_context": true,
+      "metrics": {
+        "psnr_rgb_db": {
+          "delta": "Align minus Base",
+          "favorable_direction": "positive",
+          "per_training_seed_delta": {
+            "20261102": -0.006836798556634327,
+            "20261103": 0.04098804334312722,
+            "20261104": -0.01613815412003239
+          },
+          "mean_delta": 0.006004363555486836,
+          "sample_std_ddof1": 0.030651626260971995,
+          "crossed_training_seed_and_source_ci95": [
+            -0.030357916435869915,
+            0.04510286359645038
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.011150305305594362,
+            0.023371564071657115
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "ssim_rgb": {
+          "delta": "Align minus Base",
+          "favorable_direction": "positive",
+          "per_training_seed_delta": {
+            "20261102": -0.00221249763853848,
+            "20261103": 0.0009523163898847997,
+            "20261104": 0.0036329490249045193
+          },
+          "mean_delta": 0.000790922592083613,
+          "sample_std_ddof1": 0.002926063506191508,
+          "crossed_training_seed_and_source_ci95": [
+            -0.002082229706866201,
+            0.003741105947119647
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.00012558045467206595,
+            0.0017476137960329647
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "lpips_alex_v0_1": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.0025721822312334552,
+            "20261103": 0.0012409173141350038,
+            "20261104": -0.004842136164370459
+          },
+          "mean_delta": -0.0020578003604896367,
+          "sample_std_ddof1": 0.003073975672854583,
+          "crossed_training_seed_and_source_ci95": [
+            -0.005079442276291956,
+            0.00123240147040633
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.0030083457576135213,
+            -0.0011369769437806097
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.026435244171807426,
+            "20261103": 0.004969875772076193,
+            "20261104": -0.012945831440447364
+          },
+          "mean_delta": -0.011470399946726198,
+          "sample_std_ddof1": 0.015754461693181628,
+          "crossed_training_seed_and_source_ci95": [
+            -0.039056556301299374,
+            0.016096405634016264
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.027140938524325968,
+            0.0032770407002165767
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.009420169342774898,
+            "20261103": 0.0038455023313872516,
+            "20261104": 0.0027866157761309296
+          },
+          "mean_delta": -0.0009293504117522389,
+          "sample_std_ddof1": 0.007372300507561071,
+          "crossed_training_seed_and_source_ci95": [
+            -0.013884243910433724,
+            0.008058923307544319
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.008340493062132737,
+            0.006198153045261277
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        }
+      }
+    },
+    "HQ_val32/HRI/ref4/hri_off": {
+      "primary_reference_context": false,
+      "metrics": {
+        "psnr_rgb_db": {
+          "delta": "Align minus Base",
+          "favorable_direction": "positive",
+          "per_training_seed_delta": {
+            "20261102": -0.00011752245464202726,
+            "20261103": 0.010373690352622367,
+            "20261104": 0.034746012078958555
+          },
+          "mean_delta": 0.015000726658979632,
+          "sample_std_ddof1": 0.017886408493019253,
+          "crossed_training_seed_and_source_ci95": [
+            -0.013749892866762729,
+            0.04574138951457297
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.0035363782561551684,
+            0.03398927449515895
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "ssim_rgb": {
+          "delta": "Align minus Base",
+          "favorable_direction": "positive",
+          "per_training_seed_delta": {
+            "20261102": 0.0005512584466487169,
+            "20261103": -4.106201231479645e-05,
+            "20261104": 0.005517871060874313
+          },
+          "mean_delta": 0.002009355831736078,
+          "sample_std_ddof1": 0.0030528626265110387,
+          "crossed_training_seed_and_source_ci95": [
+            -0.0006021456497061688,
+            0.005287897920061366
+          ],
+          "original_conditional_source_cluster_ci95": [
+            0.0010038554794543114,
+            0.003058247702332059
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "lpips_alex_v0_1": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.0016334870670107193,
+            "20261103": 0.0006611255448660813,
+            "20261104": -0.00489908158488106
+          },
+          "mean_delta": -0.0019571477023418993,
+          "sample_std_ddof1": 0.0027941980936522686,
+          "crossed_training_seed_and_source_ci95": [
+            -0.004909351842616161,
+            0.0009649170644479435
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.002972929409346155,
+            -0.0009629773424724903
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": 0.009623809364711633,
+            "20261103": 0.050676799946813844,
+            "20261104": -0.019184506345482077
+          },
+          "mean_delta": 0.0137053676553478,
+          "sample_std_ddof1": 0.03510904253573988,
+          "crossed_training_seed_and_source_ci95": [
+            -0.03309917619844782,
+            0.05959313534731333
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.007558028827740294,
+            0.03635450504210287
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.012998682504985482,
+            "20261103": -0.0016361213056370616,
+            "20261104": 9.400537237524986e-06
+          },
+          "mean_delta": -0.004875134424461673,
+          "sample_std_ddof1": 0.007083146235697869,
+          "crossed_training_seed_and_source_ci95": [
+            -0.015305108456717183,
+            0.003195595048600806
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.009399989954545163,
+            -0.0009249499722500363
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        }
+      }
+    },
+    "HQ_val32/HRI/ref4/hri_on": {
+      "primary_reference_context": false,
+      "metrics": {
+        "psnr_rgb_db": {
+          "delta": "Align minus Base",
+          "favorable_direction": "positive",
+          "per_training_seed_delta": {
+            "20261102": -0.09200539118000317,
+            "20261103": -0.0418449583493955,
+            "20261104": 0.07807467559796566
+          },
+          "mean_delta": -0.01859189131047767,
+          "sample_std_ddof1": 0.08739185387572969,
+          "crossed_training_seed_and_source_ci95": [
+            -0.09267257329263233,
+            0.06826128111621675
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.033891810914403915,
+            -0.00299383882808152
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "ssim_rgb": {
+          "delta": "Align minus Base",
+          "favorable_direction": "positive",
+          "per_training_seed_delta": {
+            "20261102": -0.002777494490146637,
+            "20261103": -0.0024951312225311995,
+            "20261104": 0.00816115754423663
+          },
+          "mean_delta": 0.0009628439438529313,
+          "sample_std_ddof1": 0.006235520930189098,
+          "crossed_training_seed_and_source_ci95": [
+            -0.0034057759577990512,
+            0.007547741374582982
+          ],
+          "original_conditional_source_cluster_ci95": [
+            2.9855176398996346e-05,
+            0.0019587537239810137
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "lpips_alex_v0_1": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.0014475152929662727,
+            "20261103": 0.0006578969696420245,
+            "20261104": -0.005823231607791968
+          },
+          "mean_delta": -0.002204283310372072,
+          "sample_std_ddof1": 0.0033061730570909504,
+          "crossed_training_seed_and_source_ci95": [
+            -0.005582469806904556,
+            0.0010322996829927433
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.0031787560500257926,
+            -0.0012676210481610427
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.005167317885934608,
+            "20261103": 0.013897342068958096,
+            "20261104": 0.0015647024156351108
+          },
+          "mean_delta": 0.0034315755328861997,
+          "sample_std_ddof1": 0.009668465556946379,
+          "crossed_training_seed_and_source_ci95": [
+            -0.0359443008665039,
+            0.04149372585061428
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.022518412397403154,
+            0.028883287133491344
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": -0.011615359166171402,
+            "20261103": -0.003167285700328648,
+            "20261104": 0.0038381306221708655
+          },
+          "mean_delta": -0.0036481714147763946,
+          "sample_std_ddof1": 0.0077379600000497305,
+          "crossed_training_seed_and_source_ci95": [
+            -0.014465905771551964,
+            0.005869220351451068
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.00871164781759338,
+            0.000747975904475122
+          ],
+          "positive_training_seed_count": 1,
+          "negative_training_seed_count": 2,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        }
+      }
+    },
+    "HQ_val32/NoRef/all_frames": {
+      "primary_reference_context": true,
+      "metrics": {
+        "psnr_rgb_db": {
+          "delta": "Align minus Base",
+          "favorable_direction": "positive",
+          "per_training_seed_delta": {
+            "20261102": 0.1404532643635581,
+            "20261103": 0.061113145246999845,
+            "20261104": -0.04519961275884721
+          },
+          "mean_delta": 0.05212226561723691,
+          "sample_std_ddof1": 0.0931524268784469,
+          "crossed_training_seed_and_source_ci95": [
+            -0.038588443647982106,
+            0.13556881392041265
+          ],
+          "original_conditional_source_cluster_ci95": [
+            0.03715736809385831,
+            0.06839808808633321
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "ssim_rgb": {
+          "delta": "Align minus Base",
+          "favorable_direction": "positive",
+          "per_training_seed_delta": {
+            "20261102": 0.005977972928020684,
+            "20261103": 0.0030813939972884306,
+            "20261104": -0.0014890609309077315
+          },
+          "mean_delta": 0.0025234353314671277,
+          "sample_std_ddof1": 0.003764656301333451,
+          "crossed_training_seed_and_source_ci95": [
+            -0.0011698504573562022,
+            0.005991017813276918
+          ],
+          "original_conditional_source_cluster_ci95": [
+            0.0016388861164968154,
+            0.0035663878614151964
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "lpips_alex_v0_1": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": 0.0010890539916646146,
+            "20261103": 6.380906820090126e-05,
+            "20261104": 0.0008295148016057058
+          },
+          "mean_delta": 0.0006607926204904072,
+          "sample_std_ddof1": 0.0005330404947771385,
+          "crossed_training_seed_and_source_ci95": [
+            -0.0015823958318732262,
+            0.002840051048217529
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.0013679634238576038,
+            0.0024617355606837733
+          ],
+          "positive_training_seed_count": 3,
+          "negative_training_seed_count": 0,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": false
+        },
+        "tLP100_alex_v0_1_TecoGAN_crop": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": 0.0087111936409201,
+            "20261103": 0.023021795459499117,
+            "20261104": -0.0221134478579188
+          },
+          "mean_delta": 0.0032065137475001393,
+          "sample_std_ddof1": 0.02306563835833286,
+          "crossed_training_seed_and_source_ci95": [
+            -0.028322973882571507,
+            0.03751880709880119
+          ],
+          "original_conditional_source_cluster_ci95": [
+            -0.014243076858141041,
+            0.01923171829162129
+          ],
+          "positive_training_seed_count": 2,
+          "negative_training_seed_count": 1,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": true
+        },
+        "tOF_Farneback_TecoGAN_crop": {
+          "delta": "Align minus Base",
+          "favorable_direction": "negative",
+          "per_training_seed_delta": {
+            "20261102": 0.007655343855731189,
+            "20261103": 0.006525983160827309,
+            "20261104": 0.002457232913002372
+          },
+          "mean_delta": 0.005546186643186957,
+          "sample_std_ddof1": 0.002734061128653562,
+          "crossed_training_seed_and_source_ci95": [
+            -0.0005586212396641104,
+            0.013028409757680492
+          ],
+          "original_conditional_source_cluster_ci95": [
+            0.0012117302059778013,
+            0.010572206532621444
+          ],
+          "positive_training_seed_count": 3,
+          "negative_training_seed_count": 0,
+          "zero_training_seed_count": 0,
+          "observed_sign_flip_between_training_seeds": false
+        }
+      }
+    }
+  }
+}

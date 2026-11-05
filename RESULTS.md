@@ -85,3 +85,32 @@ The human explicitly authorized publishing the 239 text files, including local p
 The GitHub connection published the two prepared snapshots as `2a697995d24483c66c38ab67b8d72793eaf2abf6` and `fe8b581e57a662028a9ac56a7246b7ce04a1ce36`, preserving the initial remote commit `468db7a927a528f2bf8a80b9dee5e0336d955743`. The connection generated new commit identities; their file trees are byte-identical to local `c95495b` and `dbedaaf` respectively. Verified tree SHAs are `b72c6e473343d426420369d67b14628de4fbcad0` and `ddc2a8f264de985cb97c4c2c673270bb5697d422`. The local pre-publication history is preserved in an archive ref and the earlier Git bundle.
 
 A recursive, non-truncated GitHub tree read and independent agent review confirmed 239 regular UTF-8 text blobs, no symlink/gitlink or excluded binary asset, and the original six handoff files in the first snapshot. This append-only entry records the completed publication; the earlier pending-authentication entry remains historical. No training, GPU evaluation or numerical protocol change was performed during synchronization. T0.2 reproduction and the open research gates remain unfinished.
+
+## 2026-11-05 — Continued Stage 0: existing statistics and loss diagnostics
+
+The human instructed "continue". The following work reads existing JSON/JSONL only; it does not train, rescore saved images or alter any original artifact. Full tables and provenance are in `docs/stage0_analysis_20261105/{statistics.json,statistics.md,statistics.csv,seed_uncertainty.json,seed_uncertainty.md,loss_diagnostics.json,loss_diagnostics.md}`. Reusable scripts have the corresponding names under `scripts/`.
+
+### Internal validation: three matched training seeds
+
+Each number is the mean over the fixed 32 held-out validation clips within a training seed, then mean ± sample SD over training seeds 20261102/03/04. Sampling seeds 42/43 are averaged within each clip, not counted as training replicates. The float32 validation protocol is distinct from frozen PNG/255 test211 evaluation. NoRef uses all frames; HRI ref0/on uses its predeclared nonreference pool, so these family rows must not be compared directly.
+
+| Family / context | Variant | Training seeds | PSNR RGB dB | LPIPS Alex0.1 |
+| --- | --- | ---: | --- | --- |
+| NoRef / all frames | Base | 3 | 21.918281 ± 0.139593 | 0.134595 ± 0.003537 |
+| NoRef / all frames | Align | 3 | 21.970403 ± 0.220101 | 0.135256 ± 0.003720 |
+| HRI / ref0 on, nonreference | Base | 3 | 21.870963 ± 0.231003 | 0.139322 ± 0.009634 |
+| HRI / ref0 on, nonreference | Align | 3 | 21.876967 ± 0.256260 | 0.137264 ± 0.007132 |
+
+The main statistics table reports 10,000-draw paired source-cluster bootstrap intervals conditioned on the existing trained instances. A separate supplement simultaneously resamples the three matched training seeds and source groups (10,000 draws, seed 20261105) to show seed uncertainty. All five metric intervals in the two primary validation contexts cross zero under that crossed bootstrap. Examples: NoRef Align−Base PSNR = +0.052122 ± 0.093152 dB over seeds, crossed 95% interval [−0.038588, +0.135569]; HRI ref0/on Align−Base LPIPS = −0.002058 ± 0.003074, crossed 95% interval [−0.005079, +0.001232]. Three training seeds give limited information; these are exploratory descriptive intervals with no p-value, multiplicity correction or Stage 5 decision. They do not prove a zero effect.
+
+Frozen internal HQ test211 results are tabulated separately for each of the five fixed degradation conditions and HRI on/off modes. They contain only training seed 20261102, so every model there, including Relation/Both, is labeled "single training seed, indicative". Validation Relation/Both are likewise single-seed. No best context/seed was selected after looking at quality. These existing results support retaining the narrower statement that a stable overall auxiliary-loss benefit has not been established. T0.4 remains partial because the external evaluation is incomplete.
+
+### Training losses (T0.5 complete)
+
+All 16 final-checkpoint runs have 8192 consecutive logged updates. The diagnostic window was fixed at the first 512 records (steps 1–512) and last 512 records (7681–8192). Flow loss decreased in 16/16 runs (about 49.5–55.9%); active alignment loss decreased in 8/8 (about 38.7–40.1%); active relation loss decreased in 4/4 (about 60.6–61.8%). Inactive zero placeholders are excluded. An earlier interrupted 3849-record Align attempt without a final checkpoint is explicitly excluded, never spliced into a final run. Loss decrease shows objective optimization; it does not establish restoration or temporal-quality improvement.
+
+### T0.2 protocol fixed before the fresh reproduction
+
+Use exactly NoRef Base training seed 20261102 / REDS4 / 000, selected as the first declared REDS4 sequence. Both sampler seeds 42 and 43 are mandatory. Retain 17 consecutive original PNG frames from index 0, native LR 180×320 / HR 720×1280, official-config UniPC 20 steps, CFG=1, HR tile 256×448, overlap 64, one global CPU float32 Gaussian field, original cached generic text and real CUDA FP32 VAE. Restoration is on CUDA, metrics on CPU, using the original PNG q/255 pixel contract and all original metric pools. Preserve the historical per-restore VAE policy remove/reinstall lifecycle. No T5 fallback, changed precision/steps or old-output resume is allowed.
+
+The new single-row harness separates the old read-only assets from a new dated output directory and creates its own pre-execution subset protocol, binding harness/core/helper/assets/runtime hashes. It does not reuse an all-eight completion certificate for this subset. Before execution, freeze a pass rule requiring all 34 saved PNG files to have identical byte hashes, all pool scalar metrics (including bicubic baseline and seed mean) to match with atol=1e−10 and rtol=1e−8, two restores/32 original VAE delegates/zero T1 events, and seed42 failure stopping before seed43. Preserve any failed attempt without automatic retry or changed tolerances. A passed single row fulfills T0.2's bounded reproduction criterion, not T0.3's full external coverage. Actual execution status will be appended separately.
