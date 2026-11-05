@@ -1,0 +1,11 @@
+# Stage3 CPU components — partial implementation, 2026-11-05
+
+The human-approved review permits CPU implementation in parallel with the Base preparation. `vsr/self_distillation.py` now provides trainable-only EMA initialized from its supplied restoration model, decay0.999, exact parameter contracts and detached state export/load. Frozen backbone parameters are never copied into the EMA. The student projector belongs outside the model passed to the EMA.
+
+An exception-safe temporary teacher context restores student parameter values, training flags and existing gradients. Teacher outputs are detached owned clones. **Run the teacher before creating the student graph:** parameter swapping uses `copy_` and increments autograd version counters. This API must not be used underneath an outstanding student graph.
+
+Latent masks exclude position0 and use independent CPU generators. The default nine-position, rho0.25, span2 setting realizes2/9 of all positions, or2/8 eligible positions. Rounding is explicitly nearest whole-span count, half-up and capped by available positions. A requested rho0.1 with nine positions/span2 rounds to zero; do not silently treat it as a distinct nonzero corruption sweep. Its later Stage4 interpretation needs a prospective protocol choice before executing that sweep. The default pilot remains rho0.25. A rho0 mask preserves cached input values and does not consume the corruption RNG.
+
+Latent replacement supports matched-mean/population-variance noise and zero replacement. The original condition cache is never mutated. The token mask follows the core model's T,H,W flatten order. The alignment component uses a separate student MLP, teacher LayerNorm without affine parameters, detached teacher features, masked FP32 cosine arithmetic and strictly normalized timestep greater than0.3. Unused masked-out NaNs cannot contaminate projector gradients.
+
+Seventeen CPU tests cover these contracts. They do not instantiate Wan or CUDA, run an optimizer update, integrate block9/block21 hooks or implement a complete continuation trainer. T3.5's actual training equivalence checks and feature-diagnostic logging remain pending. **G3 has not passed:** actual EMA/A2 full-update memory and at-most1.5x overhead must still be measured. No Stage4 method training is authorized by a CPU primitive test alone.

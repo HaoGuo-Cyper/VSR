@@ -40,6 +40,15 @@ def require(condition, message):
         raise RuntimeError(message)
 
 
+def json_record(value):
+    """Use one lossless JSON representation in memory and on disk.
+
+    CUDA's free/total byte counts arrive as a tuple; JSON stores the same two
+    integers in a list. Canonicalize before persistence and strict comparison.
+    """
+    return json.loads(json.dumps(value,ensure_ascii=False,allow_nan=False))
+
+
 def validate_config(config):
     d, t, c = config['data'], config['training'], config['stage2_contract']
     require((d['num_frames'], d['temporal_stride'], d['height'], d['width'], d['scale']) == (33,1,128,224,4), 'Protocol geometry changed')
@@ -155,7 +164,7 @@ def worker(args):
     begun = time.perf_counter()
     try:
         write(run/'reproducibility.json',configure_reproducibility(config))
-        env = environment(ROOT)
+        env = json_record(environment(ROOT))
         write(run/'environment.json',env)
         require(env['cuda_available'] and not env['git_status'], 'CUDA unavailable or dirty runtime source')
         write(run/'official_artifacts.json',verify_official(ROOT,config))

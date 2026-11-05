@@ -204,6 +204,23 @@ class PreparationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Base-only"):
             preparation._base_config(wrong)
 
+    def test_runtime_memory_tuple_is_canonicalized_before_exact_environment_check(self):
+        from vsr.stage2_base_queue import json_record
+        original_hashes = copy.deepcopy(self.env["code_sha256"])
+        # The actual CUDA audit returns this tuple; persisted JSON returns list.
+        self.env["free_total_bytes"] = (15271919616, 16606101504)
+        rejected = self.run_directory("unserialized_environment")
+        with self.assertRaisesRegex(ValueError, "exact config/environment"):
+            self.prepare(rejected)
+        self.env = json_record(self.env)
+        accepted = self.run_directory("canonical_environment")
+        result, load = self.prepare(accepted)
+        self.assertEqual(self.env["free_total_bytes"], [15271919616, 16606101504])
+        self.assertEqual(self.env["code_sha256"], original_hashes)
+        self.assertEqual(len(result[0]), 2)
+        load.assert_called_once()
+        self.assertFalse(torch.cuda.is_initialized())
+
 
 if __name__ == "__main__":
     torch.set_num_threads(2)

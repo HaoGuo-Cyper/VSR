@@ -56,9 +56,9 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
 
 ## Stage 2. Baseline and test sets
 
-- [~] **T2.1 Base under the final protocol.** (2026-11-05: human settled D1–D4 and authorized three fresh 33-frame/stride1 NoRef Base seeds,8192 updates each; preparing streaming caches and a bounded full-optimizer resource check before the formal runs.) If the protocol changed, retrain NoRef Base with 3 seeds (3 RE). Otherwise reuse the existing NoRef Base checkpoints.
-- [ ] **T2.2 Frame-varying test set.** Start from REDS4, YouHQ40 or held-out HQ-VSR clips. Inject per-frame spikes into selected frames: extra blur, noise, heavy codec compression, dropped frames (repeated or blank). Save a mask of which frames are corrupted.
-- [ ] **T2.3 Corrupted-frame recovery metric.** Compute PSNR and LPIPS on the corrupted frames, compared with the same frames restored from clean LR. Also compute the gap between corrupted frames and their neighbours.
+- [!] **T2.1 Base under the final protocol.** (Latest2026-11-05: first startup stopped before data encoding/optimizer updates because an environment tuple became a JSON list; fixed with full-record JSON canonicalization and41 CPU tests passing. No formal seed began; GPU restart awaits confirmation after reporting this error.) (2026-11-05: human settled D1–D4 and authorized three fresh 33-frame/stride1 NoRef Base seeds,8192 updates each; preparing streaming caches and a bounded full-optimizer resource check before the formal runs.) If the protocol changed, retrain NoRef Base with 3 seeds (3 RE). Otherwise reuse the existing NoRef Base checkpoints.
+- [x] **T2.2 Frame-varying test set.** (Latest2026-11-05: CPU materialization complete,32val clips/224NPYs;192 reader views passed SHA/shape/window/FPS/source and unmasked identity checks. No predictions or G2 result.) (2026-11-05: fixed val32 metadata cohort/masks sealed before pixels/new scores; CPU materialization underway; no test/external tuning.) Start from REDS4, YouHQ40 or held-out HQ-VSR clips. Inject per-frame spikes into selected frames: extra blur, noise, heavy codec compression, dropped frames (repeated or blank). Save a mask of which frames are corrupted.
+- [~] **T2.3 Corrupted-frame recovery metric.** (2026-11-05: original-frame/pair pool and three-seed G2 summarizer implemented; five-corruption CPU synthetic checks passed; actual checkpoint scores remain unmeasured.) Compute PSNR and LPIPS on the corrupted frames, compared with the same frames restored from clean LR. Also compute the gap between corrupted frames and their neighbours.
 - [ ] **T2.4 Evaluate Base.** Run all Base seeds on every test set.
   *Done when:* Base mean ± std is reported on every set and the headroom is measured.
 
@@ -66,14 +66,14 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
 
 ## Stage 3. Self-distillation code
 
-- [ ] **T3.1 EMA.** Keep an EMA over trainable parameters (LoRA and LR branch), initialized from the starting checkpoint, with configurable decay (default 0.999).
-- [ ] **T3.2 Teacher pass.** Run the frozen backbone with the EMA adapters under `no_grad`, either by swapping adapter weights or by holding a second adapter set. Check memory use.
-- [ ] **T3.3 Frame-selective corruption at the LR-branch input.** The accepted pilot default is latent-level corruption, excluding latent position0. Pixel-level is deferred to an optional later ablation after a crop leakage test; implement required pilot behavior first. Original alternatives:
+- [~] **T3.1 EMA.** (2026-11-05: standalone CPU primitives/17 tests pass; actual Wan hooks/trainer/GPU integration and G3 remain pending.) Keep an EMA over trainable parameters (LoRA and LR branch), initialized from the starting checkpoint, with configurable decay (default 0.999).
+- [~] **T3.2 Teacher pass.** (2026-11-05: standalone CPU primitives/17 tests pass; actual Wan hooks/trainer/GPU integration and G3 remain pending.) Run the frozen backbone with the EMA adapters under `no_grad`, either by swapping adapter weights or by holding a second adapter set. Check memory use.
+- [~] **T3.3 Frame-selective corruption at the LR-branch input.** (2026-11-05: standalone CPU primitives/17 tests pass; actual Wan hooks/trainer/GPU integration and G3 remain pending.) The accepted pilot default is latent-level corruption, excluding latent position0. Pixel-level is deferred to an optional later ablation after a crop leakage test; implement required pilot behavior first. Original alternatives:
   - pixel-level: blur, downscale or codec applied to the LR frames behind the chosen latent frames;
   - latent-level: replace them with matched-variance noise or a learned null token.
 
   Add a mask sampler with ratio ρ and span length.
-- [ ] **T3.4 Alignment loss.**
+- [~] **T3.4 Alignment loss.** (2026-11-05: standalone CPU primitives/17 tests pass; actual Wan hooks/trainer/GPU integration and G3 remain pending.)
   - Forward hooks on student block l and teacher block k.
   - An MLP projector on the student features; LayerNorm without affine on the teacher features.
   - Cosine loss on corrupted-frame tokens, weighted by γ.
