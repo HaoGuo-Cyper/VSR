@@ -346,3 +346,22 @@ The original queue automatically started seed20261104 in `stage2_protocol33_base
 ## Completion auditor prepared before final seed ends — 2026-11-06
 
 The independent full three-Base auditor now has24 focused CPU schema/rejection/atomic-publication checks and an exact archived source snapshot. It distinguishes8192 scalar gradient norms from19 detailed records, rederives data/order/timing/config/init/cache provenance, and waits for the full completed queue before its5024-file cache/three-checkpoint audit. Review corrected an overly strict helper-only SSIM bound to the valid[-1,1] interval before the final audit; existing seed02/03 monitoring values were valid and no experimental failure occurred. The full auditor main/cache rehash has not run early. Source hash and boundaries are recorded in `docs/stage2_20261106/three_base_auditor_review.json`.
+
+
+## Three protocol33 Bases complete; full T2 evaluation declared — 2026-11-06
+
+All three fresh official NoRef Bases completed8192 updates, full final monitoring/probes and final checkpoints. The independent full audit and a second read-only report/statistics review passed. It checks24576 finite scalar-loss/gradient-norm rows,57 declared detailed group/frozen checks, identical fixed train1641/val32 data/order/33stride1 geometry, independent initialization, full cache reuse/source/config provenance,119 runtime source files and3 native implementation files. All5024 producer artifacts(40963007497bytes) and final checkpoint files were rehashed; checkpoint tensors were not deserialized by this audit. Diagnostic8 updates remain separate from3 formal RE.
+
+| Training seed | Final FM loss | Optimizer seconds | Peak GiB | Float RGB monitor PSNR | Float RGB monitor SSIM |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 20261102 | 0.06674346 | 2458.877 | 3.818955 | 22.37118 | 0.707213 |
+| 20261103 | 0.05190755 | 2459.561 | 3.818955 | 22.19982 | 0.701893 |
+| 20261104 | 0.04724322 | 2456.388 | 3.818955 | 22.15527 | 0.708878 |
+
+Training-seed mean±sampleSD: monitoring RGB PSNR22.24209±0.11399dB, SSIM0.705995±0.003648; last1024 FM mean0.08598861±0.00456177. These unquantized monitoring scores do not replace T2.4 or decide G2. Full records are in `docs/stage2_20261106/three_base_completion_audit.json`. The original queue service exited normally(code0). Actual source remains41407b0.
+
+The prepared T2 run is `stage2_base_eval_20261106T064330Z`, protocol raw SHA256 `ddebf3768f55d0c9f33b31c1bb03bed0ad9e8bbdddfff56af08970dd408eef7e`. Before any restore, it fixes3trainingseeds×32clips×6conditions×2samplingseeds=1152 observations,38016 PNGs,33 stride1 frames,128×224 HR,32×56 LR, original native UniPC20/CFG1, CPU Gaussian42/43, one crop tile and no temporal window/HRI. Preserve original quantize_rgb/LPIPS/TecoGAN and the sealed8-frame masks, two neighbors and original temporal-pair pools. All5 types are retained with equal weights. G2 uses the previously frozen paired-excess-gap and clean-gap training-seed SD rule, without p-values or post-hoc severity changes.
+
+Metadata preparation initially could not see/prove the desktop process from the restricted sandbox. A read-only host comparison verified the same original gjs process; unchanged host metadata preparation passed. No GPU job, data/protocol change or relaxed guard occurred in that failed restricted preflight. The separate receipt preserves both observations.
+
+The prepared protocol now freezes every bound numeric worker/core/reader/metric/native/dependency source through the complete matrix. Documents/logs and unbound workspace scratch may change. Execution follows independent protocol review under the shared actual GPU lease and desktop guard; no duplicate GPU job, fallback, retry or Stage3 work is authorized by a partial matrix. Real G2/G3 remain pending.
