@@ -5,6 +5,17 @@ Add a date and a one-line note whenever a status changes.
 
 Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
 
+## Current execution order — H100 planning update,2026-11-06
+
+Read `docs/H100_MAIN_EXPERIMENT_PLAN_20261106.md` first for current status, machine roles, migration inventory and dependency order. Remote H10080GB is the future main experiment platform; RTX5080 16GB handles development/validation. The human requests **planning only, no experiment launch**. All GPU work remains stopped and automationvsr PAUSED. Historical tasks below retain evidence and superseded-status chronology; the latest three-Base audit and user-stop records determine current completion.
+
+- [x] **P0 Reorganize the plan.** (2026-11-06: completed work, H100 migration and E2–E6 documented; no transfer or experiment.)
+- [ ] **M1 Resolve H100 access/storage/paths and select the deployment commit.** No remote host verified.
+- [ ] **M2 Migrate and hash-verify private assets.** Existing3Bases, official Wan/VAE, fixed data/cache/text, val32 and metrics; no Base retraining.
+- [ ] **M3 Review H100 environment and runner.** Explicit paths/roots/device/host admission/locks and source/environment bindings, related CPU checks. GPU smoke/resource tests await a later start instruction.
+- [ ] **E2 Return to T2.4 on H100 in a fresh run.** Full1152 observations; preserve stopped5080 prefix separately, no cross-host row stitching. Complete recomputed G2 is required before G3.
+- [ ] **E3–E6 Follow G3/pilot/G4/formal/ablation/final stages after their gates.** Budgets and mappings are in the new plan; no experiment started.
+
 ## Stage 0. Consolidate existing results (start now, no training)
 
 - [x] **T0.1 Map the codebase.** (2026-11-05: code/assets mapped; D1–D3 documented with code evidence; see `docs/stage0-code-audit-20261105.md`.) Locate the training code, evaluation code, configs, checkpoints, data and logs, and fill in "Where things are" in `AGENTS.md`. From the code, answer:

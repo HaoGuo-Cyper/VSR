@@ -45,6 +45,8 @@ The comparison that matters most is against **C1**: the same corruption used as 
 
 ## Where things are
 
+**Current planning entry,2026-11-06:** read `docs/H100_MAIN_EXPERIMENT_PLAN_20261106.md`. The human assigned a remote H10080GB to main experiments and RTX5080 16GB to development/validation, requesting a new plan **without starting experiments**. H100 access/environment/assets are not yet verified or migrated. Experiments remain stopped and automation PAUSED; this planning instruction does not authorize GPU execution or restart. Keep D1–D4, existing three Bases and scientific gates; prepare a new prospective H100 protocol before future execution.
+
 Verified by read-only inspection on 2026-11-05. The new source root is `/home/hugo/Projects/VSR_`; the original `/home/hugo/Projects/VSR` remains the read-only asset and historical-results source. Existing configs retain their original paths and hashes. Do not redirect outputs into the historical runs.
 
 | Item | Path |

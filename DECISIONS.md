@@ -83,7 +83,7 @@ The primary validation crossed bootstrap currently includes zero for all five me
 - **S3. A2 is tested first.** Raising latent noise on a frame (A1) leaves that frame's own LR condition intact, so it does not force cross-frame use. A1 and A3 come only after A2 shows a signal, and only with 5 or more latent frames.
 - **S4. C1 is mandatory.** The augmentation-only control appears in every comparison involving A2.
 - **S5. Existing DINOv2 results are kept.** They are reported with seed statistics as the paper's motivation: external alignment is unreliable at this scale.
-- **S6. Hardware budget.** One 16 GB GPU. Training uses 128×224 crops; full-resolution evaluation uses tiling.
+- **S6. Hardware budget (historical; updated2026-11-06 below).** Original budget was one16GB GPU. Existing training uses128×224 crops; full-resolution evaluation uses tiling. The remote H100 role update does not itself change crop/frame/batch/scientific settings.
 
 ## Decision log
 
@@ -112,3 +112,9 @@ The actual T2 evaluation protocol does not yet exist. Before method scoring, a n
 ## Desktop startup policy — human adopted,2026-11-06
 
 After the original T2 startup guard stopped before model loading(0restores), the human selected: “采用已审查的桌面兼容修正，在新目录完整重启评价（推荐）”. Adopt the reviewed candidate: require one completely pinned gjs, permit additional Nautilus/Ptyxis only through the unchanged strict classifier, retain256MiB/UID/system executable/inode/mode/GNOME-cgroup checks, reject unknown/ML/duplicate/secondgjs/missinggjs inventories. Preserve the failed protocol/run and use a new prospective protocol SHA/run for the full1152 matrix. Scientific data/checkpoints/numerical restore/sampler/masks/metrics/G2 criteria are unchanged. This approval does not authorize automatic retries after a new failure.
+
+## Hardware roles and planning-only scope — human settled,2026-11-06
+
+The human confirmed an H10080GB on another machine and requested: “按H100做主实验、5080做开发验证…整理一份新的任务计划…先不要启动实验。” This updates the old single16GB hardware constraint: H100 is the future main training/official evaluation platform; RTX5080 remains the development/validation platform. Remote access, storage, environment and assets have not been verified or migrated. The current authorization is documentation/planning only; all experiments remain stopped and automationvsr PAUSED.
+
+Read `docs/H100_MAIN_EXPERIMENT_PLAN_20261106.md` for completed tasks, migration inventory and M1–M3/E2–E6 dependencies. Preserve the three audited8192-step Bases; no hardware-triggered retraining. Initial scientific frame/crop/degradation/split/effective-batch/optimizer/teacher settings and G2/G3/G4 definitions remain unchanged. A future H100 run needs new reviewed source/environment/path/host bindings and a fresh full1152 Base evaluation. Retain the5080 stopped228-row prefix as history without cross-host row stitching. Any actual migration, GPU compatibility probe or experiment awaits a later execution instruction; larger inputs, distributed training and a cross-host teacher are not silently added.
