@@ -78,7 +78,7 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
   - An MLP projector on the student features; LayerNorm without affine on the teacher features.
   - Cosine loss on corrupted-frame tokens, weighted by γ.
   - A timestep window controlling which t the loss applies to.
-- [ ] **T3.5 Unit tests.**
+- [~] **T3.5 Unit tests.** (2026-11-06:29 synthetic CPU primitive/integration tests pass, including real tinyWan wrapper, rho0/coreBase and gamma0/C1 full AdamW trajectories. Actual GPU equivalence/cost gate still pending.)
   - With EMA equal to the student and no corruption, teacher features equal student features.
   - Corruption changes only the chosen frames' condition.
   - With the auxiliary loss disabled, training numerics match Base training.

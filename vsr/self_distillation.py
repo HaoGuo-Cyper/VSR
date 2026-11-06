@@ -34,6 +34,26 @@ def _frozen_signature(model):
             for name, p in model.named_parameters() if not p.requires_grad}
 
 
+def _require_finite(entries):
+    """Check every (failure message, tensor), with one verdict per device.
+
+    Shape/name/dtype/device contracts belong to the caller. All finite-value
+    reductions stay on their tensor's device until a single combined verdict
+    is read. Only a failing device needs individual reads to locate the first
+    offender. This changes synchronization, not the set of values checked.
+    No tensor is mutated, so callers can validate before committing a change.
+    """
+    per_device = {}
+    for message, value in entries:
+        _require(isinstance(value, torch.Tensor), "Finite validation requires tensors")
+        verdict = torch.isfinite(value.detach()).all()
+        per_device.setdefault(value.device, []).append((message, verdict))
+    for checks in per_device.values():
+        if not bool(torch.stack([verdict for _, verdict in checks]).all()):
+            for message, verdict in checks:
+                _require(bool(verdict), message)
+
+
 class TrainableEMA:
     """EMA of exactly the captured restoration trainables, initialized to Base.
 
@@ -47,7 +67,9 @@ class TrainableEMA:
         self.decay, self.num_updates = float(decay), 0
         params = _trainables(model)
         self._spec = {name: (tuple(p.shape), p.dtype, p.device) for name, p in params.items()}
-        _require(all(p.is_floating_point() and bool(torch.isfinite(p).all()) for p in params.values()), "EMA initialization requires finite floating trainables")
+        _require(all(p.is_floating_point() for p in params.values()), "EMA initialization requires finite floating trainables")
+        _require_finite(("EMA initialization requires finite floating trainables: " + name, p)
+                        for name, p in params.items())
         self._shadow = {name: p.detach().clone() for name, p in params.items()}
         self._swapping = False
 
@@ -58,12 +80,16 @@ class TrainableEMA:
     def _validate(self, model):
         params = _trainables(model)
         _require(set(params) == set(self._spec), "EMA trainable parameter names changed")
+        _require(set(self._shadow) == set(self._spec), "EMA shadow parameter names changed")
+        finite = []
         for name, p in params.items():
             _require((tuple(p.shape), p.dtype, p.device) == self._spec[name], "EMA shape/dtype/device changed: " + name)
-            _require(bool(torch.isfinite(p).all()), "Nonfinite student trainable: " + name)
             shadow = self._shadow[name]
-            _require((tuple(shadow.shape), shadow.dtype, shadow.device) == self._spec[name]
-                     and not shadow.requires_grad and bool(torch.isfinite(shadow).all()), "Invalid EMA shadow: " + name)
+            _require(isinstance(shadow, torch.Tensor) and (tuple(shadow.shape), shadow.dtype, shadow.device) == self._spec[name]
+                     and not shadow.requires_grad, "Invalid EMA shadow: " + name)
+            finite.extend((("Nonfinite student trainable: " + name, p),
+                           ("Invalid EMA shadow: " + name, shadow)))
+        _require_finite(finite)
         return params
 
     @torch.no_grad()
@@ -88,11 +114,12 @@ class TrainableEMA:
         _require(type(state.get("num_updates")) is int and state["num_updates"] >= 0, "Invalid EMA update count")
         _require(state.get("trainable_names") == list(self.names) and isinstance(state.get("shadow"), dict)
                  and set(state["shadow"]) == set(self._spec), "EMA state parameter names mismatch")
-        staged = {}
         for name, value in state["shadow"].items():
             _require(isinstance(value, torch.Tensor) and (tuple(value.shape), value.dtype, value.device) == self._spec[name]
-                     and not value.requires_grad and bool(torch.isfinite(value).all()), "EMA state shape/dtype/device/value mismatch: " + name)
-            staged[name] = value.detach().clone()
+                     and not value.requires_grad, "EMA state shape/dtype/device/value mismatch: " + name)
+        _require_finite(("EMA state shape/dtype/device/value mismatch: " + name, value)
+                        for name, value in state["shadow"].items())
+        staged = {name: value.detach().clone() for name, value in state["shadow"].items()}
         self._shadow, self.num_updates = staged, state["num_updates"]
 
     @contextmanager

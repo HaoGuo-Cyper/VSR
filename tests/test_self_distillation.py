@@ -1,6 +1,7 @@
 """Tiny CPU gradient/contract fixtures; no GPU, task weights or optimizer step."""
 import copy
 import unittest
+from unittest.mock import patch
 
 import torch
 from torch import nn
@@ -120,6 +121,74 @@ class EMATests(unittest.TestCase):
             self.ema.update(self.model)
         self.assertTrue(torch.equal(before, self.ema.state_dict()["shadow"]["adapter.weight"]))
         self.assertEqual(self.ema.num_updates, 0)
+
+    def test_all_sources_and_shadows_share_one_device_verdict(self):
+        # Count actual Tensor->host boolean reads, rather than timing a CPU
+        # fixture and extrapolating GPU performance. All 128 values are checked.
+        model = nn.ParameterList([nn.Parameter(torch.randn(index % 4 + 1)) for index in range(64)])
+        ema = TrainableEMA(model)
+        original = torch.Tensor.__bool__
+        reads = []
+        def counted(value):
+            reads.append(value.device)
+            return original(value)
+        with patch.object(torch.Tensor, "__bool__", counted):
+            ema._validate(model)
+        self.assertEqual(reads, [torch.device("cpu")])
+
+    def test_late_nonfinite_source_or_shadow_rejects_without_partial_mutation(self):
+        for location in ("source", "shadow"):
+            with self.subTest(location=location):
+                model = TinyRestorer()
+                model.late_adapter = nn.Linear(4, 4)
+                ema = TrainableEMA(model)
+                last = ema.names[-1]
+                self.assertEqual(last, "late_adapter.bias")
+                with torch.no_grad():
+                    # If an earlier shadow were updated before full validation,
+                    # this deliberately changed source would reveal it.
+                    model.adapter.weight.add_(7.)
+                    target = dict(model.named_parameters())[last] if location == "source" else ema._shadow[last]
+                    target[0] = float("nan") if location == "source" else float("inf")
+                before_model = {name: p.detach().clone() for name, p in model.named_parameters()}
+                versions = {name: p._version for name, p in model.named_parameters()}
+                before_shadow = ema.state_dict()["shadow"]
+                message = "Nonfinite student trainable: " if location == "source" else "Invalid EMA shadow: "
+                with self.assertRaisesRegex(ValueError, message + last):
+                    ema.update(model)
+                with self.assertRaisesRegex(ValueError, message + last):
+                    with ema.teacher_parameters(model):
+                        self.fail("A corrupt late value must never enter the teacher context")
+                # Byte comparisons also preserve a deliberately injected NaN.
+                self.assertTrue(all(torch.equal(p.detach().view(torch.uint8), before_model[name].view(torch.uint8))
+                                    for name, p in model.named_parameters()))
+                self.assertTrue(all(torch.equal(value.view(torch.uint8), before_shadow[name].view(torch.uint8))
+                                    for name, value in ema.state_dict()["shadow"].items()))
+                self.assertEqual(versions, {name: p._version for name, p in model.named_parameters()})
+                self.assertEqual(ema.num_updates, 0)
+                self.assertFalse(ema._swapping)
+
+    def test_late_nonfinite_initialization_and_state_load_are_atomic(self):
+        model = TinyRestorer()
+        model.late_adapter = nn.Linear(4, 4)
+        ema = TrainableEMA(model)
+        last = ema.names[-1]
+        before = ema.state_dict()
+        bad = ema.state_dict()
+        bad["num_updates"] = 23
+        bad["shadow"][ema.names[0]].add_(5.)
+        bad["shadow"][last][0] = float("nan")
+        with self.assertRaisesRegex(ValueError, "value mismatch: " + last):
+            ema.load_state_dict(bad)
+        self.assertEqual(ema.num_updates, 0)
+        self.assertTrue(all(torch.equal(value, before["shadow"][name])
+                            for name, value in ema.state_dict()["shadow"].items()))
+        with torch.no_grad():
+            dict(model.named_parameters())[last][0] = float("inf")
+        versions = {name: p._version for name, p in model.named_parameters()}
+        with self.assertRaisesRegex(ValueError, "initialization.*" + last):
+            TrainableEMA(model)
+        self.assertEqual(versions, {name: p._version for name, p in model.named_parameters()})
 
 
 class CorruptionTests(unittest.TestCase):

@@ -1,0 +1,35 @@
+{
+  "observed_at_UTC": "2026-11-06T03:42:20.638944+00:00",
+  "status": "passed_CPU_integration_only",
+  "Stage3_tests": 29,
+  "root_validation": {
+    "command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/home/hugo/Projects/VSR_/.deps /home/hugo/miniconda3/envs/reprvsr-pretrained/bin/python -m unittest tests.test_stage2_evaluate_bases tests.test_self_distillation_step tests.test_self_distillation -q",
+    "combined_passed": 45,
+    "seconds": 31.547,
+    "scope": "29 Stage3 cases plus16 preliminary evaluation-worker cases; this report publishes only Stage3 source, the evaluator remains under final review"
+  },
+  "source_sha256": {
+    "vsr/self_distillation.py": "f35bc1e82c72e94ed189edc86145c515086a19800d280ffeddd0fb5f44345afe",
+    "vsr/self_distillation_step.py": "cc42e704fd1da86a90ca37416dafa0fc1f0e4f528ba9cf3a4d23c1d85e399a6a",
+    "tests/test_self_distillation.py": "a5833768e9da44e7816896bf24b9d3aa6fa824344ce264127bbdecf742f0172c",
+    "tests/test_self_distillation_step.py": "94b8c80a7d337f536b8ad10f0851eecba9009746d36ba45202807b02321f5ea1"
+  },
+  "CPU_model": "real ConditionalWan wrapper and a tiny randomly initialized30-block native Wan, not official pretrained weights",
+  "numerics": [
+    "rho0 flow/C1/A2 three-step tiny AdamW parameter and moment trajectories equal core Base bitwise",
+    "gamma0 with nonzero corruption matches C1 and differs from clean flow-only",
+    "equal EMA/student same-layer9 features exactly match; no layer9-vs21 equality claim",
+    "same noisedHR/timestep/sigma for teacher and student; only LR condition differs",
+    "teacher swap and owned detached feature capture complete before student graph",
+    "capture hook removed before checkpoint replay; LR graph retained until backward then cleared",
+    "FP32 tensor sigma comparison makes strict sigma>.3 boundary consistent",
+    "late source/shadow/state/gradient nonfinite values reject without partial EMA/optimizer mutation",
+    "64 trainables+64 shadows use one normal-path host verdict perdevice without dropping value/structure checks"
+  ],
+  "optimizer": "Every future comparison arm explicitly foreach=False; CPU equality does not establish CUDA equivalence to historical default foreach selection",
+  "official_Wan_or_GPU_updates": 0,
+  "actual_GPU_overhead_measured": false,
+  "G3": "not passed; actual GPU equivalence and<=1.5x step-cost gate pending",
+  "full_continuation_queue_or_checkpoint_writer": false,
+  "runtime_actual_checkout_changed": false
+}
