@@ -47,6 +47,8 @@ The comparison that matters most is against **C1**: the same corruption used as 
 
 **Current planning entry,2026-11-06:** read `docs/H100_MAIN_EXPERIMENT_PLAN_20261106.md`. The human assigned a remote H10080GB to main experiments and RTX5080 16GB to development/validation, requesting a new plan **without starting experiments**. H100 access/environment/assets are not yet verified or migrated. Experiments remain stopped and automation PAUSED; this planning instruction does not authorize GPU execution or restart. Keep D1–D4, existing three Bases and scientific gates; prepare a new prospective H100 protocol before future execution.
 
+**Code organization,2026-11-06:** the human accepted planning the main experiment around data/vae/model/teacher/losses/train/infer/evaluate/metrics/checkpoints (10 business modules). Read `README.md` and `docs/CODE_ORGANIZATION.md` for responsibilities, old-source mapping, R0–R5 refactor order and 5080→GitHub→H100 fixed-commit workflow. This update is documentation/planning; numeric modules have not yet been consolidated and no new CLI is claimed operational. Preserve historical sources/results. Development, future small tests and formal experiments are separate validation levels; GPU execution remains paused.
+
 Verified by read-only inspection on 2026-11-05. The new source root is `/home/hugo/Projects/VSR_`; the original `/home/hugo/Projects/VSR` remains the read-only asset and historical-results source. Existing configs retain their original paths and hashes. Do not redirect outputs into the historical runs.
 
 | Item | Path |
@@ -87,7 +89,7 @@ The 2026-11-05 T0.1 evidence, bounded Stage 1 proposals and subsequent human set
 7. **Keep `TASKS.md` current.** Mark each task `[~]` when started and `[x]` when done (or `[!]` when blocked), with a date and a one-line note.
 8. **Stop at failed gates.** If a gate fails or a result contradicts the plan, report it and wait. Do not improvise a new research direction.
 9. **Ask the human first** before you delete anything, change the data split, change the degradation used by existing baselines, or spend more than 2 run-equivalents on anything not in `TASKS.md`.
-10. **Fit in 16 GB.** Use the precomputed text embedding and never load the T5 encoder during training. Train in bf16 with gradient checkpointing. Cache DINOv2 features offline.
+10. **Hardware roles.** The original16GB limit remains the RTX5080 development/validation target; the remote H10080GB is the future main experiment platform. Preserve first-round scientific settings and review device assumptions before migration. Use precomputed text embedding, never keep T5 loaded during training, and retain declared bf16/checkpointing settings. Historical DINO targets are cached offline. Neither hardware availability nor this planning update authorizes GPU startup.
 11. **Public GitHub synchronization is authorized.** On 2026-11-05 the human authorized this and future new/updated project text files to be synchronized to the public `HaoGuo-Cyper/VSR` repository, including project-local paths, experiment metadata and data manifests. No repeated publication confirmation is needed for that scope. Keep weights, checkpoints, raw media, tensor caches and credentials outside Git. This permission does not settle D1–D4, waive failed gates or authorize training.
 
 ## Vocabulary
