@@ -313,3 +313,12 @@ The prospective G3 worker requires real passedG2 and70 fresh diagnostic updates,
 ## Explicit checkpoint root in the inference CLI — 2026-11-06
 
 Follow-up source review found that the CLI still used the historical checkpoint root, although its preview and loader supported explicit new run roots. The new optional `--allowed-checkpoint-root` now reaches both calls and keeps the historical default. This lets the actual method-arm path use the generic student-only inference route without changing restoration numerics. Owner33 compatibility cases passed(1.910s); root independently reviewed the diff and passed5 CLI fixtures(0.122s), including new-root A2 and both default-root calls. These are CPU/mock pipeline checks, not official-model inference. Details are in `docs/stage3_20261106/cli_checkpoint_root_review.json`. No GPU/actual source was changed and no gate verdict was inferred.
+
+
+## Future pilot training/evaluation controllers — CPU ready,2026-11-06
+
+The two new controllers passed47 combined CPU cases (17pilot+11evaluation+19G3 regression,2.586s). Independent pilot17 passed(1.214s); root separately passed17pilot(1.197s) and11evaluation(0.760s) after source review. Root also checked all1641 real completed seed02 training metadata/latent seals (3282file hashes,1.328s), without Torch, tensor-payload loading, val consumption or real prepare. Source hashes and exact boundaries are in `docs/stage4_20261106/worker_review.json` and `real_cache_metadata_audit.json`.
+
+The future three-arm pilot uses fresh matched Base01/freshAdamW and exactly3×2048=6144 scientific updates(0.75RE), no diagnostic-weight reuse/warmup. The new evaluator uses the unchanged full1152 method matrix and reuses all1152 original Base observations; it produces descriptive paired statistics only. Before method scoring, explicit nonplaceholder G4 definitions must be frozen and bound by rawSHA. No new G4 thresholds, sweep decision, p-value or pass verdict was chosen in this implementation.
+
+Neither real controller was prepared or executed. Real G2/G3 still gate any pilot GPU work. Both preserve the shared GPU lease through failure receipts/cleanup and publish new checkpoints without overwrite. The active Base queue remains on41407b0; only staged code and allowlisted text are synchronized.

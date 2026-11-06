@@ -1,0 +1,81 @@
+{
+  "observed_at_UTC": "2026-11-06T05:25:31.055125+00:00",
+  "status": "future_controllers_CPU_source_review_passed_only",
+  "source_sha256": {
+    "scripts/stage4_pilot.py": "501a9590a736e9d070cee16865a815c23e3313ec2d124708df2aab6d36f00e9a",
+    "tests/test_stage4_pilot.py": "e53e9a5ec6cdc4da4ebed446f4a7ebed3e97a48c110553a652301d28b86e5f21",
+    "scripts/stage4_evaluate_pilot.py": "99ce43e2a6823b49ed1544bdcd98687e6c324f1e6765f6865ce7ed68bf79baed",
+    "tests/test_stage4_evaluate_pilot.py": "9f94dc7f56f7f365119c3e4cee8f48333a9d80c34e940792af3c99d34a016249"
+  },
+  "validation": {
+    "owner_combined": {
+      "passed": 47,
+      "seconds": 2.586,
+      "groups": {
+        "pilot": 17,
+        "evaluation": 11,
+        "G3_regression": 19
+      }
+    },
+    "independent_pilot_review": {
+      "passed": 17,
+      "seconds": 1.214,
+      "source_review": "passed"
+    },
+    "root_independent_pilot": {
+      "passed": 17,
+      "seconds": 1.197,
+      "source_review": "passed"
+    },
+    "root_independent_evaluation": {
+      "passed": 11,
+      "seconds": 0.76,
+      "source_review": "passed"
+    }
+  },
+  "training": {
+    "prerequisites": "real complete threeBase1152/G2 plus rederived real G3 semantics/cost/memory/cleanup",
+    "arms": [
+      "flow_only",
+      "C1",
+      "A2"
+    ],
+    "training_seed": 20261102,
+    "updates_per_arm": 2048,
+    "scientific_updates": 6144,
+    "scientific_RE": 0.75,
+    "warmup_updates": 0,
+    "initialization": "each arm freshly reloads matched Base8192; fresh AdamW and four explicit RNG streams; no diagnostic/previous-arm weights",
+    "optimizer": "matched Base constant lr/weight_decay/maxnorm, common foreach=False",
+    "data": "fixed train1641 IDs in producer order, ordinal%1641; no val/test pixels; CPU normalized latents only",
+    "cache": "per-access metadata/latent file seals and payload/source/geometry/finite checks; CPU LRU<=2",
+    "checkpoints": [
+      512,
+      1024,
+      1536,
+      2048
+    ],
+    "publication": "existing atomic exclusive method student writer; true-arm directories; no overwrite/resume",
+    "logging": "all6144 returned updates, paired FM streams, matched C1/A2 corruption, first-active/every512 feature reports",
+    "configuration": "new method-only configs remove inherited formal_training/stage2_contract and disable in-training quality evaluation; original Base model/conditioning/data/evaluation unchanged"
+  },
+  "evaluation": {
+    "prerequisites": "completed pilot2048 for all3 arms plus real G2/G3 and prospectively frozen explicit G4 criteria raw SHA",
+    "method_restores": 1152,
+    "axis": "3 arms, one training seed;32clips x6conditions x2sampler seeds",
+    "Base_restores": 0,
+    "Base_observations_reused": 1152,
+    "numerics": "unchanged T2 val32 NPYs/reader/native Wan+VAE/UniPC20 CFG1/quantization/LPIPS/TecoGAN/mask-pair pools",
+    "student_identity": "final checkpoint SHA plus loaded student trainable SHA equals training final hash; unchanged after inference",
+    "aggregation": "sampler42/43 mean within clip, equal32clips, equal all5types; clean separately",
+    "statistics": "complete descriptive paired deltas/clip appendix and original3Base seed means/sampleSD; no p-values or automatic G4 decision",
+    "G4_criteria": "status=frozen, frozen_by/UTC and existing decision/authorization reference, exact rawSHA, complete nonplaceholder definitions, before new method scores; no newly invented human-only approval field"
+  },
+  "resource_lifecycle": "shared actual stage2 GPU lease, exact desktop gjs/strict dependency/native bindings, failures/secondary receipts/final cleanup within lease; no fallback or retry",
+  "real_GPU_executions": 0,
+  "real_prepare_executions": 0,
+  "G2": "pending",
+  "G3": "not executed",
+  "G4": "criteria and actual scores not yet frozen/executed",
+  "actual_runtime_changed": false
+}

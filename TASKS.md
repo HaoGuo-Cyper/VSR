@@ -56,7 +56,7 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
 
 ## Stage 2. Baseline and test sets
 
-- [~] **T2.1 Base under the final protocol.** (Latest2026-11-06: confirmed restart; full-optimizer8-update check passed,3.581GiB. Queue=running; seed20261103: 4096/8192 formal updates; completed seed budgets=1/3. Runtime fixed at41407b0; source/log development stays in staging. Previous startup failure preserved.) If the protocol changed, retrain NoRef Base with3seeds(3RE). Otherwise reuse the existing NoRef Base checkpoints.
+- [~] **T2.1 Base under the final protocol.** (Latest2026-11-06: confirmed restart; full-optimizer8-update check passed,3.581GiB. Queue=running; seed20261103: 6863/8192 formal updates; completed seed budgets=1/3. Runtime fixed at41407b0; source/log development stays in staging. Previous startup failure preserved.) If the protocol changed, retrain NoRef Base with3seeds(3RE). Otherwise reuse the existing NoRef Base checkpoints.
 - [x] **T2.2 Frame-varying test set.** (Latest2026-11-05: CPU materialization complete,32val clips/224NPYs;192 reader views passed SHA/shape/window/FPS/source and unmasked identity checks. No predictions or G2 result.) (2026-11-05: fixed val32 metadata cohort/masks sealed before pixels/new scores; CPU materialization underway; no test/external tuning.) Start from REDS4, YouHQ40 or held-out HQ-VSR clips. Inject per-frame spikes into selected frames: extra blur, noise, heavy codec compression, dropped frames (repeated or blank). Save a mask of which frames are corrupted.
 - [~] **T2.3 Corrupted-frame recovery metric.** (2026-11-05: original-frame/pair pool and three-seed G2 summarizer implemented; five-corruption CPU synthetic checks passed; actual checkpoint scores remain unmeasured.) Compute PSNR and LPIPS on the corrupted frames, compared with the same frames restored from clean LR. Also compute the gap between corrupted frames and their neighbours.
 - [~] **T2.4 Evaluate Base.** (2026-11-06: complete1152-restore worker source/CPU review passed17 fixtures; actual metadata prepare/GPU execution waits for all3 completed Base8192 checkpoints and cache seal. No G2 result.) Run all Base seeds on every test set.
@@ -89,13 +89,13 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
 
 ## Stage 4. Pilot A2 (one seed, about 3 RE)
 
-- [ ] **T4.1 Three arms.** From NoRef Base seed 1, continue for K = 2,048 updates in three arms: flow-only, C1 and A2. A2 defaults:
+- [~] **T4.1 Three arms.** (2026-11-06: complete staged training controller is CPU/source reviewed; actual prepare/execution waits for real G2/G3. Exact3×2048=6144 scientific updates,0.75RE; no warmup or diagnostic-state reuse.) From NoRef Base seed1, continue for K=2,048 updates in three arms: flow-only,C1 and A2. A2 defaults:
   - ρ = 0.25, in spans of 2 latent frames;
   - latent-level LR-branch corruption, excluding latent position0;
   - γ = 0.8, loss applied for t > 0.3;
   - EMA decay 0.999.
 - [ ] **T4.2 A2 sweep, one factor at a time.** ρ ∈ {0.1, 0.4}; γ ∈ {0.25, 0.5}; latent-level corruption.
-- [ ] **T4.3 Evaluate.** Under the human-approved review, run every pilot arm on the fixed clean internal validation crops and the frame-varying validation set. Reserve REDS4/YouHQ40 external evaluation for final models; do not launch the old external backlog.
+- [~] **T4.3 Evaluate.** (2026-11-06: staged full1152 method evaluator is CPU/source reviewed; actual scoring waits for completed pilot and prospectively frozen G4 definitions. Outputs descriptive paired metrics, no automatic G4 verdict.) Under the human-approved review, run every pilot arm on the fixed clean internal validation crops and the frame-varying validation set. Reserve REDS4/YouHQ40 external evaluation for final models; do not launch the old external backlog.
 
 **Gate G4:** A2 beats C1 on corrupted-frame recovery by more than the Base seed spread, with no loss on the clean sets. If it fails: check the diagnostics and try K = 4,096. If it still fails, report and stop.
 
