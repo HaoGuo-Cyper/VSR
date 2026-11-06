@@ -278,14 +278,14 @@ class Stage2DependencyAndGPUGuardTest(unittest.TestCase):
     def test_only_pinned_verified_small_desktop_is_allowed(self):
         classifier=worker.import_helper(ROOT/'scripts/frozen_external/work/gpu_process_classification.py','gpu_classifier_fixture')
         info=self.process_info()
-        desktop={'UID':os.getuid(),'PID':4816,'reported_name':'gjs','start_ticks':123,'process_metadata':info}
+        desktop={'UID':os.getuid(),'PID':4816,'reported_name':'gjs','start_ticks':123,'process_metadata':info,'memory_limit_MiB':256}
         def check(stdout,*,metadata=info,start=123,code=0):
             runner=lambda *a,**kw:subprocess.CompletedProcess(a[0],code,stdout,'complete stderr evidence')
             return worker.gpu_idle_guard(desktop,classifier,runner=runner,proc_reader=lambda pid:metadata,start_reader=lambda pid:start)
         evidence=check('4816, gjs, 64 MiB\n')
         self.assertTrue(evidence['passed']);self.assertEqual(evidence['stdout'],'4816, gjs, 64 MiB\n')
         self.assertEqual(evidence['stderr'],'complete stderr evidence');self.assertEqual(evidence['pinned_desktop_matches'],[True])
-        self.assertTrue(check('')['passed'])
+        self.assertFalse(check('')['passed'])
         for stdout in ('4816, gjs, 257 MiB\n','4816, gjs, N/A\n',
                        '4816, /usr/bin/gjs, 64 MiB\n','4816, python, 64 MiB\n','9999, gjs, 64 MiB\n',
                        '4816, gjs, 64 MiB\n9999, python, 8000 MiB\n'):
@@ -417,6 +417,129 @@ class Stage2RestoreLifecycleTest(unittest.TestCase):
         self.assertAlmostEqual(score['raw_harm_gap']['lpips_alex_v0_1'],.2)
         self.assertEqual(score['temporal']['mask_touch_original_pairs'],[[i,i+1] for i in range(3,12)])
         self.assertEqual(score['temporal']['boundary_original_pairs'],[[3,4],[11,12]])
+
+
+class Stage2AdoptedDesktopPolicyTest(unittest.TestCase):
+    """Portable captured/fake inventory fixtures; no GPU query or live /proc."""
+    GJS,NAUTILUS,PTYXIS=4816,1652088,1652090
+
+    @classmethod
+    def setUpClass(cls):
+        path=ROOT/'scripts/frozen_external/work/gpu_process_classification.py'
+        if hashlib.sha256(path.read_bytes()).hexdigest()!='0f98c8b717c0f0528042d2abcbb38db0b7798b44906707b9b83133f7bd7d42d2':
+            raise AssertionError('These fixtures require the unchanged original classifier')
+        cls.classifier=worker.import_helper(path,'stage2_adopted_desktop_classifier_fixture')
+
+    @staticmethod
+    def process(pid,exe,cgroup):
+        uid=os.getuid()
+        return {'pid':pid,'proc_directory_uid':uid,'exe':exe,'uid_fields':[uid]*4,
+            'cgroups':[{'hierarchy':'0','controllers':'','path':cgroup}],
+            'executable_identity':{'same_system_inode':True,'system_uid':0,'system_mode':0o755,'system_regular_file':True},
+            'read_error':None}
+
+    def setUp(self):
+        prefix=f'/user.slice/user-{os.getuid()}.slice/user@{os.getuid()}.service'
+        self.info={
+            self.GJS:self.process(self.GJS,'/usr/bin/gjs-console',prefix+'/session.slice/org.gnome.Shell@ubuntu.service'),
+            self.NAUTILUS:self.process(self.NAUTILUS,'/usr/bin/nautilus',prefix+'/app.slice/app-dbus\\x2d:1.1\\x2dorg.gnome.Nautilus.slice/dbus-:1.1-org.gnome.Nautilus@8.service'),
+            self.PTYXIS:self.process(self.PTYXIS,'/usr/bin/ptyxis',prefix+f'/app.slice/app-gnome-xdg\\x2dterminal\\x2dexec-{self.PTYXIS}.scope')}
+        self.desktop={'PID':self.GJS,'reported_name':'gjs','UID':os.getuid(),'start_ticks':1771,
+            'process_metadata':copy.deepcopy(self.info[self.GJS]),'memory_limit_MiB':256}
+
+    def check(self,stdout,*,info=None,tick=1771,code=0):
+        info=self.info if info is None else info
+        calls=[]
+        def runner(command,**kwargs):
+            calls.append((command,kwargs))
+            return subprocess.CompletedProcess(command,code,stdout,'captured stderr')
+        result=worker.gpu_idle_guard(self.desktop,self.classifier,runner=runner,
+            proc_reader=lambda pid:info.get(pid,{'pid':pid,'read_error':'fixture missing metadata'}),
+            start_reader=lambda _:tick)
+        self.assertEqual(len(calls),1)
+        self.assertEqual(calls[0][0],['nvidia-smi','--query-compute-apps=pid,process_name,used_gpu_memory','--format=csv,noheader'])
+        self.assertEqual(result['stdout'],stdout)
+        self.assertEqual(result['stderr'],'captured stderr')
+        return result
+
+    def test_single_bound_gjs_is_still_allowed(self):
+        result=self.check(f'{self.GJS}, gjs, 64 MiB\n')
+        self.assertTrue(result['passed']);self.assertTrue(result['original_gjs_only_rule_would_pass'])
+        self.assertEqual(result['pinned_gjs_match_count'],1)
+
+    def test_verified_nautilus_and_ptyxis_are_only_additional_categories(self):
+        for extra in (f'{self.NAUTILUS}, /usr/bin/nautilus, 72 MiB',f'{self.PTYXIS}, /usr/bin/ptyxis, 24 MiB',
+                      f'{self.NAUTILUS}, /usr/bin/nautilus, 72 MiB\n{self.PTYXIS}, /usr/bin/ptyxis, 24 MiB'):
+            with self.subTest(extra=extra):
+                result=self.check(f'{self.GJS}, gjs, 64 MiB\n'+extra+'\n')
+                self.assertTrue(result['classification']['all_inventory_processes_verified_allowed'])
+                self.assertTrue(result['passed']);self.assertFalse(result['original_gjs_only_rule_would_pass'])
+
+    def test_captured_failed_inventory_changes_outer_policy_only(self):
+        # Captured raw row names/memory from the failed run, embedded for clean clones.
+        stdout='4816, gjs, 64 MiB\n1652088, /usr/bin/nautilus, 72 MiB\n'
+        result=self.check(stdout)
+        original=self.classifier.classify_inventory(stdout.splitlines(),own_pid=None,own_worker_verified=False,
+            expected_uid=os.getuid(),proc_reader=lambda pid:self.info[pid],query_success=True)
+        self.assertEqual(result['classification'],original)
+        self.assertTrue(original['all_inventory_processes_verified_allowed'])
+        self.assertEqual(result['pinned_desktop_matches'],[True,False])
+        self.assertFalse(result['original_gjs_only_rule_would_pass']);self.assertTrue(result['passed'])
+
+    def test_unknown_python_unreadable_or_non_numeric_memory_is_rejected(self):
+        python=1652111;info=copy.deepcopy(self.info)
+        info[python]=self.process(python,'/home/fixture/env/bin/python3.12','/unverified_model.service')
+        for extra in (f'{python}, python, 20 MiB','8888, unknown, 10 MiB',f'{self.NAUTILUS}, /usr/bin/nautilus, N/A'):
+            with self.subTest(extra=extra):
+                self.assertFalse(self.check(f'{self.GJS}, gjs, 64 MiB\n'+extra+'\n',info=info)['passed'])
+
+    def test_high_memory_is_rejected_for_anchor_and_extra(self):
+        for stdout in (f'{self.GJS}, gjs, 257 MiB\n',
+                       f'{self.GJS}, gjs, 64 MiB\n{self.NAUTILUS}, /usr/bin/nautilus, 257 MiB\n'):
+            self.assertFalse(self.check(stdout)['passed'])
+
+    def test_stale_or_missing_gjs_and_query_failure_are_rejected(self):
+        self.assertFalse(self.check(f'{self.GJS}, gjs, 64 MiB\n',tick=1772)['passed'])
+        for stdout in ('',f'{self.NAUTILUS}, /usr/bin/nautilus, 72 MiB\n'):
+            result=self.check(stdout)
+            self.assertFalse(result['passed']);self.assertEqual(result['pinned_gjs_match_count'],0)
+        self.assertTrue(self.check('')['original_gjs_only_rule_would_pass'])
+        self.assertFalse(self.check(f'{self.GJS}, gjs, 64 MiB\n',code=1)['passed'])
+        def unavailable(*args,**kwargs):raise subprocess.TimeoutExpired(args[0],20)
+        with self.assertRaises(subprocess.TimeoutExpired):
+            worker.gpu_idle_guard(self.desktop,self.classifier,runner=unavailable)
+
+    def test_second_unpinned_gjs_or_any_duplicate_PID_is_rejected(self):
+        second=1652222;info=copy.deepcopy(self.info);info[second]=copy.deepcopy(info[self.GJS]);info[second]['pid']=second
+        result=self.check(f'{self.GJS}, gjs, 64 MiB\n{second}, gjs, 64 MiB\n',info=info)
+        self.assertTrue(result['classification']['all_inventory_processes_verified_allowed']);self.assertFalse(result['passed'])
+        for stdout in (f'{self.GJS}, gjs, 64 MiB\n{self.GJS}, gjs, 64 MiB\n',
+            f'{self.GJS}, gjs, 64 MiB\n{self.NAUTILUS}, /usr/bin/nautilus, 72 MiB\n{self.NAUTILUS}, /usr/bin/nautilus, 72 MiB\n'):
+            result=self.check(stdout);self.assertFalse(result['passed']);self.assertFalse(result['unique_inventory_PIDs'])
+
+    def test_no_basename_UID_inode_cgroup_or_startup_binding_exemption(self):
+        changes=[lambda x:x[self.NAUTILUS].update(uid_fields=[-1]*4),
+            lambda x:x[self.NAUTILUS].update(exe='/home/fixture/nautilus'),
+            lambda x:x[self.NAUTILUS]['executable_identity'].update(same_system_inode=False),
+            lambda x:x[self.NAUTILUS]['executable_identity'].update(system_uid=1000),
+            lambda x:x[self.NAUTILUS]['executable_identity'].update(system_mode=0o777),
+            lambda x:x[self.NAUTILUS]['cgroups'][0].update(path='/unverified'),
+            lambda x:x[self.GJS]['executable_identity'].update(system_mode=0o700)]
+        for change in changes:
+            with self.subTest(change=change):
+                info=copy.deepcopy(self.info);change(info)
+                self.assertFalse(self.check(f'{self.GJS}, gjs, 64 MiB\n{self.NAUTILUS}, /usr/bin/nautilus, 72 MiB\n',info=info)['passed'])
+        self.assertFalse(self.check(f'{self.GJS}, /usr/bin/gjs, 64 MiB\n')['passed'])
+        self.desktop['memory_limit_MiB']=512
+        self.assertFalse(self.check(f'{self.GJS}, gjs, 64 MiB\n')['passed'])
+
+    def test_real_worker_policy_is_adopted_and_preserves_full_evidence(self):
+        result=self.check(f'{self.GJS}, gjs, 64 MiB\n{self.NAUTILUS}, /usr/bin/nautilus, 72 MiB\n')
+        self.assertEqual(result['policy_status'],'adopted');self.assertNotIn('proposal_only',result)
+        self.assertEqual(result['permitted_pinned_or_verified_extra_desktop'],[True,True])
+        self.assertTrue(result['unique_inventory_PIDs'])
+        self.assertEqual(set(worker.EXTRA_DESKTOPS),{'verified_desktop_gnome_nautilus','verified_desktop_gnome_ptyxis'})
+        self.assertEqual(result['classification']['observations'][1]['process_metadata'],self.info[self.NAUTILUS])
 
 
 if __name__=='__main__':unittest.main()

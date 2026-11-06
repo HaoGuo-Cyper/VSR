@@ -107,3 +107,8 @@ Recovery uses masked LPIPS: Delta=mean(C1)-mean(A2), strictly greater than the s
 The method experiment remains one training seed. Report10000 paired-clip bootstrap draws with seed20261102 and95% percentile intervals as descriptive conditional uncertainty; no p-value or extra bootstrap gate is introduced. G4 failures/problematic results follow the existing stop/report rule;4096 updates are a subsequent planned option requiring a concrete protocol after that report. T5.0 retains its separate formal metric/statistical/fidelity freeze.
 
 The actual T2 evaluation protocol does not yet exist. Before method scoring, a new immutable executable criteria file will bind that completed protocol SHA and these unchanged definitions/rawSHA. No placeholder criteria are executed and no new human-only approval flow is added.
+
+
+## Desktop startup policy — human adopted,2026-11-06
+
+After the original T2 startup guard stopped before model loading(0restores), the human selected: “采用已审查的桌面兼容修正，在新目录完整重启评价（推荐）”. Adopt the reviewed candidate: require one completely pinned gjs, permit additional Nautilus/Ptyxis only through the unchanged strict classifier, retain256MiB/UID/system executable/inode/mode/GNOME-cgroup checks, reject unknown/ML/duplicate/secondgjs/missinggjs inventories. Preserve the failed protocol/run and use a new prospective protocol SHA/run for the full1152 matrix. Scientific data/checkpoints/numerical restore/sampler/masks/metrics/G2 criteria are unchanged. This approval does not authorize automatic retries after a new failure.
