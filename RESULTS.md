@@ -365,3 +365,12 @@ The prepared T2 run is `stage2_base_eval_20261106T064330Z`, protocol raw SHA256 
 Metadata preparation initially could not see/prove the desktop process from the restricted sandbox. A read-only host comparison verified the same original gjs process; unchanged host metadata preparation passed. No GPU job, data/protocol change or relaxed guard occurred in that failed restricted preflight. The separate receipt preserves both observations.
 
 The prepared protocol now freezes every bound numeric worker/core/reader/metric/native/dependency source through the complete matrix. Documents/logs and unbound workspace scratch may change. Execution follows independent protocol review under the shared actual GPU lease and desktop guard; no duplicate GPU job, fallback, retry or Stage3 work is authorized by a partial matrix. Real G2/G3 remain pending.
+
+
+## T2 evaluator stopped before model loading — 2026-11-06
+
+The unique host service `vsr-stage2-eval-20261106t064330.service` exited1 at its fresh GPU startup guard, before Torch/model/VAE loading and before any restore:0/1152 observations,0 training updates. The passed three-Base audit is unchanged. G2 is unmeasured, rather than a measured quality failure; G3 was not started.
+
+The raw inventory contained bound system gjs4816(64MiB) and system Nautilus1652088(72MiB). The unchanged classifier independently verified both same-user system desktop processes and confirmed no concurrent model job; the original evaluator's outer guard nevertheless rejected its pinned-match vector[true,false], because it restricts the inventory to the bound gjs. Full guard/failure/console/host-launch receipts are preserved beside the frozen protocol under `docs/stage2_20261106/stage2_base_eval_20261106T064330Z/`.
+
+Per the human's runtime-failure stop rule, no automatic retry/resume, desktop termination or deployed guard/protocol change occurred. The original-protocol option is for the user to exit Nautilus and authorize a new run. A separate unbound scratch compatibility candidate may be CPU-reviewed for the user's choice; the failed prepared source stays unchanged. All dependent GPU work stops awaiting that decision.
