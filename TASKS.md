@@ -11,7 +11,7 @@ Read `docs/H100_MAIN_EXPERIMENT_PLAN_20261106.md` first for current status, mach
 
 - [x] **P0 Reorganize the plan.** (2026-11-06: completed work, H100 migration and E2–E6 documented; no transfer or experiment.)
 - [x] **R0 Plan the10-module code structure and README.** (2026-11-06: responsibilities, existing-source mapping, all151Python file index, two-host workflow and oldREADME archive; numeric code unchanged.)
-- [ ] **R1–R4 Consolidate and validate the mainline source.** Follow `docs/CODE_ORGANIZATION.md`: VAE/model factory boundaries, EMA/losses separation, shared train/infer/evaluate, relevant CPU parity and historical compatibility. No claim that target10-file CLI is already implemented.
+- [x] **R1–R4 Consolidate and validate the mainline source.** (2026-11-06: actual10 business modules plusinit, no runtimelegacy import;144 old files byte-identical inlegacy; unified data/train/infer/evaluate CLI.130CPU cases passed,0fail/0skip,CUDAnot initialized; actual3Base CPU payload and originalcache/val32metadata compatible. GPU equivalence/resource/H100 validation remain unrun.) See `docs/CODE_ORGANIZATION.md` and `docs/code_refactor_20261106/cpu_validation.json`.
 - [ ] **R5 Validate the new structure on both devices.** Planned small5080 GPU loop and H100 compatibility cases require prospective protocols and a later start instruction. OldBase success is not validation of unimplemented new structure.
 - [ ] **M1 Resolve H100 access/storage/paths and select the deployment commit.** No remote host verified.
 - [ ] **M2 Migrate and hash-verify private assets.** Existing3Bases, official Wan/VAE, fixed data/cache/text, val32 and metrics; no Base retraining.

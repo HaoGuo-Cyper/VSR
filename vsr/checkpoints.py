@@ -7,14 +7,16 @@ make_model; loading a task checkpoint must be disclosed as its own origin.
 from __future__ import annotations
 
 import hashlib
+import copy
 import json
+import os
 from pathlib import Path
 
 import torch
-from .reproducibility import configure_reproducibility
-from .restoration_architecture import validate_restoration_architecture, METHOD_ARMS
+from .model import configure_reproducibility
+from .model import validate_restoration_architecture, METHOD_ARMS
 
-PRODUCTION_RUNS_ROOT = Path("/home/hugo/Projects/VSR/runs")
+PRODUCTION_RUNS_ROOT = Path(os.environ.get("VSR_RUNS_ROOT", str(Path.cwd() / "runs"))).resolve()
 LEGACY_PROJECT_ROOT = Path("/home/hugo/Projects/ReprVSR-pretrained")
 OFFICIAL_REPO_ID = "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
 OFFICIAL_REVISION = "0fad780a534b6463e45facd96134c9f345acfa5b"
@@ -63,7 +65,7 @@ def _check_config(config):
 
 
 def load_training_checkpoint(path, *, device="cuda", allowed_root=PRODUCTION_RUNS_ROOT,
-                             model_factory=None, variant=None):
+                             model_factory=None, variant=None, model_directory=None):
     """Return (model,meta), restoring only the exact trainable parameter set.
 
     A custom model_factory(config,variant) must return (model,initialization)
@@ -106,13 +108,20 @@ def load_training_checkpoint(path, *, device="cuda", allowed_root=PRODUCTION_RUN
             raise ValueError("Method trainable_state must contain only restoration student LoRA/LR: "+key)
         if not bool(torch.isfinite(value).all()):
             raise ValueError(f"Task checkpoint contains nonfinite tensor: {key}")
+    runtime_config = copy.deepcopy(config)
+    runtime_model_directory = config.get('model', {}).get('local_dir')
+    if model_directory is not None:
+        runtime_model_directory = str(Path(model_directory).expanduser().resolve())
+        runtime_config['model']['local_dir'] = runtime_model_directory
+    # Source config and canonical hash remain the original checkpoint record.
+    # The explicit runtime path is separately disclosed, never rewritten there.
     if model_factory is None:
         runtime=configure_reproducibility(config)
-        from .train import make_model
-        result=make_model(config,selected_variant,device=device)
+        from .model import make_model
+        result=make_model(runtime_config,selected_variant,device=device)
     else:
         runtime=None
-        result = model_factory(config, selected_variant)
+        result = model_factory(runtime_config, selected_variant)
     if not isinstance(result, tuple) or len(result) != 2:
         raise ValueError("model_factory must return (fresh_model, initialization)")
     model, fresh_initialization = result
@@ -145,6 +154,8 @@ def load_training_checkpoint(path, *, device="cuda", allowed_root=PRODUCTION_RUN
         "checkpoint_path": str(path), "checkpoint_sha256": checkpoint_sha,
         "format": payload["format"], "step": step, "variant": selected_variant,
         "config": config, "config_sha256": source_config_sha,
+        "runtime_model_directory": runtime_model_directory,
+        "runtime_model_directory_overridden": model_directory is not None,
         "official_repo_id": OFFICIAL_REPO_ID, "official_revision": OFFICIAL_REVISION,
         "fresh_base_initialization": fresh_initialization,
         "task_initialization_origin": "new VSR run checkpoint",
@@ -163,3 +174,344 @@ def load_training_checkpoint(path, *, device="cuda", allowed_root=PRODUCTION_RUN
         "training_only_fields_present":sorted(map(str,payload.get("training_only",{}))) if isinstance(payload.get("training_only"),dict) else [],
     }
     return model, metadata
+
+
+# Student and explicitly separated training-state publication.
+import hashlib
+
+import json
+
+import math
+
+import os
+
+from pathlib import Path
+
+import tempfile
+
+import torch
+
+ARMS = ('flow_only', 'C1', 'A2')
+
+HISTORICAL = Path('/home/hugo/Projects/VSR')
+
+LEGACY = Path('/home/hugo/Projects/ReprVSR-pretrained')
+
+def _need(ok,message):
+    if not ok:raise ValueError(message)
+
+def _cpu_owned(value):
+    """A weights_only-compatible tree with no aliases to the live engine."""
+    if isinstance(value,torch.Tensor):
+        _need(not value.is_floating_point() or bool(torch.isfinite(value).all()), 'Nonfinite training checkpoint tensor')
+        _need(not value.is_complex(), 'Complex training checkpoint tensors are unsupported')
+        return value.detach().to('cpu').clone().contiguous()
+    if isinstance(value,dict):
+        _need(all(type(key) in (str,int) for key in value), 'Checkpoint state keys must be strings or integers')
+        return {key:_cpu_owned(item) for key,item in value.items()}
+    if isinstance(value,(list,tuple)):
+        owned = [_cpu_owned(item) for item in value]
+        return tuple(owned) if isinstance(value,tuple) else owned
+    _need(value is None or type(value) in (str,bool,int,float), 'Unsupported training checkpoint metadata type')
+    _need(type(value) is not float or math.isfinite(value), 'Nonfinite checkpoint metadata')
+    return value
+
+def _atomic_publish(path,writer):
+    """Publish a complete same-directory file with hardlink O_EXCL semantics."""
+    path = Path(path)
+    _need(not path.exists(), 'Refusing to overwrite existing checkpoint/config: '+str(path))
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w+b',prefix='.'+path.name+'.',suffix='.partial',
+                                         dir=path.parent,delete=False) as stream:
+            temporary = Path(stream.name)
+            writer(stream)
+            stream.flush()
+            os.fsync(stream.fileno())
+        # link() atomically fails when another writer won the destination race.
+        os.link(temporary,path)
+        descriptor = os.open(path.parent,os.O_RDONLY|os.O_DIRECTORY)
+        try:os.fsync(descriptor)
+        finally:os.close(descriptor)
+    finally:
+        if temporary is not None:temporary.unlink(missing_ok=True)
+
+def _destination(path,allowed_root,arm,step):
+    path,root = Path(path),Path(allowed_root)
+    _need(path.is_absolute() and root.is_absolute(), 'Explicit absolute checkpoint path and allowed_root required')
+    _need(not path.is_symlink(), 'Checkpoint destination must not be an existing symlink')
+    root,path = root.resolve(),path.resolve()
+    _need(root.is_dir() and root != HISTORICAL and not root.is_relative_to(HISTORICAL)
+          and root != LEGACY and not root.is_relative_to(LEGACY), 'Historical/legacy assets are read-only')
+    run = path.parent.parent
+    _need(all(not path.is_relative_to(protected.resolve()) and not run.is_relative_to(protected.resolve())
+              for protected in (HISTORICAL,LEGACY)),
+          'Resolved checkpoint/run cannot enter historical or legacy assets, even with an ancestor allowed_root')
+    _need(path.is_relative_to(root) and path.parent.parent != root and path.parent.name == arm
+          and path.name == f'checkpoint_{step:06d}.pt', 'Checkpoint must be a new run/<true arm>/checkpoint_<step>.pt inside allowed_root')
+    _need(not path.exists(), 'Refusing to overwrite existing checkpoint: '+str(path))
+    return path,run
+
+def build_method_payload(engine,config,*,initialization=None):
+    """Validate a completed step and snapshot student plus training-only state."""
+    from .model import validate_restoration_architecture
+    arm,step = engine.arm,engine.steps
+    _need(arm in ARMS and type(step) is int and step > 0, 'A completed positive method step is required')
+    _need(config.get('restoration_architecture') == 'noref_base_v1', 'Explicit noref_base_v1 architecture marker required')
+    _need(validate_restoration_architecture(config,arm) is False, 'Method restoration must exclude legacy DINO projector')
+    config_sha = _check_config(config)
+    _need(isinstance(config_sha,str) and len(config_sha) == 64, 'Canonical config _sha256 is mandatory')
+    _need(type(config['training'].get('updates')) is int and 0 < step <= config['training']['updates'], 'Checkpoint step exceeds declared update budget')
+    _need(config['training'].get('seed',config.get('seed')) == engine.training_seed, 'Checkpoint training seed differs from the engine')
+    model = engine.model
+    _need(getattr(model,'projector','not Base') is None and not hasattr(model,'reference_adapter'), 'Only the NoRef restoration model may be checkpointed')
+    parameters = {name:p for name,p in model.named_parameters() if p.requires_grad}
+    _need(parameters and all(name.startswith(('lrv_stem.','lrv_residuals.')) or '.lora_' in name for name in parameters),
+          'trainable_state may contain only student LoRA/LR restoration parameters')
+    _need(all(p.is_floating_point() and bool(torch.isfinite(p).all()) and p.grad is None for p in parameters.values()),
+          'Student parameters must be finite floating values with cleared gradients')
+    base = engine.base_load_audit
+    _need(isinstance(base,dict) and base.get('variant') == 'Base' and base.get('step') == 8192
+          and isinstance(base.get('checkpoint_sha256'),str) and len(base['checkpoint_sha256']) == 64
+          and all(c in '0123456789abcdef' for c in base['checkpoint_sha256']),
+          'Matched final Base8192 provenance is required')
+    _need(all(base.get(key) is False for key in ('optimizer_state_restored','scheduler_state_restored','rng_state_restored')),
+          'Continuation origin must not have restored Base optimizer/scheduler/RNG')
+    base_config = base.get('config')
+    _need(isinstance(base_config,dict), 'Matched Base provenance requires its originating config')
+    _check_config(base_config)
+    _need(base_config.get('training',{}).get('variants') == ['Base']
+          and base_config['training'].get('updates') == 8192
+          and base_config['training'].get('seed',base_config.get('seed')) == engine.training_seed
+          and base_config.get('seed') == config.get('seed'), 'Matched Base training/data seed or8192-update identity differs')
+    _need(base_config.get('model') == config.get('model'),
+          'Method model must equal the complete matched Base model config')
+    _need(isinstance(config.get('conditioning'),dict)
+          and base_config.get('conditioning') == config['conditioning'],
+          'Method conditioning must equal the complete matched Base restoration architecture')
+    geometry = {'num_frames':33,'temporal_stride':1,'height':128,'width':224,'scale':4}
+    for origin,candidate in (('Base',base_config),('method',config)):
+        data = candidate.get('data',{})
+        _need(all(type(data.get(key)) is int and data[key] == value for key,value in geometry.items()),
+              'Wrong '+origin+' protocol33 stride1 crop geometry')
+        _need(candidate.get('reference',{}).get('enabled',False) is False
+              and candidate.get('conditioning',{}).get('hri_enabled',False) is False,
+              'Matched Base and method checkpoints must both be NoRef')
+    alignment,ema = engine.alignment,engine.ema
+    if arm == 'A2':
+        _need(alignment is not None and ema is not None and not ema._swapping and ema.num_updates == step,
+              'A2 EMA/projector must match completed steps and be outside a teacher swap')
+        ema._validate(model)
+        ema_state = ema.state_dict()
+        projector = alignment.projector.state_dict()
+        _need(projector and all(p.requires_grad and p.dtype == torch.float32 and p.grad is None
+                               for p in alignment.projector.parameters()),
+              'Student projector must remain trainable FP32 with cleared gradients')
+    else:
+        _need(alignment is None and ema is None, 'Flow/C1 may not carry an A2 teacher/projector')
+        ema_state = projector = None
+    expected_optimizer = list(parameters.values()) + (list(alignment.projector.parameters()) if alignment is not None else [])
+    actual_optimizer = [p for group in engine.optimizer.param_groups for p in group['params']]
+    _need(isinstance(engine.optimizer,torch.optim.AdamW)
+          and len(actual_optimizer) == len({id(p) for p in actual_optimizer})
+          and {id(p) for p in actual_optimizer} == {id(p) for p in expected_optimizer},
+          'Optimizer must contain exactly student restoration and external-projector parameters')
+    rng = {}
+    for name in ('noise','timestep','mask','corruption'):
+        generator = getattr(engine.rng,name,None)
+        _need(isinstance(generator,torch.Generator), 'Missing explicit method RNG stream: '+name)
+        state = generator.get_state()
+        _need(state.dtype == torch.uint8 and state.ndim == 1 and state.device.type == 'cpu', 'RNG state must be a CPU byte vector')
+        rng[name] = state
+    payload = {'format':'vsr_training_v1','variant':arm,'step':step,'config':config,
+        'trainable_state':parameters,'initialization':initialization,
+        'inference_parameters':'student','restoration_architecture':'noref_base_v1',
+        'training_only':{'schema':'vsr_method_training_state_v1','arm':arm,'completed_updates':step,
+            'EMA':ema_state,'student_projector':projector,'optimizer':engine.optimizer.state_dict(),
+            'explicit_RNG':rng,'matched_Base':base,
+            'restored_by_generic_inference_loader':False,'resume_implementation_provided':False}}
+    return _cpu_owned(payload)
+
+def save_method_checkpoint(path,engine,config,*,allowed_root,initialization=None):
+    """Atomically write a new method checkpoint; never overwrite any artifact.
+
+    Existing run/config.json must equal the canonical config exactly. A missing
+    one is created atomically inside this new run; no legacy file is modified.
+    A failed checkpoint publication may leave that valid new config, never a
+    partial checkpoint or a replacement of a previously published checkpoint.
+    """
+    payload = build_method_payload(engine,config,initialization=initialization)
+    path,run = _destination(path,allowed_root,engine.arm,engine.steps)
+    path.parent.mkdir(parents=True,exist_ok=True)
+    config_path = run/'config.json'
+    _need(not config_path.is_symlink() and config_path.resolve().parent == run, 'Run config must not be a symlink')
+    canonical = (json.dumps(payload['config'],ensure_ascii=False,indent=2,allow_nan=False)+'\n').encode()
+    if config_path.exists():
+        _need(json.loads(config_path.read_text()) == payload['config'], 'Existing run config differs; refusing to overwrite')
+    else:
+        try:_atomic_publish(config_path,lambda stream:stream.write(canonical))
+        except FileExistsError:
+            _need(json.loads(config_path.read_text()) == payload['config'], 'Concurrent run config differs')
+    _atomic_publish(path,lambda stream:torch.save(payload,stream))
+    with path.open('rb') as stream:digest = hashlib.file_digest(stream,'sha256').hexdigest()
+    return {'path':str(path),'sha256':digest,'step':engine.steps,'variant':engine.arm,
+        'restoration_architecture':'noref_base_v1','inference_parameters':'student',
+        'config_sha256':payload['config']['_sha256'],'student_parameter_names':sorted(payload['trainable_state']),
+        'training_only_present':True,'existing_artifacts_overwritten':False}
+
+
+def save_base_checkpoint(path, model, config, *, step, allowed_root, initialization=None):
+    """Publish a new Base student checkpoint using the legacy loader format."""
+    _need(type(step) is int and 0 < step <= config.get('training', {}).get('updates', 0), 'Invalid completed Base step')
+    _need(config.get('training', {}).get('variants') == ['Base'], 'Base configuration must identify only Base')
+    _need(validate_restoration_architecture(config, 'Base') is False, 'NoRef Base architecture required')
+    _need(isinstance(_check_config(config), str), 'Canonical config _sha256 is required for new Base checkpoints')
+    state = {name: parameter for name, parameter in model.named_parameters() if parameter.requires_grad}
+    _need(state and all(name.startswith(('lrv_stem.', 'lrv_residuals.')) or '.lora_' in name for name in state),
+          'Base state must contain only restoration LoRA/LR parameters')
+    _need(all(parameter.is_floating_point() and bool(torch.isfinite(parameter).all()) and parameter.grad is None
+              for parameter in state.values()), 'Base parameters must be finite with cleared gradients')
+    path, run = _destination(path, allowed_root, 'Base', step)
+    payload = _cpu_owned({'format': 'vsr_training_v1', 'variant': 'Base', 'step': step,
+        'config': config, 'trainable_state': state, 'initialization': initialization,
+        'inference_parameters': 'student', 'training_only': {}})
+    path.parent.mkdir(parents=True, exist_ok=True)
+    config_path = run / 'config.json'
+    _need(not config_path.is_symlink(), 'Run config must not be a symlink')
+    encoded = (json.dumps(config, ensure_ascii=False, indent=2, allow_nan=False) + '\n').encode()
+    if config_path.exists():
+        _need(json.loads(config_path.read_text()) == config, 'Existing run config differs')
+    else:
+        try:
+            _atomic_publish(config_path, lambda stream: stream.write(encoded))
+        except FileExistsError:
+            _need(json.loads(config_path.read_text()) == config, 'Concurrent run config differs')
+    _atomic_publish(path, lambda stream: torch.save(payload, stream))
+    return {'path': str(path), 'sha256': _sha256_file(path), 'step': step, 'variant': 'Base',
+            'inference_parameters': 'student', 'existing_artifacts_overwritten': False,
+            'config_sha256': config.get('_sha256')}
+
+
+# A single admission/lease implementation is shared by GPU entry points.
+from contextlib import contextmanager
+from datetime import datetime, timezone
+import csv
+import fcntl
+import stat
+import subprocess
+
+
+def _gpu_query(arguments):
+    result = subprocess.run(['nvidia-smi', *arguments], check=True, capture_output=True,
+                            text=True, timeout=15)
+    return list(csv.reader(line for line in result.stdout.splitlines() if line.strip()))
+
+
+def _gpu_selection(device, admission):
+    selected = torch.device(device)
+    _need(selected.type == 'cuda', 'GPU lease requires an explicit CUDA device')
+    expected = admission.get('expected_gpu_uuid')
+    _need(isinstance(expected, str) and expected.startswith('GPU-') and ',' not in expected,
+          'GPU admission requires expected_gpu_uuid for a full GPU device')
+    index = 0 if selected.index is None else selected.index
+    rows = _gpu_query(['--query-gpu=index,uuid', '--format=csv,noheader'])
+    devices = {str(int(row[0].strip())): row[1].strip() for row in rows if len(row) == 2}
+    _need(len(devices) == len(rows) and len(set(devices.values())) == len(rows), 'Ambiguous nvidia-smi device inventory')
+    visible = os.environ.get('CUDA_VISIBLE_DEVICES')
+    if visible is not None:
+        identifiers = [item.strip() for item in visible.split(',')]
+        _need(0 <= index < len(identifiers) and len(identifiers) == len(set(identifiers)), 'CUDA_VISIBLE_DEVICES does not identify the requested device uniquely')
+        token = identifiers[index]
+        uuid = token if token.startswith('GPU-') else devices.get(token)
+        _need(uuid in devices.values(), 'CUDA_VISIBLE_DEVICES is not an exact full-GPU UUID/index mapping')
+    else:
+        _need(len(devices) == 1 or os.environ.get('CUDA_DEVICE_ORDER') == 'PCI_BUS_ID',
+              'Multiple GPUs require an explicit UUID visibility mapping or CUDA_DEVICE_ORDER=PCI_BUS_ID')
+        uuid = devices.get(str(index))
+    _need(uuid == expected, 'Requested CUDA device does not match expected_gpu_uuid')
+    return {'torch_device': str(selected), 'gpu_uuid': uuid, 'CUDA_VISIBLE_DEVICES': visible,
+            'CUDA_DEVICE_ORDER': os.environ.get('CUDA_DEVICE_ORDER'), 'device_inventory': devices}
+
+
+def _desktop_identity(pid):
+    base = Path('/proc') / str(pid)
+    status_text = (base / 'status').read_text()
+    uid_line = next(line for line in status_text.splitlines() if line.startswith('Uid:'))
+    uids = [int(value) for value in uid_line.split()[1:]]
+    executable = (base / 'exe').resolve(strict=True)
+    info = executable.stat()
+    process_stat = (base / 'stat').read_text()
+    start_ticks = int(process_stat.rsplit(')', 1)[1].split()[19])
+    return {'pid': pid, 'uid': uids[0], 'uids': uids, 'exe': str(executable),
+            'exe_sha256': _sha256_file(executable), 'start_ticks': start_ticks,
+            'exe_inode': info.st_ino, 'exe_device': info.st_dev,
+            'exe_mode': stat.S_IMODE(info.st_mode), 'exe_owner': info.st_uid,
+            'cgroup': (base / 'cgroup').read_text()}
+
+
+def _gpu_admission(device, admission):
+    _need(isinstance(admission, dict), 'Explicit GPU admission dictionary required')
+    selection = _gpu_selection(device, admission)
+    raw = _gpu_query(['--id=' + selection['gpu_uuid'],
+                      '--query-compute-apps=pid,process_name,used_gpu_memory',
+                      '--format=csv,noheader,nounits'])
+    processes = []
+    for row in raw:
+        _need(len(row) == 3, 'Unrecognized GPU process inventory row')
+        pid, name, memory = int(row[0].strip()), row[1].strip(), float(row[2].strip())
+        _need(pid > 0 and math.isfinite(memory) and memory >= 0, 'Invalid GPU PID/memory inventory')
+        processes.append({'pid': pid, 'process_name': name, 'used_memory_mib': memory})
+    _need(len({row['pid'] for row in processes}) == len(processes), 'Duplicate GPU process PID')
+    pins = admission.get('desktop_processes', [])
+    _need(isinstance(pins, list) and all(isinstance(pin, dict) for pin in pins), 'desktop_processes must be a list of complete pinned identities')
+    pinned = {pin.get('pid'): pin for pin in pins}
+    _need(len(pinned) == len(pins) and all(type(pid) is int and pid > 0 for pid in pinned), 'Duplicate/invalid desktop admission PIDs')
+    _need({row['pid'] for row in processes} == set(pinned), 'Unexpected or missing GPU process; no unknown/ML process is admitted')
+    admitted = []
+    for row in processes:
+        pin = pinned[row['pid']]
+        required = ('pid', 'uid', 'exe', 'exe_sha256', 'start_ticks', 'exe_inode', 'exe_device', 'exe_mode', 'process_name', 'max_memory_mib')
+        _need(all(key in pin for key in required), 'Desktop admission requires a complete pinned process identity')
+        maximum = pin['max_memory_mib']
+        _need(type(maximum) in (int, float) and 0 < maximum <= 256 and row['used_memory_mib'] <= maximum,
+              'Desktop process GPU memory exceeds its explicit <=256MiB cap')
+        actual = _desktop_identity(row['pid'])
+        _need(pin['uid'] == os.getuid() and actual['uids'] == [os.getuid()] * 4, 'Desktop process UID mismatch')
+        _need(actual['exe'] in ('/usr/bin/gjs-console', '/usr/bin/nautilus', '/usr/bin/ptyxis'), 'Only verified system desktop executables are admitted')
+        _need(actual['exe_owner'] == 0 and actual['exe_mode'] & 0o022 == 0 and 'gnome' in actual['cgroup'].lower(),
+              'Desktop executable ownership/mode/GNOME-cgroup mismatch')
+        _need(all(actual[key] == pin[key] for key in required if key not in ('max_memory_mib', 'process_name'))
+              and row['process_name'] == pin['process_name'], 'Desktop process identity changed')
+        admitted.append({**row, **actual})
+    return {'checked_at_UTC': datetime.now(timezone.utc).isoformat(), **selection,
+            'inventory': processes, 'admitted_desktop': admitted, 'unknown_processes_admitted': False}
+
+
+@contextmanager
+def gpu_lease(lock_path, device, admission):
+    """Nonblocking host lock and fresh UUID/process admission through cleanup.
+
+    Importing this module never invokes nvidia-smi. An empty process inventory
+    is the default. Optional desktop rows require complete host-pinned metadata;
+    no process is killed, filtered, retried or silently allowed.
+    """
+    path = Path(lock_path)
+    _need(path.is_absolute() and path.parent.is_dir(), 'GPU lock requires an explicit absolute file in an existing directory')
+    descriptor = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    locked = False
+    try:
+        info = os.fstat(descriptor)
+        _need(stat.S_ISREG(info.st_mode) and info.st_uid == os.getuid() and info.st_nlink == 1
+              and stat.S_IMODE(info.st_mode) & 0o022 == 0,
+              'GPU lock must be an owned regular file without aliases')
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            locked = True
+        except BlockingIOError as error:
+            raise RuntimeError('GPU lease is already held; refusing overlapping execution') from error
+        receipt = _gpu_admission(device, admission)
+        receipt.update(lock_path=str(path.resolve()), lease_held_through_cleanup=True)
+        yield receipt
+    finally:
+        if locked: fcntl.flock(descriptor, fcntl.LOCK_UN)
+        os.close(descriptor)

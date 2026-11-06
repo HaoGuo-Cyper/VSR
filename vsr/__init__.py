@@ -1,1 +1,1 @@
-"""Independent Wan2.1 conditional video super-resolution experiment."""
+"""Wan video super-resolution: ten core modules; importing starts no experiment."""
