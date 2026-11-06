@@ -332,3 +332,17 @@ Before method training or scores, the agent fixed the accepted G4 gate's operati
 ## Stage2 evaluator after staged method integration — CPU regression,2026-11-06
 
 The17 evaluator fixtures passed again(0.394s) after related model-factory/checkpoint/CLI source changed during method integration. This repeat checks the final candidate sources before real T2 preparation; the evaluator script itself remains SHA298e8f6f. Exact source bindings are in `docs/stage2_20261106/post_integration_cpu_review.json`. No real prepare, checkpoint inference or G2 decision occurred.
+
+
+## Second protocol33 Base completed — 2026-11-06
+
+Seed20261103 completed all8192 optimizer updates, final validation/probes and its final checkpoint. Independent component audit checks8192 finite scalar gradient norms/losses with the declared fixed train1641 order and19 detailed gradient-group/frozen checks, exact effective config, fresh official initialization/AdamW, all119 runtime source files and3 native implementation files. The complete cache-reuse receipt agrees with producer seed02. Checkpoint SHA256 `87f60ce812797d73b27b9d2d0bcb41abb45ea4659ca2b6eb6092d02f3b58061a` is published as metadata only; tensor payload was not deserialized or exported.
+
+Optimization took2459.561s, whole run including verified cache reuse3449.091s; peak allocation4100571648bytes. Single-seed final float-RGB monitoring PSNR/SSIM are22.19982dB/0.701893. These are monitoring observations, not the quantized T2.4/G2 verdict. Three-seed statistics wait for the final seed.
+
+The original queue automatically started seed20261104 in `stage2_protocol33_base_seed20261104_20261106T054135.722171Z`, with another fresh official initialization/AdamW and verified reuse of only producer data/text/VAE caches. All three initial trainable hashes differ as expected across independent training seeds. No new GPU queue or runtime deployment was started; actual remains41407b0. The full three-seed audit/cache rehash has not run early.
+
+
+## Completion auditor prepared before final seed ends — 2026-11-06
+
+The independent full three-Base auditor now has24 focused CPU schema/rejection/atomic-publication checks and an exact archived source snapshot. It distinguishes8192 scalar gradient norms from19 detailed records, rederives data/order/timing/config/init/cache provenance, and waits for the full completed queue before its5024-file cache/three-checkpoint audit. Review corrected an overly strict helper-only SSIM bound to the valid[-1,1] interval before the final audit; existing seed02/03 monitoring values were valid and no experimental failure occurred. The full auditor main/cache rehash has not run early. Source hash and boundaries are recorded in `docs/stage2_20261106/three_base_auditor_review.json`.
