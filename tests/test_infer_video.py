@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from vsr.checkpoints import OFFICIAL_REPO_ID, OFFICIAL_REVISION
+from vsr.checkpoints import OFFICIAL_REPO_ID, OFFICIAL_REVISION, PRODUCTION_RUNS_ROOT
 from vsr.infer_video import (build_parser, decode_lrv, preview_training_config,
                              read_hri, run_inference)
 
@@ -48,6 +48,7 @@ class InferVideoTests(unittest.TestCase):
         self.assertEqual(args.caption, "A high quality video.")
         self.assertEqual((args.seed, args.steps, args.tile_height, args.tile_width, args.overlap), (42, 20, 256, 448, 64))
         self.assertFalse(args.save_rgb)
+        self.assertEqual(args.allowed_checkpoint_root,PRODUCTION_RUNS_ROOT)
         args.hri = "provided.png"
         with self.assertRaises(ValueError):
             run_inference(args, device="cpu")
@@ -132,16 +133,18 @@ class InferVideoTests(unittest.TestCase):
             def writer(path, video, fps):
                 self.assertEqual(fps, 23.976)
                 Path(path).write_bytes(b"mock playback")
-            with mock.patch("vsr.infer_video.preview_training_config", return_value=preview), \
+            with mock.patch("vsr.infer_video.preview_training_config", return_value=preview) as previewer, \
                  mock.patch("vsr.infer_video.decode_lrv", return_value=(lrv, source)) as decoder, \
                  mock.patch("vsr.infer_video.encode_caption", side_effect=caption_encoder), \
-                 mock.patch("vsr.infer_video.load_training_checkpoint", side_effect=checkpoint_loader), \
+                 mock.patch("vsr.infer_video.load_training_checkpoint", side_effect=checkpoint_loader) as loader, \
                  mock.patch("vsr.infer_video.load_frozen_vae", side_effect=vae_loader), \
                  mock.patch("vsr.infer_video.restore_video", side_effect=restore), \
                  mock.patch("vsr.infer_video.write_video", side_effect=writer), \
                  mock.patch("vsr.infer_video.verify_output_video", return_value={"frame_count": 5, "height": 12, "width": 20, "fps": 23.976}):
                 metadata = run_inference(args, device="cpu")
             self.assertEqual(calls, ["text encoded and released", "DiT", "VAE", "restore"])
+            previewer.assert_called_once_with(args.checkpoint,allowed_root=PRODUCTION_RUNS_ROOT)
+            loader.assert_called_once_with(preview['path'],device=torch.device('cpu'),allowed_root=PRODUCTION_RUNS_ROOT)
             decoder.assert_called_once_with(str(input_path), frame_limit=None)
             self.assertFalse(metadata["hr_target_accessed"])
             self.assertFalse(metadata["output"]["audio_preserved"])
@@ -149,6 +152,41 @@ class InferVideoTests(unittest.TestCase):
             self.assertTrue(output.with_suffix(".mp4.rgb.pt").is_file())
             saved = json.loads(output.with_suffix(".mp4.metadata.json").read_text())
             self.assertEqual(saved["caption"]["caption_provided"], args.caption)
+
+    def test_true_method_arm_pipeline_uses_explicit_new_root_for_preview_and_restore(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);allowed=directory/'new_runs'
+            checkpoint=allowed/'pilot/arm_runs/A2/A2/checkpoint_002048.pt'
+            source=directory/'user_lr.mp4';source.write_bytes(b'only user input')
+            output=directory/'student.mp4'
+            args=build_parser().parse_args(['--checkpoint',str(checkpoint),'--allowed-checkpoint-root',str(allowed),
+                '--input',str(source),'--output',str(output)])
+            config={'model':{'repo_id':OFFICIAL_REPO_ID,'revision':OFFICIAL_REVISION},
+                'training':{'variants':['A2']},'reference':{'enabled':False},'restoration_architecture':'noref_base_v1'}
+            preview={'path':str(checkpoint),'checkpoint_sha256':'bound','variant':'A2','config':config}
+            audit={'config':config,'checkpoint_sha256':'bound','variant':'A2','inference_weights':'student',
+                   'EMA_weights_selected':False,'training_only_state_restored':False}
+            model=mock.Mock();vae=object()
+            lrv=torch.zeros(1,3,5,2,3)
+            decoded={'fps':24.,'decoded_frames':5,'source_frame_indices':list(range(5)),'full_input_decoded':True}
+            def write_output(path,video,fps):Path(path).write_bytes(b'mock student output')
+            with mock.patch('vsr.infer_video.preview_training_config',return_value=preview) as previewer,\
+                 mock.patch('vsr.infer_video.decode_lrv',return_value=(lrv,decoded)),\
+                 mock.patch('vsr.infer_video.encode_caption',return_value=(torch.zeros(1,512,4),{'cached_fixture':True})),\
+                 mock.patch('vsr.infer_video.load_training_checkpoint',return_value=(model,audit)) as loader,\
+                 mock.patch('vsr.infer_video.load_frozen_vae',return_value=vae),\
+                 mock.patch('vsr.infer_video.restore_video',return_value=(torch.zeros(1,3,5,8,12),{})),\
+                 mock.patch('vsr.infer_video.write_video',side_effect=write_output),\
+                 mock.patch('vsr.infer_video.verify_output_video',return_value={'frame_count':5,'height':8,'width':12,'fps':24.}):
+                metadata=run_inference(args,device='cpu')
+            self.assertEqual(args.allowed_checkpoint_root,allowed)
+            previewer.assert_called_once_with(str(checkpoint),allowed_root=allowed)
+            loader.assert_called_once_with(str(checkpoint),device=torch.device('cpu'),allowed_root=allowed)
+            self.assertEqual(metadata['checkpoint']['variant'],'A2')
+            self.assertEqual(metadata['checkpoint']['inference_weights'],'student')
+            self.assertFalse(metadata['checkpoint']['EMA_weights_selected'])
+            self.assertFalse(metadata['teacher_accessed'])
+            self.assertFalse(torch.cuda.is_initialized())
 
 
 if __name__ == "__main__":

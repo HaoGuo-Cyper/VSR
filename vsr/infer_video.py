@@ -46,7 +46,9 @@ def _nonnegative(value):
 
 def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--checkpoint", required=True, help="Training checkpoint under /home/hugo/Projects/VSR/runs")
+    parser.add_argument("--checkpoint", required=True, help="Student checkpoint within --allowed-checkpoint-root")
+    parser.add_argument("--allowed-checkpoint-root",type=Path,default=PRODUCTION_RUNS_ROOT,
+                        help="Explicit permitted checkpoint run tree; defaults to the historical VSR runs root")
     parser.add_argument("--input", required=True, help="User-supplied low-resolution video")
     parser.add_argument("--output", required=True, help="New output .mp4 path")
     parser.add_argument("--caption", default="A high quality video.")
@@ -214,7 +216,7 @@ def run_inference(args, *, device="cuda"):
     if output.exists() or metadata_path.exists() or (args.save_rgb and rgb_path.exists()):
         raise FileExistsError("Output or requested sidecar already exists; choose a new output path")
     os.environ.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", HF_HUB_DISABLE_TELEMETRY="1", TOKENIZERS_PARALLELISM="false")
-    preview = preview_training_config(args.checkpoint)
+    preview = preview_training_config(args.checkpoint,allowed_root=args.allowed_checkpoint_root)
     config = preview["config"]
     configure_reproducibility(config)
     if args.hri and not config.get("reference", {}).get("enabled", False):
@@ -232,7 +234,7 @@ def run_inference(args, *, device="cuda"):
     text, caption_audit = encode_caption(config, args.caption, device=device)
     model = vae = None
     try:
-        model, checkpoint_audit = load_training_checkpoint(preview["path"], device=device)
+        model, checkpoint_audit = load_training_checkpoint(preview["path"], device=device,allowed_root=args.allowed_checkpoint_root)
         if checkpoint_audit["checkpoint_sha256"] != preview["checkpoint_sha256"] or checkpoint_audit["config"] != config:
             raise ValueError("Checkpoint changed between CPU preview and model restore")
         vae = load_frozen_vae(config, device=device)
