@@ -256,3 +256,16 @@ The frozen val32 cohort was materialized in new staging/runs/stage2_val_assets_2
 ### Stage3 CPU primitives — PARTIAL
 
 Trainable-only EMA, exception-safe teacher swap/owned detached outputs, position0-excluding latent-span masks, nonmutating replacement, T/H/W token mapping and masked FP32 student-projector/teacher-LayerNorm cosine are implemented separately in vsr/self_distillation.py. Seventeen CPU tests passed with no CUDA or optimizer update. The teacher must run before the student graph because swap copy operations increment parameter versions. Default rho0.25/span2 realizes2/9; rho0.1 rounds to0 under the explicit whole-span rule and must not be silently executed as a distinct nonzero sweep. No block9/21 hook integration, actual continuation trainer, real rho0 trajectory comparison or actual EMA overhead benchmark exists yet. G3 remains pending. This independent CPU work does not restart the failed Base queue.
+
+
+## Confirmed restart and full-optimizer check — 2026-11-06
+
+The human explicitly confirmed the repaired restart. Fresh service `vsr-protocol33-base-20261106-a2.service` started a new queue under frozen runtime commit `41407b0e62748d879d2d9e1d8c5b58fa5202d09f`; the previous failed startup remains untouched.
+
+The new independent diagnostic `stage2_protocol33_optimizer_probe_20261106T025808.644791Z` **PASSED** eight actual full-AdamW updates on two fixed training clips,33frames/stride1,latent[9,16,28], with the evaluation FP32 VAE resident. Peak allocation was3845157888bytes (3.581GiB). Excluding the declared first update, seven observed updates averaged0.342009±0.057118seconds (sampleSD); the slower eighth update0.470781s is retained. The update-only extrapolation is0.7783hours per8192updates, excluding data preparation, initialization, validation, checkpoint I/O and actualEMA/projector work. This is not a completion-time guarantee or a G3/A2 result.
+
+All losses/gradients are finite, frozen gradients remain absent, trainable state changes, and independent inspection verifies fresh official initialization, exact source/config bindings, gradient groups and AdamW-state size. Diagnostic8updates are recorded separately from the planned three formal RE; their trained parameters are never reused. Raw text records and independent review are under `docs/stage2_20261106/`.
+
+The queue automatically entered fresh Base seed20261102 run `stage2_protocol33_base_seed20261102_20261106T025845.129456Z`, preparing the new33-frame train1641+val32 cache. It will train8192updates, complete/seal that cache, then independently initialize seeds20261103/04 with fresh optimizers and only verified data/text/VAE cache reuse. At this report's first snapshot, formal optimizer updates have not begun. The live text snapshot explicitly distinguishes preparation from training.
+
+Normal planned continuation is authorized. A15-minute heartbeat on this thread checks progress and continues after gates pass, without duplicate GPU jobs or unchanged-state reports. Runtime checkout/source/HEAD remain fixed during all three seeds; ongoing development and public text-log synchronization use the separate staging checkout. T2.4 and real Stage3/G3 remain pending, and any failed scientific/runtime gate stops for a report rather than automatic retry or protocol changes.
