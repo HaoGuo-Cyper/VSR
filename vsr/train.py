@@ -30,6 +30,7 @@ from .relation import relation_loss
 from .feature_diagnostics import feature_statistics, same_anchor_patch_identity_retrieval
 from .probes import evaluate_denoising_probe
 from .reproducibility import configure_reproducibility,tensor_state_hashes
+from .restoration_architecture import validate_restoration_architecture
 
 
 def seed_all(seed):
@@ -39,6 +40,7 @@ def seed_all(seed):
 
 
 def make_model(config, variant, device="cuda"):
+    projection = validate_restoration_architecture(config,variant)
     from diffusers import WanTransformer3DModel
     release()
     training_seed=config["training"].get("seed",config["seed"])
@@ -54,7 +56,7 @@ def make_model(config, variant, device="cuda"):
             raise ValueError(f"Native FP32 exception changed: {name}")
     c = config["conditioning"]
     model_options={k:c[k] for k in ("rank", "alpha", "injection_layers", "alignment_layer", "stem_channels", "projector_hidden", "teacher_dim")}
-    model_options.update(projection=(variant!="Base"),gradient_checkpointing=config["training"]["gradient_checkpointing"])
+    model_options.update(projection=projection,gradient_checkpointing=config["training"]["gradient_checkpointing"])
     reference=config.get("reference",{})
     if reference.get("enabled",False):
         from .reference_model import ReferenceConditionalWan

@@ -78,12 +78,12 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
   - An MLP projector on the student features; LayerNorm without affine on the teacher features.
   - Cosine loss on corrupted-frame tokens, weighted by γ.
   - A timestep window controlling which t the loss applies to.
-- [~] **T3.5 Unit tests.** (2026-11-06:29 synthetic CPU primitive/integration tests pass, including real tinyWan wrapper, rho0/coreBase and gamma0/C1 full AdamW trajectories. Actual GPU equivalence/cost gate still pending.)
+- [~] **T3.5 Unit tests.** (2026-11-06:89 combined CPU cases passed, including29 primitive/real tinyWan Step,19 G3-worker,19 logging/architecture/checkpoint and22 historical regressions; independent review passed. Actual GPU equivalence/cost gate remains pending.)
   - With EMA equal to the student and no corruption, teacher features equal student features.
   - Corruption changes only the chosen frames' condition.
   - With the auxiliary loss disabled, training numerics match Base training.
   - Measure step-time overhead.
-- [ ] **T3.6 Logging.** Log L_flow, L_sd, cosine per layer, feature std and effective rank.
+- [x] **T3.6 Logging.** (2026-11-06: staged active cosine/layer IDs and first-active/every512 detached feature std/entropy-rank logging pass CPU trajectory/RNG tests. Full Step includes snapshot copies; explicit CPU statistics drain is outside timing. Real GPU/G3 remains pending.) Log L_flow, L_sd, cosine per layer, feature std and effective rank.
 
 **Gate G3:** all tests pass and the overhead is at most 1.5×.
 

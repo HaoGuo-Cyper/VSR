@@ -299,3 +299,12 @@ Seed20261102 completed8192 updates, its full final validation/probes, final chec
 The single-seed final float-RGB monitoring PSNR/SSIM are22.37118dB/0.707213. These monitoring numbers do not use the sealed T2.4 quantized metric protocol and do not decide G2. All3 training-seed means±SD and the complete1152-restore stress comparison remain pending.
 
 The existing queue automatically started seed20261103 with independent official initialization/fresh optimizer and verified reuse of only seed02's sealed data/text/VAE cache; it did not load seed02's task checkpoint. The producer seal and consumer reuse receipt agree. This audit reads the seal/receipt without repeating the consumer's full cache rehash. Details are in `docs/stage2_20261106/base_seed20261102_completion.json`. No additional GPU job or runtime deployment was started.
+
+
+## Stage3 resource worker, logging and method checkpoints — CPU ready,2026-11-06
+
+The final staged source passed89 combined CPU cases in34.356s:19 G3-worker,29 primitive/real tinyWan Step,19 new logging/architecture/checkpoint and22 historical checkpoint/CLI/model/DINO/HRI cases. Independent source review passed; the initial17 new tests plus revised10 writer tests cover19 distinct cases. Two writer findings (ancestor-root destination bypass and same-shape conditioning drift) were fixed before any GPU execution. Exact final source hashes and validation scope are in `docs/stage3_20261106/resource_worker_review.json` and `method_compatibility_review.json`.
+
+New method arms explicitly use the NoRef Base restoration architecture. Generic inference restores only student LoRA/LR parameters, while EMA/projector/optimizer/RNG remain training-only. New checkpoints use canonical configs and atomic exclusive publication. Historical unmarked variants/HRI retain their behavior. Active-step cosine and first-active/every512 feature std/effective-rank diagnostics are implemented without altering the CPU training/RNG trajectory; snapshot copies count in ordinary Step timing, while explicitly drained CPU std/SVD does not.
+
+The prospective G3 worker requires real passedG2 and70 fresh diagnostic updates, with mean-all20 A2/flow<=1.5 fixed before measurement. It holds the shared lease through failure receipts and final cleanup. No real G3 protocol/run or GPU update exists; G3 is pending. A full T4.1 pilot runner is still separate CPU work. Actual Base training continues on frozen41407b0 and receives none of this staged source.

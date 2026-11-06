@@ -1,0 +1,9 @@
+# Method logging and inference compatibility: CPU review complete
+
+New flow_only/C1/A2 configurations explicitly declare restoration_architecture=noref_base_v1. They construct the NoRef Base restoration wrapper without its historical DINO projector. Unmarked Base/Align/Relation/Both/HRI keep their original behavior. Complete model/conditioning equality to the matched Base prevents same-shape LoRA scaling drift. No old config or checkpoint was rewritten.
+
+The generic checkpoint loader restores only exact student LoRA/LR parameters for the method arms. EMA, the external student projector, AdamW and explicit RNG streams are stored under training_only and are ignored for inference. A canonical config SHA is required. The new writer uses same-directory temporary files, fsync and an exclusive hardlink, so it cannot replace an existing checkpoint even under a competing writer. Resolved run/checkpoint destinations independently reject the historical/legacy trees, including an ancestor allowed_root or symlink. Both review findings were fixed and tested before any GPU run.
+
+Each active step logs its actual cosine and layer identities. First-active and every512 active-step snapshots own detached CPU matrices for both raw layers, projected student and normalized teacher. GPU-to-CPU copies count in the complete Step timer. An explicit CPU drain computes population feature standard deviations and centered entropy effective rank; its float64 SVD is outside that timer. Fixtures verify exact enabled/disabled AdamW trajectories and unchanged model, gradients, EMA and RNG state across diagnostics.
+
+The final 89-case combined CPU regression includes 19 new cases and historical checkpoint/CLI/DINO/HRI behavior; independent review also passed. Details and final hashes are in the adjacent JSON. The complete pilot runner remains separate work. These checks do not establish G2, G3, model quality or real GPU overhead.

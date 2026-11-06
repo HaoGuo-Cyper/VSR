@@ -12,6 +12,7 @@ from pathlib import Path
 
 import torch
 from .reproducibility import configure_reproducibility
+from .restoration_architecture import validate_restoration_architecture, METHOD_ARMS
 
 PRODUCTION_RUNS_ROOT = Path("/home/hugo/Projects/VSR/runs")
 LEGACY_PROJECT_ROOT = Path("/home/hugo/Projects/ReprVSR-pretrained")
@@ -45,6 +46,8 @@ def _check_config(config):
     if model.get("repo_id") != OFFICIAL_REPO_ID or model.get("revision") != OFFICIAL_REVISION:
         raise ValueError("Checkpoint official Wan repo/revision differs from pinned 1.3B")
     source_hash = config.get("_sha256")
+    if config.get("restoration_architecture") is not None and source_hash is None:
+        raise ValueError("Method architecture requires canonical config _sha256")
     if source_hash is not None:
         value = {key: item for key, item in config.items() if key != "_sha256"}
         canonical = (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode()
@@ -54,6 +57,8 @@ def _check_config(config):
     variants = config.get("training", {}).get("variants")
     if not isinstance(variants, list) or not variants or any(not isinstance(v, str) or not v for v in variants) or len(variants) != len(set(variants)):
         raise ValueError("Checkpoint config must identify distinct training variants")
+    for variant in variants:
+        validate_restoration_architecture(config,variant)
     return source_hash
 
 
@@ -97,6 +102,8 @@ def load_training_checkpoint(path, *, device="cuda", allowed_root=PRODUCTION_RUN
     for key, value in state.items():
         if not isinstance(key, str) or not isinstance(value, torch.Tensor) or not value.is_floating_point():
             raise ValueError("Task checkpoint state requires named floating tensors")
+        if selected_variant in METHOD_ARMS and not (key.startswith(("lrv_stem.","lrv_residuals.")) or ".lora_" in key):
+            raise ValueError("Method trainable_state must contain only restoration student LoRA/LR: "+key)
         if not bool(torch.isfinite(value).all()):
             raise ValueError(f"Task checkpoint contains nonfinite tensor: {key}")
     if model_factory is None:
@@ -149,5 +156,10 @@ def load_training_checkpoint(path, *, device="cuda", allowed_root=PRODUCTION_RUN
         "rng_state_restored": False, "frozen_official_parameters_restored_from_task_state": False,
         "device": str(device), "training_comparison_initialization": False,
         "reproducibility":runtime,
+        "restoration_architecture":config.get("restoration_architecture"),
+        "inference_weights":"student",
+        "training_only_state_restored":False,
+        "EMA_weights_selected":False,
+        "training_only_fields_present":sorted(map(str,payload.get("training_only",{}))) if isinstance(payload.get("training_only"),dict) else [],
     }
     return model, metadata

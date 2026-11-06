@@ -266,7 +266,8 @@ class MaskedTemporalAlignment(nn.Module):
         self.projector = nn.Sequential(nn.Linear(student_dim, hidden_dim), nn.SiLU(), nn.Linear(hidden_dim, teacher_dim))
         self.teacher_norm = nn.LayerNorm(teacher_dim, elementwise_affine=False)
 
-    def forward(self, student, teacher, latent_mask, grid, normalized_timestep):
+    def forward(self, student, teacher, latent_mask, grid, normalized_timestep, *, capture_diagnostics=False):
+        _require(type(capture_diagnostics) is bool, "capture_diagnostics must be boolean")
         _require(isinstance(student, torch.Tensor) and isinstance(teacher, torch.Tensor) and student.ndim == teacher.ndim == 3
                  and student.is_floating_point() and teacher.is_floating_point(), "Block features must be floating [B,N,C]")
         _require(student.shape[:2] == teacher.shape[:2] and student.shape[-1] == self.student_dim
@@ -297,5 +298,12 @@ class MaskedTemporalAlignment(nn.Module):
             cosines = (F.normalize(projected, dim=-1) * F.normalize(target, dim=-1)).sum(-1)
             loss = (1 - cosines).mean()
         _require(bool(torch.isfinite(loss)), "Nonfinite temporal alignment loss")
-        return loss, {"selected_tokens": selected, "cosine_mean": cosines.detach().mean(),
+        diagnostic = {"selected_tokens": selected, "cosine_mean": cosines.detach().mean(),
                       "window": "normalized_t > threshold", "threshold": self.threshold}
+        if capture_diagnostics:
+            # Copies are part of the actual Step. CPU rank/statistic work is
+            # deferred to an explicit drain; no graph or cached input aliases.
+            diagnostic["feature_snapshot"] = {name:value.detach().to(device="cpu",dtype=torch.float32,copy=True)
+                for name,value in (("student_raw",selected_student),("teacher_raw",selected_teacher),
+                    ("student_projected",projected),("teacher_normalized",target))}
+        return loss, diagnostic

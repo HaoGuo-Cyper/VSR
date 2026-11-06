@@ -120,15 +120,22 @@ class NoRefContinuationStep:
 
     def __init__(self, model, *, arm, training_seed, rho=.25, span=2, gamma=.8,
                  student_layer=9, teacher_layer=21, hidden_dim=1024, ema_decay=.999,
-                 learning_rate=1e-4, weight_decay=.01, max_grad_norm=1.):
+                 learning_rate=1e-4, weight_decay=.01, max_grad_norm=1.,
+                 feature_diagnostics_first=True, feature_diagnostics_every=512):
         _need(arm in ARMS, "Unknown continuation arm")
         _need(type(gamma) in (int, float) and math.isfinite(gamma) and gamma >= 0, "gamma must be finite and nonnegative")
         _need(type(max_grad_norm) in (int, float) and math.isfinite(max_grad_norm) and max_grad_norm > 0, "Positive gradient norm limit required")
+        _need(type(feature_diagnostics_first) is bool and type(feature_diagnostics_every) is int
+              and feature_diagnostics_every >= 0,"Use boolean first-active and nonnegative integer feature diagnostic frequency")
         _restoration_contract(model, student_layer, teacher_layer)
         self.model, self.arm, self.training_seed = model, arm, training_seed
         self.rho, self.span, self.gamma = rho, span, float(gamma)
         self.student_layer, self.teacher_layer = student_layer, teacher_layer
         self.max_grad_norm, self.steps = float(max_grad_norm), 0
+        self.feature_diagnostics_first = feature_diagnostics_first
+        self.feature_diagnostics_every = feature_diagnostics_every
+        self._first_feature_snapshot_collected = False
+        self._pending_feature_diagnostic = None
         device = next(model.parameters()).device
         self.rng = MatchedStepRNG(training_seed, device)
         self.ema = TrainableEMA(model, decay=ema_decay) if arm == "A2" else None
@@ -168,6 +175,14 @@ class NoRefContinuationStep:
 
         return self.ema.teacher_forward(self.model, call)
 
+    def drain_feature_diagnostics(self):
+        """CPU-only low-frequency stats; call outside any Step timing block."""
+        if self._pending_feature_diagnostic is None:return None
+        from .method_diagnostics import analyze_feature_snapshot
+        result = analyze_feature_snapshot(self._pending_feature_diagnostic)
+        self._pending_feature_diagnostic = None
+        return result
+
     def step(self, clean, low, text, scheduler):
         _need(torch.is_grad_enabled(), "Continuation step requires enabled student autograd")
         _need(clean.ndim == 5 and clean.shape == low.shape and clean.shape[2] == 9
@@ -192,6 +207,10 @@ class NoRefContinuationStep:
             # Compare in sigma's tensor precision, matching the loss window.
             # Converting FP32 .3 to Python float would spuriously exceed .3.
             active = self.arm == "A2" and self.gamma > 0 and bool(plan.mask.any()) and bool(sigma > .3)
+            collect_features = active and ((self.feature_diagnostics_first and not self._first_feature_snapshot_collected)
+                or (self.feature_diagnostics_every > 0 and (self.steps+1) % self.feature_diagnostics_every == 0))
+            _need(not collect_features or self._pending_feature_diagnostic is None,
+                  "Drain the previous detached CPU feature snapshot before another scheduled snapshot")
             # An active teacher validates source AND shadows before its swap.
             # The disabled-auxiliary path must also reject a corrupt EMA before
             # a student optimizer mutation; the post-step update checks again.
@@ -209,7 +228,8 @@ class NoRefContinuationStep:
             fm = F.mse_loss(flow.float(), target)
             if active:
                 _need(teacher is not None and not teacher.requires_grad, "Teacher feature graph must be detached")
-                sd, diagnostic = self.alignment(student, teacher, plan.mask, tuple(self.model.token_grid), sigma)
+                sd, diagnostic = self.alignment(student, teacher, plan.mask, tuple(self.model.token_grid), sigma,
+                                                capture_diagnostics=collect_features)
             else:
                 sd = flow.reshape(-1)[:0].sum()
                 diagnostic = {"selected_tokens": 0, "cosine_mean": None}
@@ -226,6 +246,13 @@ class NoRefContinuationStep:
                 self.ema.update(self.model)
             _need(frozen == _frozen(self.model), "Frozen backbone parameters changed")
             self.steps += 1
+            cosine_mean = float(diagnostic['cosine_mean']) if diagnostic['cosine_mean'] is not None else None
+            if collect_features:
+                self._pending_feature_diagnostic = {'step':self.steps,'student_layer':self.student_layer,
+                    'teacher_layer':self.teacher_layer,'sigma':float(sigma),'selected_tokens':diagnostic['selected_tokens'],
+                    'cosine_mean':cosine_mean,'schedule':{'first_active':self.feature_diagnostics_first,
+                        'every_steps':self.feature_diagnostics_every},'features':diagnostic['feature_snapshot']}
+                self._first_feature_snapshot_collected = True
             return {"step": self.steps, "arm": self.arm, "timestep_index": index, "native_timestep": float(timestep[0]),
                     "sigma": float(sigma), "fm": float(fm.detach()), "sd": float(sd.detach()),
                     "total": float(total.detach()), "grad_norm_before_clip": float(norm),
@@ -234,6 +261,8 @@ class NoRefContinuationStep:
                     "rho_realized_eligible_latents": plan.realized_ratio_eligible_latents,
                     "mask_spans": plan.spans, "mask_rounding": plan.rounding,
                     "selected_tokens": diagnostic["selected_tokens"],
+                    "cosine_mean":cosine_mean,"cosine_layers":{"student":self.student_layer,"teacher":self.teacher_layer},
+                    "feature_diagnostics_snapshot_collected":collect_features,
                     "student_layer": self.student_layer, "teacher_layer": self.teacher_layer,
                     "optimizer_state_fresh_at_initialization": True, "EMA_updates": self.ema.num_updates if self.ema else 0}
         finally:

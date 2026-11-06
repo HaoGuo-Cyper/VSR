@@ -1,0 +1,93 @@
+{
+  "observed_at_UTC": "2026-11-06T04:56:04.164965+00:00",
+  "status": "CPU_and_source_review_passed_only",
+  "source_sha256": {
+    "vsr/restoration_architecture.py": "5aa1046a9bb3109e2422c1780770a8bb59b0557e4a5e7376dd300acc9460a6ef",
+    "vsr/method_diagnostics.py": "ad4288734028c5942d2615c47f6d0ede78a618ec751a07a65af92b60afb4bc4f",
+    "vsr/method_checkpoint.py": "66c18f6dc1736b97bd47039b4694f68d5bc8d93ec3892aa19ab29747545a1402",
+    "vsr/train.py": "8715899227a3e2e081a5f9d71cbda3eef968b2c8657ac121f32d732c5cc1f22c",
+    "vsr/checkpoints.py": "6ceade773d1729d4d9cef0fefddeec575b4eaf6819388de80f156c5a7457e201",
+    "vsr/self_distillation.py": "247387b3d06e3c7ae757e64c02d8188451eb3e5025ed85c39f64ec71c44f4ebe",
+    "vsr/self_distillation_step.py": "39cf6a1afa669be5860a2352d29bbe3514e2c75e2c9baaa68a98aa82ada2644a",
+    "scripts/stage3_resource_gate.py": "e5f41f17cc9f09a1c0cd964188dee4324f8d4249ab914691eb5d409afc65fc15",
+    "tests/test_method_diagnostics.py": "91686bc6a00628e7a57ff24f1a83655c214ea9518a75c5b86caca602415e788b",
+    "tests/test_method_checkpoint.py": "50093aa4f370f1af0f880f1f01c573af3b42a8044258f95a96591c51c79b15f3",
+    "tests/test_restoration_architecture.py": "f2f94efdf07bf9c66d187fad0133d5abdae5da1c54ed4011a09bbdd69950cdd9",
+    "tests/test_stage3_resource_gate.py": "f16bd7c63b5fac7b844fc77b4deaec8e99d804443c61e30033b209cc21c10142"
+  },
+  "owner_final_combined_CPU_suite": {
+    "passed": 89,
+    "seconds": 34.356,
+    "groups": {
+      "G3_worker": 19,
+      "primitives_and_real_tinyWan_step": 29,
+      "new_logging_architecture_checkpoint": 19,
+      "legacy_checkpoint_CLI_model_DINO_HRI": 22
+    }
+  },
+  "independent_review": {
+    "final_status": "passed",
+    "initial_new_suite": {
+      "passed": 17,
+      "seconds": 2.237
+    },
+    "revised_writer_suite": {
+      "passed": 10,
+      "seconds": 0.606
+    },
+    "unique_new_tests_covered": 19,
+    "overlap": 8,
+    "resource_worker_lifecycle_prior_revision": {
+      "root": 19,
+      "peer": 19
+    },
+    "final_resource_worker_fixture_count_in_owner_combined_suite": 19
+  },
+  "root_review": "final source/diff and exact hashes checked; prior runtime remains separate",
+  "GPU_execution_started": false,
+  "G2": "pending actual1152 evaluation",
+  "G3": "not executed/not passed",
+  "actual_runtime_changed": false,
+  "architecture": {
+    "new_marker": "restoration_architecture=noref_base_v1",
+    "new_arms": [
+      "flow_only",
+      "C1",
+      "A2"
+    ],
+    "NoRef_only": true,
+    "model_and_conditioning_equal_matched_Base": true,
+    "unmarked_historical_variants_and_HRI": "unchanged projection behavior",
+    "inference": "generic loader restores exact student LoRA/LR only; never EMA/projector/optimizer/RNG"
+  },
+  "checkpoint": {
+    "format": "vsr_training_v1",
+    "canonical_config_SHA_required": true,
+    "training_only": [
+      "EMA",
+      "student_projector",
+      "optimizer",
+      "explicit_RNG",
+      "matched_Base"
+    ],
+    "publication": "same-directory temporary + fsync + exclusive hardlink; no overwrite or implicit resume",
+    "protected_destinations": "resolved run and checkpoint paths reject historical/legacy trees, including ancestor allowed_root and symlink cases",
+    "review_fixes_before_any_GPU": [
+      "destination ancestor-root bypass",
+      "same-shape conditioning/LoRA-alpha drift"
+    ]
+  },
+  "logging": {
+    "each_step": [
+      "flow",
+      "self_distillation",
+      "cosine_mean when active",
+      "student/teacher layer identity"
+    ],
+    "snapshots": "first active and every512 steps when active; raw student/teacher, projected student, normalized teacher",
+    "capture": "owned detached CPU matrices; GPU-to-CPU copy inside Step",
+    "drain": "CPU float64 population channel std and L2-normalized centered entropy effective rank outside Step timer",
+    "tests": "enabled/disabled exact AdamW trajectory and unchanged parameter/gradient/EMA/explicit/default RNG state"
+  },
+  "full_pilot_runner": "separate CPU implementation in progress; not executed"
+}

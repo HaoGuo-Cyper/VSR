@@ -1,0 +1,9 @@
+# Future G3 resource worker: CPU review complete
+
+The final combined CPU suite passed 89 cases in 34.356 seconds, including 19 resource-worker fixtures, 29 primitive/real tinyWan step cases, 19 new logging/architecture/checkpoint cases and 22 historical compatibility cases. Independent source review passed; its initial 17 new cases and revised 10 writer cases cover 19 distinct cases. Exact final source hashes and scope are in the adjacent JSON. These are CPU fixtures, not official-model GPU measurements.
+
+Actual preparation requires three completed Base8192 runs, their sealed provenance, and the full 1152-restore evaluation with a recomputed passed G2. The prospective budget is 70 diagnostic updates: two direct-core plus two A2 rho0 semantic updates, then fresh flow/C1/A2 roles with two warmups and 20 timed updates each. All use fresh matched Base seed20261102 and fresh AdamW with common foreach=False. Same-layer feature equality uses no update. No diagnostic weights or optimizer states enter formal training.
+
+The fixed primary cost gate is mean(all20 A2)/mean(all20 flow)<=1.5 with the default sigma>.3 window. Report every observation, sample SD, teacher frequency, active-only and C1 ratios; retain slow observations. Time H2D and the complete ordinary Step, including checks, backward, clipping, AdamW, EMA, cosine scalar and scheduled owned CPU snapshot copies, with synchronization and the frozen FP32 VAE resident. Independent hashes, JSON I/O and explicitly drained CPU std/SVD are outside the timer.
+
+The shared actual GPU lease covers main execution, failure receipts and final cleanup. Preserve primary failures; cleanup-only failure revokes passed status. No numerical tolerance adjustment, fallback, retry or extra training is authorized after a failed gate. G3 has not run or passed. Runtime41407b0 remains untouched.
