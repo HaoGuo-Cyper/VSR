@@ -322,3 +322,13 @@ The two new controllers passed47 combined CPU cases (17pilot+11evaluation+19G3 r
 The future three-arm pilot uses fresh matched Base01/freshAdamW and exactly3×2048=6144 scientific updates(0.75RE), no diagnostic-weight reuse/warmup. The new evaluator uses the unchanged full1152 method matrix and reuses all1152 original Base observations; it produces descriptive paired statistics only. Before method scoring, explicit nonplaceholder G4 definitions must be frozen and bound by rawSHA. No new G4 thresholds, sweep decision, p-value or pass verdict was chosen in this implementation.
 
 Neither real controller was prepared or executed. Real G2/G3 still gate any pilot GPU work. Both preserve the shared GPU lease through failure receipts/cleanup and publish new checkpoints without overwrite. The active Base queue remains on41407b0; only staged code and allowlisted text are synchronized.
+
+
+## Pilot G4 definitions recorded prospectively — 2026-11-06
+
+Before method training or scores, the agent fixed the accepted G4 gate's operational pools/reference: masked LPIPS C1-minus-A2 gain > same-corrupt-pool three-Base seed sampleSD, with clean all33 RGB PSNR/SSIM A2-minus-C1 means>=0 at zero tolerance. Complete temporal/other-control diagnostics and descriptive paired-clip bootstrap intervals are retained. This is explicitly agent operationalization of the authorized plan, not a claim of separate human selection of each formula. Definitions/rawSHA and reasoning are recorded in `DECISIONS.md` and `configs/stage4_g4_definitions_20261106.json`. Actual T2 protocol binding and all method/G4 scores remain pending.
+
+
+## Stage2 evaluator after staged method integration — CPU regression,2026-11-06
+
+The17 evaluator fixtures passed again(0.394s) after related model-factory/checkpoint/CLI source changed during method integration. This repeat checks the final candidate sources before real T2 preparation; the evaluator script itself remains SHA298e8f6f. Exact source bindings are in `docs/stage2_20261106/post_integration_cpu_review.json`. No real prepare, checkpoint inference or G2 decision occurred.

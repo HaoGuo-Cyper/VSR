@@ -96,3 +96,14 @@ The primary validation crossed bootstrap currently includes zero for all five me
 | 2026-11-05 | D1–D4 / G1 | SETTLED by explicit human acceptance of the 33-frame proposal; authorize T2.1 three fresh NoRef Bases and normal planned continuation after passing checks | Human message quoted above; bounded audit limitations and unclosed G0 remain recorded. |
 
 | 2026-11-05 | Review refinements / G0 scope | Accepted by human: descope old external backlog; close native untiled and unavailable E*warp/tLPIPS sub-items out of scope; latent-level A2 default excluding position0; retain three Base seeds | Pasted independent review and “可以按照这个思路继续运行，没有问题就持续推进”. Existing evidence is retained and no unrun task is marked experimentally passed. |
+
+
+## Pilot G4 operational definitions — frozen before method scores,2026-11-06
+
+The human authorized the research plan and normal continuation. The agent records this prospective implementation of its pilot G4 rule before any method training or quality scores; the exact pool/reference formulas were not separately specified by the human. A separate read-only review found the mapping consistent with the minimal interpretation of the accepted plan. Definitions are frozen in `configs/stage4_g4_definitions_20261106.json`, raw SHA256 `d552dbb136223d246e05af202f25b072a2c822ad4eeaecead0aa0d6360b1ca58`.
+
+Recovery uses masked LPIPS: Delta=mean(C1)-mean(A2), strictly greater than the sampleSD(ddof1) of the three Base seed means on the same corrupt-masked LPIPS and five-type macro pool. Average sampler42/43 within clip, then all32 clips and all five types equally. Clean fidelity uses all33 frames and requires unrounded A2-minus-C1 RGB PSNR and SSIM means each>=0, with zero tolerance. All types, temporal metrics, masked PSNR, flow-only and matched-Base comparisons are reported. Temporal improvement is not an extra pilot AND condition.
+
+The method experiment remains one training seed. Report10000 paired-clip bootstrap draws with seed20261102 and95% percentile intervals as descriptive conditional uncertainty; no p-value or extra bootstrap gate is introduced. G4 failures/problematic results follow the existing stop/report rule;4096 updates are a subsequent planned option requiring a concrete protocol after that report. T5.0 retains its separate formal metric/statistical/fidelity freeze.
+
+The actual T2 evaluation protocol does not yet exist. Before method scoring, a new immutable executable criteria file will bind that completed protocol SHA and these unchanged definitions/rawSHA. No placeholder criteria are executed and no new human-only approval flow is added.

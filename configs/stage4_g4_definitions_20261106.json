@@ -1,0 +1,34 @@
+{
+  "schema": "stage4_G4_definition_freeze_v1",
+  "status": "definitions_frozen_before_method_scores",
+  "frozen_utc": "2026-11-06T05:29:40.119941+00:00",
+  "frozen_by": "Codex /root; prospective operationalization of the user-authorized pilot gate",
+  "decision_reference": "User-authorized TASKS.md G4 and DECISIONS.md D4; agent selects explicit same-metric spread and C1 clean-reference interpretation before method scores. The exact formulas were not separately specified by the human.",
+  "score_access_before_freeze": false,
+  "method_training_started_before_freeze": false,
+  "cohort_seal_digest": "9c5e938d8b2c9b5e7d965fca2f6b3925557848235d6b9d404b6231bffcbc36e8",
+  "definitions": {
+    "primary_recovery": "Use masked LPIPS Alex0.1 on the unchanged corrupt validation observations. Define recovery gain Delta = mean(C1) minus mean(A2), so larger is better. The recovery condition is strictly Delta > S, where S is the same-metric Base training-seed sample SD defined below. Masked RGB PSNR/SSIM, neighbor gaps, clean-subtracted recovery and temporal metrics are fully reported.",
+    "base_seed_spread": "For each of the three original Base training seeds20261102/03/04, average masked absolute LPIPS over sampler42/43 within each clip, over all32 clips equally, and over all five corrupt types equally. S is the sample standard deviation(ddof=1) across those three scalar seed means. This uses corrupt-masked absolute LPIPS, with the same metric and pool as Delta.",
+    "clean_fidelity": "Use condition clean and all33 original frames. Average sampler42/43 within clip, then weight all32 clips equally. A2 minus C1 must be greater than or equal to zero for both RGB PSNR and RGB SSIM, using unrounded means and zero tolerance. Report all comparisons to flow_only and the matched starting Base as descriptive controls.",
+    "aggregation": "Use the sealed val32 cohort and its original8-frame pixel masks, all five corrupt types with equal weight, and both fixed sampler seeds42/43. Clip aggregation precedes type macro-aggregation. The method comparison has one training seed20261102 and three arms at exactly2048 updates; sampler repetitions and bootstrap draws are not training repeats. Use final2048 checkpoints only.",
+    "decision_rule": "Pilot G4 passes if and only if Delta > S and both clean RGB PSNR/SSIM guards pass. Report all types and temporal metrics; temporal improvement is not an additional pilot AND condition. This point-estimate pilot gate has no p-value or Stage5 significance claim. Failed gates or problematic results stop for a report under AGENTS.md; the4096-update option is not an automatic retry or continuation. Stage5 primary/statistical/fidelity rules are separately frozen at T5.0."
+  },
+  "reporting_uncertainty": {
+    "paired_clip_bootstrap_draws": 10000,
+    "seed": 20261102,
+    "resampling": "32 paired clips with replacement after within-clip sampler/type means; common draws across metrics/comparisons",
+    "interval": "95 percent percentile interval, linear quantile interpolation; descriptive conditional on the single trained method seed",
+    "Base_spread": "Hold the prespecified three-seed sample SD as the observed reference; report its three original seed means",
+    "p_values_computed": false,
+    "bootstrap_CI_is_an_additional_gate": false
+  },
+  "later_protocol_binding": "After real completed T2/G2 exists and before method scoring, create a new immutable stage4_G4_prospective_criteria_v1 file with these unchanged definitions, this file rawSHA and the actual Base evaluation protocol SHA. This definition file alone is not executable evaluation criteria.",
+  "source_evidence": {
+    "primary_metric_families": "DECISIONS.md:10,75",
+    "pilot_gate": "TASKS.md:100",
+    "pilot_scope": "TASKS.md:90-98",
+    "C1_control": "AGENTS.md:9; DECISIONS.md:S4",
+    "statistics_and_stop": "AGENTS.md working rules4,8; TASKS.md:T5.0/G5"
+  }
+}
