@@ -10,9 +10,9 @@ Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
 The human resumed the existing plan on localRTX5080 and delegated routine decisions. This supersedes the earlier H100-only/planning-only stop. Read `docs/local_continuation_20261107/plan.md` and the active run's actual status. H100 migration is deferred, not performed. Existing3Bases and D1–D4/G2/G3/G4 definitions remain unchanged.
 
 - [x] **L0 Local readiness.**40 relevantCPU cases passed after the strict desktop compatibility update; independent numerical/asset andAST reviews passed. Fresh host admission verified pinned gjs/Nautilus/Ptyxis.
-- [~] **L1 / T2.4 Fresh complete Base evaluation.** `base_evaluation_local_20261107T093027Z`, protocol `e63681c96413edddefb3a7077679e9d3d3077fdceb4a6f80135732a703c2aea7`; full1152 restores,0training. First host check active/running with7 committed rows. Prior228 rows preserved separately. Never duplicate the active matrix.
-- [ ] **L2 / G3 Actual resource and semantic check.** Only after fullG2 verification passes;70diagnostic updates, fresh matchedBase01/AdamW per role, original16GiB cap and same-device overhead gate.
-- [ ] **L3 / T4 Pilot andG4.** Only afterG3;flow-only/C1/A2 each2048updates fromfreshBase01/optimizer, fixedG4 definitions and full1152pilot evaluation. No automatic4096/sweep.
+- [x] **L1 / T2.4 Fresh complete Base evaluation.** (2026-11-07:1152/1152 rows,38016PNG/source/hash audit and independentformula/seedstatistics passedG2;0training. Prior228rows retained separately.)
+- [x] **L2 / G3 Actual resource and semantic check.** (2026-11-07:70diagnosticupdates complete, exactGPU semantic/cleanup/16GiB checks passed; all20 A2/flow=1.4061998794<=1.5.0scienceupdates,diagnosticweightsdiscarded.)
+- [~] **L3 / T4 Pilot andG4.** (2026-11-07:fullG2/G3 passed;freshpilot protocol2c0badf4 started with originalG4 definition bound before methodtraining;3arms×2048=6144scienceupdates=.75RE. Firsthostcheckactive/running,flow_only83updates;full1152pilot evaluation/G4 stillpending.)
 
 ## Historical execution order — H100 planning update,2026-11-06
 
@@ -81,27 +81,27 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
 
 - [x] **T2.1 Base under the final protocol.** (2026-11-06: all3 fresh official NoRef seeds completed8192 each; independent full provenance/log/5024-cache/three-checkpoint audit and seed statistics passed. Diagnostic8 is separate from3RE. Runtime41407b0 preserved.)
 - [x] **T2.2 Frame-varying test set.** (Latest2026-11-05: CPU materialization complete,32val clips/224NPYs;192 reader views passed SHA/shape/window/FPS/source and unmasked identity checks. No predictions or G2 result.) (2026-11-05: fixed val32 metadata cohort/masks sealed before pixels/new scores; CPU materialization underway; no test/external tuning.) Start from REDS4, YouHQ40 or held-out HQ-VSR clips. Inject per-frame spikes into selected frames: extra blur, noise, heavy codec compression, dropped frames (repeated or blank). Save a mask of which frames are corrupted.
-- [~] **T2.3 Corrupted-frame recovery metric.** (2026-11-05: original-frame/pair pool and three-seed G2 summarizer implemented; five-corruption CPU synthetic checks passed; actual checkpoint scores remain unmeasured.) Compute PSNR and LPIPS on the corrupted frames, compared with the same frames restored from clean LR. Also compute the gap between corrupted frames and their neighbours.
-- [~] **T2.4 Evaluate all three Bases.** (2026-11-07: human resumed locally; new10-module full1152 matrix running above. Historical USER STOP2026-11-06 retained at228/1152; those outputs are not reused. G2 remains pending until the new complete matrix/source/output audit passes.)
+- [x] **T2.3 Corrupted-frame recovery metric.** (2026-11-07:all1152 realrows/frozenframe-pairpools validated;G2 pairedexcessgaps andthree-seed statistics independently recomputed. See docs/local_continuation_20261107/base_seed_statistics.md.)
+- [x] **T2.4 Evaluate all three Bases.** (2026-11-07:newlocal10-module full1152 matrix completed andG2passed;all38016PNG/source/hashchains verified. Old228-row userstop retained withoutreuse.)
   *Done when:* Base mean ± std is reported on every set and the headroom is measured.
 
 **Gate G2:** corrupted frames are worse than their neighbours by more than the seed spread. If not, report and propose harder settings (longer clips, larger motion, stronger per-frame degradation).
 
 ## Stage 3. Self-distillation code
 
-- [~] **T3.1 EMA.** (2026-11-05: standalone CPU primitives/17 tests pass; actual Wan hooks/trainer/GPU integration and G3 remain pending.) Keep an EMA over trainable parameters (LoRA and LR branch), initialized from the starting checkpoint, with configurable decay (default 0.999).
-- [~] **T3.2 Teacher pass.** (2026-11-05: standalone CPU primitives/17 tests pass; actual Wan hooks/trainer/GPU integration and G3 remain pending.) Run the frozen backbone with the EMA adapters under `no_grad`, either by swapping adapter weights or by holding a second adapter set. Check memory use.
-- [~] **T3.3 Frame-selective corruption at the LR-branch input.** (2026-11-05: standalone CPU primitives/17 tests pass; actual Wan hooks/trainer/GPU integration and G3 remain pending.) The accepted pilot default is latent-level corruption, excluding latent position0. Pixel-level is deferred to an optional later ablation after a crop leakage test; implement required pilot behavior first. Original alternatives:
+- [x] **T3.1 EMA.** (2026-11-07:trainable-onlyEMA.999/freshBase initialization verified in realG3;A2 EMA22 updates,finiteparameters andsafe restoration passed.) Keep an EMA over trainable LoRA/LR parameters.
+- [x] **T3.2 Teacher pass.** (2026-11-07:realG3 same-layer exact equality/teacher-detached/studentrestore checks passed,17/20timed teacheractive;VAEresident/resourcecap passed.)
+- [x] **T3.3 Frame-selective corruption at the LR-branch input.** (2026-11-07:realG3 matchedC1/A2 masks/corruptionRNG and defaultlatentpolicy passed;position0 excluded. Pixelcorruption remains onlyevaluationstress/optionalablation.) Original alternatives:
   - pixel-level: blur, downscale or codec applied to the LR frames behind the chosen latent frames;
   - latent-level: replace them with matched-variance noise or a learned null token.
 
   Add a mask sampler with ratio ρ and span length.
-- [~] **T3.4 Alignment loss.** (2026-11-05: standalone CPU primitives/17 tests pass; actual Wan hooks/trainer/GPU integration and G3 remain pending.)
+- [x] **T3.4 Alignment loss.** (2026-11-07:realG3 finiteflow/SD/gradients,exactrho0direct-coretrajectory and student9/teacher21 policy passed.)
   - Forward hooks on student block l and teacher block k.
   - An MLP projector on the student features; LayerNorm without affine on the teacher features.
   - Cosine loss on corrupted-frame tokens, weighted by γ.
   - A timestep window controlling which t the loss applies to.
-- [~] **T3.5 Unit tests.** (2026-11-06:89 combined CPU cases passed, including29 primitive/real tinyWan Step,19 G3-worker,19 logging/architecture/checkpoint and22 historical regressions; independent review passed. Actual GPU equivalence/cost gate remains pending.)
+- [x] **T3.5 Unit tests andrealG3.** (2026-11-07:existingCPU evidence retained;real70update GPUgate nowpassed,exactsemantics/fulltiming/memory/sourceprovenance independently reviewed.)
   - With EMA equal to the student and no corruption, teacher features equal student features.
   - Corruption changes only the chosen frames' condition.
   - With the auxiliary loss disabled, training numerics match Base training.
@@ -112,7 +112,7 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
 
 ## Stage 4. Pilot A2 (one seed, about 3 RE)
 
-- [~] **T4.1 Three arms.** (2026-11-06: complete staged training controller is CPU/source reviewed; actual prepare/execution waits for real G2/G3. Exact3×2048=6144 scientific updates,0.75RE; no warmup or diagnostic-state reuse.) From NoRef Base seed1, continue for K=2,048 updates in three arms: flow-only,C1 and A2. A2 defaults:
+- [~] **T4.1 Three arms.** (2026-11-07:fullG2/G3 passed;freshpilot running,originalG4 rulesbound beforetraining. Exact3×2048=6144scienceupdates=.75RE,independentfreshBase01/AdamW andno diagnosticstatereuse.) A2 defaults:
   - ρ = 0.25, in spans of 2 latent frames;
   - latent-level LR-branch corruption, excluding latent position0;
   - γ = 0.8, loss applied for t > 0.3;

@@ -1,0 +1,78 @@
+{
+  "status": "passed_new_training_exporter_synthetic_fixtures",
+  "observed_UTC": "2026-11-07T10:58:48.194335+00:00",
+  "helper": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/export_training_v2.py",
+    "sha256": "3e053730b837206e318bb2d7c6890441b7dd4a8beb0dd788649f018aabb3db0b",
+    "schema": "vsr_training_protocol_v2",
+    "modes": [
+      "resource",
+      "pilot"
+    ],
+    "explicit_run_required": true,
+    "default_destination": "VSR-sync/docs/local_continuation_20261107/<run>"
+  },
+  "tests": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/test_export_training_v2.py",
+    "sha256": "d474402a213567aac3ac8723e42378128edfd7092e12e35ecaad4a12e19afc84",
+    "command": "python -m unittest -v test_export_training_v2",
+    "passed": 7,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 0.035,
+    "cases": [
+      "test_incremental_complete_lines_and_incomplete_progress",
+      "test_full_pilot_6144_rows_and_bound_completions_exclude_binaries",
+      "test_resource_66_rows_and_summary_hash_binding",
+      "test_protocol_mismatch_and_partial_status_never_publish",
+      "test_immutable_json_and_previous_log_cannot_change",
+      "test_source_symlink_escape_and_binary_in_allowlist_rejected",
+      "test_training_rows_require_contiguous_actual_arm_steps"
+    ]
+  },
+  "actual_writer_names_verified_against": "VSR-sync/vsr/train.py:_run_arm,execute,run_benchmark_role",
+  "root_immutable_JSON_allowlist": [
+    "protocol.json",
+    "GPU_admission.json",
+    "runtime.json",
+    "benchmark_rows.json",
+    "summary.json",
+    "failure.json",
+    "cleanup_failure.json",
+    "host_service_request.json",
+    "host_service_launch.json"
+  ],
+  "root_dynamic_snapshots": [
+    "status_snapshot.json",
+    "progress_snapshot.json"
+  ],
+  "arm_paths": "arm_runs/{flow_only,C1,A2}/{config.json,initialization.json,training_complete.json,training.jsonl}",
+  "append_only_complete_line_logs": [
+    "console.log",
+    "arm_runs/{flow_only,C1,A2}/training.jsonl"
+  ],
+  "incomplete_line_policy": "Defer all bytes after the last newline; incomplete live progress JSON is never snapshotted. Incomplete required status JSON aborts publication.",
+  "integrity_checks": [
+    "Protocol raw SHA equals required status and all JSON documents carrying protocol_sha256.",
+    "Previously exported fixed JSON bytes cannot change.",
+    "Log/JSONL previous bytes must remain the exact prefix; only complete lines are appended.",
+    "Pilot actual-arm step must be integer contiguous1..2048 with arm identity exact.",
+    "Final pilot training_complete log path/bytes/SHA matches exactly2048 complete rows.",
+    "Completed pilot retains6144 rows across all3 arms and summary matches arm result records.",
+    "Resource benchmark is66 exact ordered rows,22per role,2warmup+20timed; summary binds raw benchmark SHA and completed70/0 counts.",
+    "Allowlisted source files cannot be symlinks or resolve outside explicit run; destination symlinks rejected.",
+    "UTF8/NUL/nonfinite JSON checks; nonallowlisted files and private asset references are never opened."
+  ],
+  "synthetic_full_pilot_rows_retained": 6144,
+  "synthetic_full_resource_benchmark_rows_retained": 66,
+  "numerical_vsr_sources_modified": false,
+  "GPU_work_started": false,
+  "project_CPU_tests_repeated": false,
+  "real_run_export_performed_by_this_task": false,
+  "limits": [
+    "This exporter is a text integrity/publication helper, not a scientific gate verifier.",
+    "Root training.py writes benchmark_rows.json only after all66 benchmark returns; live progress/failure records preserve current resource accounting.",
+    "Metrics/PNG/checkpoint/tensor bytes are never opened or copied."
+  ]
+}

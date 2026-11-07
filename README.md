@@ -2,7 +2,7 @@
 
 本项目研究：在Wan2.1-T2V-1.3B视频超分训练中，加入EMA teacher的特征监督，能否改善受损帧恢复和时间一致性，同时保持推理开销不变。
 
-**当前状态（2026-11-07）：用户决定继续在本地5080完成工程；新的完整Base评价已启动，目标1152次恢复。** 3个Base各8192步已完成，旧228/1152评价保留为历史，不拼接新结果。10模块主线此前通过[130项CPU回归](docs/code_refactor_20261106/cpu_validation.json)、[19项开发入口检查](docs/development_smoke_20261107/cpu_preflight_review.json)及[真实5080保存/重载/推理闭环](docs/development_smoke_20261107/completion_audit.json)。本次严格桌面兼容修正另通过[40项相关CPU检查](docs/local_continuation_20261107/desktop_cpu_validation.json)和独立审查。当前进度见[本地继续计划与状态](docs/local_continuation_20261107/plan.md)；G2/G3/G4尚未通过，自蒸馏正式训练未开始，H100未连接或迁移。
+**当前状态（2026-11-07）：本地5080完整Base评价G2及真实资源检查G3均已通过；三组pilot已启动。** 3个Base各8192步已完成，旧228/1152评价保留为历史，不拼接新结果。10模块主线此前通过[130项CPU回归](docs/code_refactor_20261106/cpu_validation.json)、[19项开发入口检查](docs/development_smoke_20261107/cpu_preflight_review.json)及[真实5080保存/重载/推理闭环](docs/development_smoke_20261107/completion_audit.json)。本次严格桌面兼容修正另通过[40项相关CPU检查](docs/local_continuation_20261107/desktop_cpu_validation.json)和独立审查。当前进度见[本地继续计划与状态](docs/local_continuation_20261107/plan.md)；G2完成1152次恢复和38,016张PNG/来源复核；G3完成70诊断更新，A2/flow平均耗时比1.406≤1.5。G4和方法质量结论仍待pilot及完整评价，H100未连接或迁移。
 
 ## 模型路径
 
@@ -79,9 +79,9 @@ CUDA_VISIBLE_DEVICES="" python -m unittest discover -s tests -v
 | --- | --- |
 | Base | 3个训练seed各8192步，已完成并审计；继续使用 |
 | 5080开发验证 | 已通过3诊断updates＋保存/学生重载＋1次UniPC20恢复；0正式RE，不代替G2/G3/G4 |
-| Base评价G2 | 本地5080新run完整1152 restores，按本地继续计划推进；旧228条单独保留 |
-| 资源与语义G3 | 70诊断updates，待真实GPU执行；CPU代码检查不等于G3通过 |
-| Pilot | 同Base01分别续训flow-only、C1、A2，各2048步，共0.75RE，待做 |
+| Base评价G2 | 已完成1152 restores及完整输出复核，G2通过；旧228条单独保留 |
+| 资源与语义G3 | 已完成70诊断updates，精确语义/显存通过；A2/flow=1.406≤1.5 |
+| Pilot | 同Base01分别续训flow-only、C1、A2，各2048步，共0.75RE；正在本地训练 |
 | Pilot评价G4 | 3arm完整1152 restores，按事前定义判断收益，待做 |
 | 正式比较与扩展 | 前述门槛通过后再做多seed、消融、最终外评 |
 

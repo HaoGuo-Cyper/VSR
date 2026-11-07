@@ -1,6 +1,6 @@
 # 当前主线入口说明
 
-2026-11-07。下列是已实现接口；本机5080开发smoke已通过，用户随后授权继续本地主线，新的完整Base评价正在运行，H100迁移延期。当前入口见[本地继续计划](local_continuation_20261107/plan.md)。示例中的`/private/...`、SHA与UUID需按实际机器和新协议填写，不能直接复制为启动命令，也不能重复启动已有评价。
+2026-11-07。下列是已实现接口；本机5080开发smoke与新完整Base评价G2均已通过，用户授权在本地按门槛继续，H100迁移延期。当前入口见[本地继续计划](local_continuation_20261107/plan.md)。示例中的`/private/...`、SHA与UUID需按实际机器和新协议填写，不能直接复制为启动命令，也不能重复启动已有评价。
 
 ## 1. 开发时先看帮助和CPU测试
 
@@ -46,7 +46,7 @@ python -m vsr.train prepare
 - `resource`：另加`--base-checkpoint`、`--expected-base-sha`及`--g2-run`；必须重算完整G2通过，执行70诊断updates。
 - `pilot`：resource的参数外再加`--g3-run`和`--g4-definitions`；同Base01、fresh optimizer、flow-only/C1/A2各2048步。G4原定义在任何方法训练/评分之前绑定。
 
-实际执行命令形态为`python -m vsr.train execute --run-dir ... --run-root ... --expected-protocol-sha ...`；按前置门槛启用新run，当前先完成Base评价，G2真实通过后才进入resource，G3通过后才进入pilot。重构前的old run不能交给新入口resume。传入matched Base的原config，模型目录迁移使用独立`--model-directory`，不改原checkpoint配置。
+实际执行命令形态为`python -m vsr.train execute --run-dir ... --run-root ... --expected-protocol-sha ...`；按前置门槛启用新run：完整Base评价G2真实通过后才进入resource，G3通过后才进入pilot。重构前的old run不能交给新入口resume。传入matched Base的原config，模型目录迁移使用独立`--model-directory`，不改原checkpoint配置。
 
 ## 4. 推理：infer.py
 
@@ -64,7 +64,7 @@ python -m vsr.train prepare
 
 `kind=bases`要求3训练seed×32clips×6条件×2采样seed；`kind=pilot`要求flow-only/C1/A2的3arm矩阵，另需`base_evaluation_run`、`pilot_training_run`和`G4_definitions`，核对真实6144步训练及对应最终2048 checkpoint。
 
-旧val32 seal和224资产内容不改。`path_map`只决定到哪里寻找同一批字节；旧源码绑定应指向`legacy/pre_refactor_20261106/`的相同字节。不同host上的FFmpeg/CPU依赖差异必须显式验收并事前记录，不关闭校验来求通过。H100仍需现场环境与GPU验证。
+旧val32 seal和224资产内容不改。`path_map`只决定到哪里寻找同一批字节；旧源码绑定应指向`legacy/pre_refactor_20261106/`的相同字节。不同host上的FFmpeg/CPU依赖差异必须显式验收并事前记录，不关闭校验来求通过。H100迁移当前延期；未来启用时仍需现场环境与GPU验证。
 
 ## 6. 设备身份与公开同步
 
