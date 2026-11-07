@@ -1,0 +1,92 @@
+{
+  "status": "completed_Base_only_independent_G4_reference",
+  "reviewer": "Codex /root/local_continuation_audit",
+  "observed_at_UTC": "2026-11-07T12:40:11.226640+00:00",
+  "method_partial_results_read": false,
+  "method_results_read": false,
+  "rules_changed": false,
+  "GPU_queried_or_used": false,
+  "sources_modified": false,
+  "tests_rerun": false,
+  "new_protocol_created": false,
+  "metric": "masked absolute LPIPS Alex0.1",
+  "reference_name": "G4_Base_training_seed_sample_SD_of_equal_five_corrupt_type_macro",
+  "Base_training_seed_means": {
+    "20261102": 0.49737327664333864,
+    "20261103": 0.4941535994585138,
+    "20261104": 0.502733294837526
+  },
+  "Base_seed_sample_SD_ddof1_S": 0.004334114461900804,
+  "per_seed_per_corrupt_type_means": {
+    "20261102": {
+      "blur": 0.6452767800074071,
+      "noise": 0.47274490690324455,
+      "codec_allintra": 0.33973337650240865,
+      "drop_repeat": 0.13425319461384788,
+      "drop_black": 0.8948581251897849
+    },
+    "20261103": {
+      "blur": 0.660711926408112,
+      "noise": 0.42985018153558485,
+      "codec_allintra": 0.335235830192687,
+      "drop_repeat": 0.13601262177689932,
+      "drop_black": 0.9089574373792857
+    },
+    "20261104": {
+      "blur": 0.654322870541364,
+      "noise": 0.49434653476055246,
+      "codec_allintra": 0.3445435737958178,
+      "drop_repeat": 0.13634512957651168,
+      "drop_black": 0.8841083655133843
+    }
+  },
+  "formula": {
+    "per_clip_condition": "m(seed,clip,type) = mean over sampler42/43 of saved masked absolute LPIPS",
+    "per_type": "t(seed,type) = mean over all32 clips of m(seed,clip,type)",
+    "per_seed": "b(seed) = mean over all five corrupt types of t(seed,type)",
+    "reference_S": "sample SD(ddof=1) over b(20261102),b(20261103),b(20261104)",
+    "future_G4_recovery_condition": "Delta = mean(C1)-mean(A2) on the same corrupt-masked LPIPS pool; require strictly Delta>S, together with original clean PSNR/SSIM guards",
+    "implementation_of_this_reference": "Python standard library statistics.mean/statistics.stdev only; no numpy/model/GPU execution",
+    "arithmetic_note": "Equal nested means implement the frozen uniform clip/type/sampler weights. This independent scalar reference does not replace or modify the frozen executable G4 implementation."
+  },
+  "coverage": {
+    "complete_Base_rows_verified": 1152,
+    "corrupt_rows_used_for_S": 960,
+    "clean_rows_excluded_from_S": 192,
+    "training_seeds": [
+      "20261102",
+      "20261103",
+      "20261104"
+    ],
+    "clips": 32,
+    "corrupt_types": [
+      "blur",
+      "noise",
+      "codec_allintra",
+      "drop_repeat",
+      "drop_black"
+    ],
+    "sampler_seeds": [
+      42,
+      43
+    ]
+  },
+  "bindings": {
+    "Base_run": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/VSR-sync/runs/base_evaluation_local_20261107T093027Z",
+    "Base_protocol_sha256": "e63681c96413edddefb3a7077679e9d3d3077fdceb4a6f80135732a703c2aea7",
+    "Base_status_sha256": "2eb3eb7f693bd8f8506e835b46b9722bc16f27d4fddaf3ea76d564be0d91fc8e",
+    "Base_summary_sha256": "f5fa9632b0eab1ad110e51a6c786515bf91a2cfbe9f47cf020b09e6708fcfab1",
+    "Base_observations_sha256": "5af43149b6c1e151aebb8854de7d9d24156195a9e1193194dbc00b966bbe54b2",
+    "G4_definition_path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/VSR-sync/configs/stage4_g4_definitions_20261106.json",
+    "G4_definition_sha256": "d552dbb136223d246e05af202f25b072a2c822ad4eeaecead0aa0d6360b1ca58",
+    "cohort_seal_digest": "9c5e938d8b2c9b5e7d965fca2f6b3925557848235d6b9d404b6231bffcbc36e8",
+    "Base_checkpoint_hashes": {
+      "20261102": "28356e22e4e718d3c378588793f60732dbc93825ec5d78b8a85c8150060da63f",
+      "20261103": "87f60ce812797d73b27b9d2d0bcb41abb45ea4659ca2b6eb6092d02f3b58061a",
+      "20261104": "c6f0aedcefac965334851e081d72916dccfa9559b469dd1ad819d7139df65edd"
+    }
+  },
+  "distinction_from_G2": "This S is the three-seed spread of absolute corrupt-masked LPIPS macro means. It is not the G2 clean masked-minus-neighbor gap SD, not the corrupt excess-gap SD, not clip/bootstrap/sampler variation, and not a confidence-interval or p-value threshold.",
+  "G4_verdict": "not_computed_no_method_observations_read",
+  "interpretation": "A fixed prespecified Base reference for independent full G4 verification after the complete pilot matrix; no partial method comparison or quality claim."
+}
