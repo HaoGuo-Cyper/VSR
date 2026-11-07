@@ -446,3 +446,12 @@ Allloss/gradients arefinite, frozenbackbone unchanged, EMAupdates3, teacheractiv
 Exactlyone originalnativeUniPC20/CFG1/CPUnoise42 restore usedtrainclip0's sealedLR and fixedtext, notHR/teacher. Outputis33×128×224; all33PNG hashes/dimensions and workerpixelreadback match, preview has33frames/29.97fps. Restore took2.949078s onthissinglecrop; PyTorchpeakallocated3.745697GiB/reserved3.886719GiB, nottotalprocess/desktopVRAM. This is an engineeringclosure ontrainingdata, not a methodquality conclusion orH100speed estimate.
 
 Independentcompletionreview rehashed protocol/sources/inputbindings/Base/outputcheckpoint/33PNGs/RGBtensor/MP4 and checked status/summary/rows/counts. Fullallowlisttext and audit are in `docs/development_smoke_20261107/`; media/tensor/checkpoint payloads remain privateoutsideGit.3diagnosticupdates add0formalRE. Original3Bases/actual41407b0checkout remain unchanged, oldevaluation228/1152 stillstopped, noG2/G3/G4verdictadded. GPUresourcesreleased; automationPAUSED and noH100connection/migration/fullGPUexperiment.
+
+
+## 2026-11-07 — Local continuation and fresh full Base evaluation
+
+The human resumed the project on localRTX5080, deferred H100 and delegated routine decisions. Existingthree8192-stepBases are reused without retraining. Shared desktop admission was updated for exactsame-UIDNautilusFileManager1DBusactivation, preserving allidentity/cap checks and tightening priorgnome-substring matching.40relevantCPU checks passed0fail/0skip withCUDAuninitialized, and independentAST review confirms only theadmissionhelper/guard changed; numericmodules areunchanged. See `docs/local_continuation_20261107/`.
+
+Newrun: `runs/base_evaluation_local_20261107T093027Z`; protocolSHA256 `e63681c96413edddefb3a7077679e9d3d3077fdceb4a6f80135732a703c2aea7`; service `vsr-base-evaluation-local-20261107t093027z.service`,Restart=no. Budget3seed×32clip×6condition×2sampler=1152restores/0trainingupdates. Original33stride1/128×224/x4,UniPC20/CFG1,seeds42/43,nativeVAEpolicy,224frozenassets/mask/pairs/quantization/metrics remainfixed. Priorstopped228rows are retainedseparately andnotreused.
+
+Initial hostobservation: active/running,MainPID1823176,7committedrestores, nofailure. Source/dependenciesarefrozen. This is a progressobservation, notG2 orqualityevidence. Fullsource/output/1152-rowverification andseedstatistics follow onlyaftercompletion. G2/G3/G4 remainpending; no newscientifictrainingupdates orformalRE.

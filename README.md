@@ -2,7 +2,7 @@
 
 本项目研究：在Wan2.1-T2V-1.3B视频超分训练中，加入EMA teacher的特征监督，能否改善受损帧恢复和时间一致性，同时保持推理开销不变。
 
-**当前状态（2026-11-07）：10模块主线已通过一次真实5080开发验证：3次A2诊断更新、保存/学生重载、1次33帧推理全部通过。** 原重构的[130项CPU回归](docs/code_refactor_20261106/cpu_validation.json)及本次入口的[19项相关CPU检查](docs/development_smoke_20261107/cpu_preflight_review.json)均通过；见[GPU开发验证记录](docs/development_smoke_20261107/completion_audit.json)。验证已结束，完整实验继续停止、自动推进暂停，H100尚未连接或迁移。已有3个Base各完成8192步；旧Base评价仍停在228/1152，G2未得出结论，自蒸馏正式训练未开始。
+**当前状态（2026-11-07）：用户决定继续在本地5080完成工程；新的完整Base评价已启动，目标1152次恢复。** 3个Base各8192步已完成，旧228/1152评价保留为历史，不拼接新结果。10模块主线此前通过[130项CPU回归](docs/code_refactor_20261106/cpu_validation.json)、[19项开发入口检查](docs/development_smoke_20261107/cpu_preflight_review.json)及[真实5080保存/重载/推理闭环](docs/development_smoke_20261107/completion_audit.json)。本次严格桌面兼容修正另通过[40项相关CPU检查](docs/local_continuation_20261107/desktop_cpu_validation.json)和独立审查。当前进度见[本地继续计划与状态](docs/local_continuation_20261107/plan.md)；G2/G3/G4尚未通过，自蒸馏正式训练未开始，H100未连接或迁移。
 
 ## 模型路径
 

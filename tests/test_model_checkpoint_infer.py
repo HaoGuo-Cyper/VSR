@@ -513,7 +513,8 @@ class GPULeaseTests(unittest.TestCase):
         uid=os.getuid()
         actual={'pid':33,'uid':uid,'uids':[uid]*4,'exe':'/usr/bin/gjs-console',
                 'exe_sha256':'a'*64,'start_ticks':1234,'exe_inode':5,'exe_device':6,
-                'exe_mode':0o755,'exe_owner':0,'cgroup':'0::/user.slice/gnome-shell.scope'}
+                'exe_mode':0o755,'exe_owner':0,
+                'cgroup':f'0::/user.slice/user-{uid}.slice/user@{uid}.service/session.slice/org.gnome.Shell@ubuntu.service\n'}
         pin={key:actual[key] for key in ('pid','uid','exe','exe_sha256','start_ticks','exe_inode','exe_device','exe_mode')}
         pin.update(process_name='gjs',max_memory_mib=256)
         allowed={'expected_gpu_uuid':'GPU-fixture','desktop_processes':[pin]}
@@ -525,6 +526,50 @@ class GPULeaseTests(unittest.TestCase):
                 with patch('vsr.checkpoints._gpu_query',side_effect=[[['0','GPU-fixture']],[['33','gjs','64']]]),patch('vsr.checkpoints._desktop_identity',return_value=actual):
                     with self.assertRaises(ValueError):
                         with gpu_lease(path,'cuda:0',{'expected_gpu_uuid':'GPU-fixture','desktop_processes':[changed]}):pass
+
+    def test_verified_file_manager_dbus_endpoints_and_terminal_scope(self):
+        uid=os.getuid();prefix=f'/user.slice/user-{uid}.slice/user@{uid}.service/app.slice/'
+        for endpoint in ('org.gnome.Nautilus','org.freedesktop.FileManager1'):
+            cgroup=prefix+f'app-dbus\\x2d:1.1\\x2d{endpoint}.slice/dbus-:1.1-{endpoint}@1.service'
+            self._desktop_lease_case('/usr/bin/nautilus','/usr/bin/nautilus','0::'+cgroup+'\n',True)
+        self._desktop_lease_case('/usr/bin/ptyxis','ptyxis',
+            '0::'+prefix+r'app-gnome-xdg\x2dterminal\x2dexec-33.scope'+'\n',True)
+
+    def _desktop_lease_case(self,exe,name,cgroup,passed):
+        uid=os.getuid()
+        actual={'pid':33,'uid':uid,'uids':[uid]*4,'exe':exe,'exe_sha256':'a'*64,
+                'start_ticks':1234,'exe_inode':5,'exe_device':6,'exe_mode':0o755,
+                'exe_owner':0,'cgroup':cgroup}
+        pin={key:actual[key] for key in ('pid','uid','exe','exe_sha256','start_ticks','exe_inode','exe_device','exe_mode')}
+        pin.update(process_name=name,max_memory_mib=256)
+        with self.subTest(cgroup=cgroup),tempfile.TemporaryDirectory() as directory:
+            with patch('vsr.checkpoints._gpu_query',side_effect=[[['0','GPU-fixture']],[['33',name,'40']]]),patch('vsr.checkpoints._desktop_identity',return_value=actual):
+                if passed:
+                    with gpu_lease(Path(directory)/'gpu.lock','cuda:0',{'expected_gpu_uuid':'GPU-fixture','desktop_processes':[pin]}) as receipt:
+                        self.assertEqual(receipt['admitted_desktop'][0]['pid'],33)
+                else:
+                    with self.assertRaises(ValueError):
+                        with gpu_lease(Path(directory)/'gpu.lock','cuda:0',{'expected_gpu_uuid':'GPU-fixture','desktop_processes':[pin]}):pass
+
+    def test_desktop_cgroup_rejects_other_user_bus_endpoint_pid_and_substrings(self):
+        uid=os.getuid();prefix=f'/user.slice/user-{uid}.slice/user@{uid}.service/app.slice/'
+        valid=prefix+r'app-dbus\x2d:1.1\x2dorg.freedesktop.FileManager1.slice/dbus-:1.1-org.freedesktop.FileManager1@1.service'
+        bad=[valid.replace(f'user-{uid}.slice',f'user-{uid+1}.slice'),
+             valid.replace('dbus-:1.1-','dbus-:1.2-'),
+             valid.replace('dbus-:1.1-org.freedesktop.FileManager1','dbus-:1.1-org.gnome.Nautilus'),
+             valid+'/gnome', '/unverified/gnome.scope']
+        for path in bad:self._desktop_lease_case('/usr/bin/nautilus','/usr/bin/nautilus','0::'+path+'\n',False)
+        self._desktop_lease_case('/usr/bin/nautilus','/usr/bin/nautilus','1:cpu:'+valid+'\n',False)
+        self._desktop_lease_case('/usr/bin/nautilus','/usr/bin/nautilus','0::'+valid+'\n0::'+valid+'\n',False)
+        self._desktop_lease_case('/usr/bin/ptyxis','ptyxis',
+            '0::'+prefix+r'app-gnome-xdg\x2dterminal\x2dexec-34.scope'+'\n',False)
+
+    def test_second_distinct_gnome_shell_is_rejected(self):
+        pins=[{'pid':pid,'exe':'/usr/bin/gjs-console'} for pid in (33,34)]
+        with tempfile.TemporaryDirectory() as directory:
+            with patch('vsr.checkpoints._gpu_query',side_effect=[[['0','GPU-fixture']],[['33','gjs','40'],['34','gjs','40']]]):
+                with self.assertRaisesRegex(ValueError,'Only one pinned'):
+                    with gpu_lease(Path(directory)/'gpu.lock','cuda:0',{'expected_gpu_uuid':'GPU-fixture','desktop_processes':pins}):pass
 
 
 if __name__=='__main__':

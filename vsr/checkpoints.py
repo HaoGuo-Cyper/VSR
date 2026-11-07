@@ -397,6 +397,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 import csv
 import fcntl
+import re
 import stat
 import subprocess
 
@@ -449,6 +450,30 @@ def _desktop_identity(pid):
             'cgroup': (base / 'cgroup').read_text()}
 
 
+def _desktop_cgroup_matches(actual):
+    """Recognize complete same-user desktop units, never a name substring."""
+    rows = actual.get('cgroup', '').splitlines()
+    if len(rows) != 1 or not rows[0].startswith('0::'):
+        return False
+    path = rows[0][3:]
+    uid = actual['uid']
+    if type(actual.get('pid')) is not int or actual['pid'] <= 0:
+        return False
+    prefix = re.escape(f'/user.slice/user-{uid}.slice/user@{uid}.service')
+    if actual['exe'] == '/usr/bin/gjs-console':
+        pattern = prefix + r'/session\.slice/org\.gnome\.Shell@ubuntu\.service'
+    elif actual['exe'] == '/usr/bin/nautilus':
+        pattern = (prefix + r'/app\.slice/app-dbus\\x2d:(?P<bus>\d+\.\d+)\\x2d'
+                   r'(?P<endpoint>org\.gnome\.Nautilus|org\.freedesktop\.FileManager1)\.slice/'
+                   r'dbus-:(?P=bus)-(?P=endpoint)@\d+\.service')
+    elif actual['exe'] == '/usr/bin/ptyxis':
+        pattern = (prefix + r'/app\.slice/app-gnome-xdg\\x2dterminal\\x2dexec-'
+                   + str(actual['pid']) + r'\.scope')
+    else:
+        return False
+    return re.fullmatch(pattern, path) is not None
+
+
 def _gpu_admission(device, admission):
     _need(isinstance(admission, dict), 'Explicit GPU admission dictionary required')
     selection = _gpu_selection(device, admission)
@@ -466,6 +491,8 @@ def _gpu_admission(device, admission):
     _need(isinstance(pins, list) and all(isinstance(pin, dict) for pin in pins), 'desktop_processes must be a list of complete pinned identities')
     pinned = {pin.get('pid'): pin for pin in pins}
     _need(len(pinned) == len(pins) and all(type(pid) is int and pid > 0 for pid in pinned), 'Duplicate/invalid desktop admission PIDs')
+    _need(sum(pin.get('exe') == '/usr/bin/gjs-console' for pin in pins) <= 1,
+          'Only one pinned GNOME Shell process is admitted')
     _need({row['pid'] for row in processes} == set(pinned), 'Unexpected or missing GPU process; no unknown/ML process is admitted')
     admitted = []
     for row in processes:
@@ -478,8 +505,8 @@ def _gpu_admission(device, admission):
         actual = _desktop_identity(row['pid'])
         _need(pin['uid'] == os.getuid() and actual['uids'] == [os.getuid()] * 4, 'Desktop process UID mismatch')
         _need(actual['exe'] in ('/usr/bin/gjs-console', '/usr/bin/nautilus', '/usr/bin/ptyxis'), 'Only verified system desktop executables are admitted')
-        _need(actual['exe_owner'] == 0 and actual['exe_mode'] & 0o022 == 0 and 'gnome' in actual['cgroup'].lower(),
-              'Desktop executable ownership/mode/GNOME-cgroup mismatch')
+        _need(actual['exe_owner'] == 0 and actual['exe_mode'] & 0o022 == 0 and _desktop_cgroup_matches(actual),
+              'Desktop executable ownership/mode/session-cgroup mismatch')
         _need(all(actual[key] == pin[key] for key in required if key not in ('max_memory_mib', 'process_name'))
               and row['process_name'] == pin['process_name'], 'Desktop process identity changed')
         admitted.append({**row, **actual})

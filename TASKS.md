@@ -5,7 +5,16 @@ Add a date and a one-line note whenever a status changes.
 
 Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
 
-## Current execution order — H100 planning update,2026-11-06
+## Latest execution order — local continuation,2026-11-07
+
+The human resumed the existing plan on localRTX5080 and delegated routine decisions. This supersedes the earlier H100-only/planning-only stop. Read `docs/local_continuation_20261107/plan.md` and the active run's actual status. H100 migration is deferred, not performed. Existing3Bases and D1–D4/G2/G3/G4 definitions remain unchanged.
+
+- [x] **L0 Local readiness.**40 relevantCPU cases passed after the strict desktop compatibility update; independent numerical/asset andAST reviews passed. Fresh host admission verified pinned gjs/Nautilus/Ptyxis.
+- [~] **L1 / T2.4 Fresh complete Base evaluation.** `base_evaluation_local_20261107T093027Z`, protocol `e63681c96413edddefb3a7077679e9d3d3077fdceb4a6f80135732a703c2aea7`; full1152 restores,0training. First host check active/running with7 committed rows. Prior228 rows preserved separately. Never duplicate the active matrix.
+- [ ] **L2 / G3 Actual resource and semantic check.** Only after fullG2 verification passes;70diagnostic updates, fresh matchedBase01/AdamW per role, original16GiB cap and same-device overhead gate.
+- [ ] **L3 / T4 Pilot andG4.** Only afterG3;flow-only/C1/A2 each2048updates fromfreshBase01/optimizer, fixedG4 definitions and full1152pilot evaluation. No automatic4096/sweep.
+
+## Historical execution order — H100 planning update,2026-11-06
 
 Read `docs/H100_MAIN_EXPERIMENT_PLAN_20261106.md` first for current status, machine roles, migration inventory and dependency order. Remote H10080GB is the future main experiment platform; RTX5080 16GB handles development/validation. The human requests **planning only, no experiment launch**. All GPU work remains stopped and automationvsr PAUSED. Historical tasks below retain evidence and superseded-status chronology; the latest three-Base audit and user-stop records determine current completion.
 
@@ -73,7 +82,7 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
 - [x] **T2.1 Base under the final protocol.** (2026-11-06: all3 fresh official NoRef seeds completed8192 each; independent full provenance/log/5024-cache/three-checkpoint audit and seed statistics passed. Diagnostic8 is separate from3RE. Runtime41407b0 preserved.)
 - [x] **T2.2 Frame-varying test set.** (Latest2026-11-05: CPU materialization complete,32val clips/224NPYs;192 reader views passed SHA/shape/window/FPS/source and unmasked identity checks. No predictions or G2 result.) (2026-11-05: fixed val32 metadata cohort/masks sealed before pixels/new scores; CPU materialization underway; no test/external tuning.) Start from REDS4, YouHQ40 or held-out HQ-VSR clips. Inject per-frame spikes into selected frames: extra blur, noise, heavy codec compression, dropped frames (repeated or blank). Save a mask of which frames are corrupted.
 - [~] **T2.3 Corrupted-frame recovery metric.** (2026-11-05: original-frame/pair pool and three-seed G2 summarizer implemented; five-corruption CPU synthetic checks passed; actual checkpoint scores remain unmeasured.) Compute PSNR and LPIPS on the corrupted frames, compared with the same frames restored from clean LR. Also compute the gap between corrupted frames and their neighbours.
-- [~] **T2.4 Evaluate all three Bases.** (USER STOP2026-11-06: service stopped and automationvsr PAUSED at228/1152 committed restores; outputs retained. G2 cannot be decided from this incomplete matrix. No restart without new human instruction; original protocol is fresh-only.)
+- [~] **T2.4 Evaluate all three Bases.** (2026-11-07: human resumed locally; new10-module full1152 matrix running above. Historical USER STOP2026-11-06 retained at228/1152; those outputs are not reused. G2 remains pending until the new complete matrix/source/output audit passes.)
   *Done when:* Base mean ± std is reported on every set and the headroom is measured.
 
 **Gate G2:** corrupted frames are worse than their neighbours by more than the seed spread. If not, report and propose harder settings (longer clips, larger motion, stronger per-frame degradation).
