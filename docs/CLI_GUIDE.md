@@ -1,6 +1,6 @@
 # 当前主线入口说明
 
-2026-11-07。下列是已实现接口；本机5080已完成一次固定预算开发smoke，完整GPU实验及H100迁移仍暂停。示例中的`/private/...`、SHA与UUID需按未来真实机器和协议填写，不能直接当作当前启动命令。
+2026-11-07。下列是已实现接口；本机5080开发smoke已通过，用户随后授权继续本地主线，新的完整Base评价正在运行，H100迁移延期。当前入口见[本地继续计划](local_continuation_20261107/plan.md)。示例中的`/private/...`、SHA与UUID需按实际机器和新协议填写，不能直接复制为启动命令，也不能重复启动已有评价。
 
 ## 1. 开发时先看帮助和CPU测试
 
@@ -46,7 +46,7 @@ python -m vsr.train prepare
 - `resource`：另加`--base-checkpoint`、`--expected-base-sha`及`--g2-run`；必须重算完整G2通过，执行70诊断updates。
 - `pilot`：resource的参数外再加`--g3-run`和`--g4-definitions`；同Base01、fresh optimizer、flow-only/C1/A2各2048步。G4原定义在任何方法训练/评分之前绑定。
 
-实际执行命令形态为`python -m vsr.train execute --run-dir ... --run-root ... --expected-protocol-sha ...`；当前不执行。重构前的old run不能交给新入口resume。传入matched Base的原config，模型目录迁移使用独立`--model-directory`，不改原checkpoint配置。
+实际执行命令形态为`python -m vsr.train execute --run-dir ... --run-root ... --expected-protocol-sha ...`；按前置门槛启用新run，当前先完成Base评价，G2真实通过后才进入resource，G3通过后才进入pilot。重构前的old run不能交给新入口resume。传入matched Base的原config，模型目录迁移使用独立`--model-directory`，不改原checkpoint配置。
 
 ## 4. 推理：infer.py
 
@@ -59,7 +59,7 @@ python -m vsr.train prepare
 
 1. 以[配置模板](../configs/evaluation_bases.template.json)填入明确绝对路径、3个已审计Base SHA、固定text及LPIPS权重、host准入。
 2. `python -m vsr.evaluate prepare --config ... --run-dir ...`创建新协议。
-3. 未来经批准后用`execute --run-dir ... --expected-protocol-sha ...`执行。
+3. 审核新协议及前置检查后用`execute --run-dir ... --expected-protocol-sha ...`执行；既定本地计划正常通过门槛后继续，无需重复许可，已有run不重复启动。
 4. `verify --run-dir ...`重查全1152行/预测文件/完成marker/来源hash并重算门槛；部分run不能解锁后续阶段。
 
 `kind=bases`要求3训练seed×32clips×6条件×2采样seed；`kind=pilot`要求flow-only/C1/A2的3arm矩阵，另需`base_evaluation_run`、`pilot_training_run`和`G4_definitions`，核对真实6144步训练及对应最终2048 checkpoint。
@@ -70,4 +70,4 @@ python -m vsr.train prepare
 
 所有CUDA执行共用checkpoints.gpu_lease。admission声明`expected_gpu_uuid`，可选`desktop_processes`完整pin；空清单要求目标GPU无compute进程，不能仅按进程名字放行。CPU检查使用mock inventory；本机5080已验证真实桌面准入/共享锁，H100准入尚未现场验证。
 
-GitHub只同步代码、配置、协议、统计和文本日志；模型、checkpoint、原视频、tensor缓存及凭证通过私有通道提供。实验期间固定commit与依赖，不git pull覆盖运行源码。
+GitHub只同步代码、配置、协议、统计和文本日志；模型、checkpoint、原视频、tensor缓存及凭证通过私有通道提供。实验期间固定协议绑定的数值源码与依赖，不git pull覆盖运行源码；文档和文本日志可单独同步。

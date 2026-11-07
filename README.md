@@ -79,7 +79,7 @@ CUDA_VISIBLE_DEVICES="" python -m unittest discover -s tests -v
 | --- | --- |
 | Base | 3个训练seed各8192步，已完成并审计；继续使用 |
 | 5080开发验证 | 已通过3诊断updates＋保存/学生重载＋1次UniPC20恢复；0正式RE，不代替G2/G3/G4 |
-| Base评价G2 | H100新run完整1152 restores，待做；旧228条单独保留 |
+| Base评价G2 | 本地5080新run完整1152 restores，按本地继续计划推进；旧228条单独保留 |
 | 资源与语义G3 | 70诊断updates，待真实GPU执行；CPU代码检查不等于G3通过 |
 | Pilot | 同Base01分别续训flow-only、C1、A2，各2048步，共0.75RE，待做 |
 | Pilot评价G4 | 3arm完整1152 restores，按事前定义判断收益，待做 |
@@ -87,13 +87,15 @@ CUDA_VISIBLE_DEVICES="" python -m unittest discover -s tests -v
 
 最重要的是**A2超过C1**：C1采用同样条件破坏但没有teacher监督，flow-only衡量普通续训收益。首轮保持33连续帧/stride1、128×224 HR、×4、train1641/val32。显存增加不自动改变科学设置。
 
-## 5080开发 → GitHub → H100实验
+## 本地5080开发与实验 → GitHub同步
 
-1. **5080开发维护**：写代码，运行相关CPU检查；小GPU测试须按批准的协议另行启动。
-2. **发布固定版本**：通过检查后提交GitHub，记录完整commit SHA。
-3. **H100独立checkout**：拉取指定commit，用服务器自己的显式模型/数据/run路径；运行期间固定代码与依赖。
-4. **逐层验证**：先H100环境和小样本兼容性，再完整评价/训练；每个run记录源码、配置、环境与资产hash。
+1. **5080开发维护**：写代码，运行相关CPU检查，保留10个核心模块和旧实验记录。
+2. **固定执行版本**：通过检查后记录完整commit及源码hash；运行期间固定代码与依赖。
+3. **本地独立run**：使用显式模型/数据/输出路径、共享GPU锁和新协议，不续跑旧停止目录。
+4. **按门槛推进**：完整Base评价G2 → 真实资源与语义G3 → flow-only/C1/A2 pilot → 完整评价G4；正常通过后继续，失败保留记录并停止依赖任务。
 5. **同步结果**：代码、配置、协议、统计和文本日志可回GitHub；权重、原始视频、tensor缓存和凭证通过私有通道管理。
+
+H100迁移方案保留为历史计划，当前延期，不是本地主线的前置条件。
 
 旧checkpoint中的原配置保留，新的`--model-dir`/`--model-directory`只覆盖实际资产位置并另记审计。GPU执行共用租约，必须显式指定device/UUID；桌面进程需完整身份声明。新准入逻辑已通过本机5080桌面身份与共享租约实测；H100驱动、依赖、GPU数值和现场准入尚未验收。
 
@@ -101,8 +103,8 @@ CUDA_VISIBLE_DEVICES="" python -m unittest discover -s tests -v
 
 - [旧代码归档](legacy/README.md)：原`vsr/`、`scripts/`、`tests/`共144个文件，逐字节保留，主线运行不依赖归档。
 - [Python文件索引](docs/PYTHON_FILE_INDEX.md)：当前主线与历史代码分别列出。
-- [H100任务计划](docs/H100_MAIN_EXPERIMENT_PLAN_20261106.md)：完成状态、私有迁移清单、后续门槛。
+- [H100历史计划](docs/H100_MAIN_EXPERIMENT_PLAN_20261106.md)：迁移清单和原两机分工方案，当前延期；主线以本地继续计划为准。
 - [TASKS](TASKS.md)、[DECISIONS](DECISIONS.md)、[RESULTS](RESULTS.md)：任务、决策及真实实验记录。
 - [旧README](docs/history/README_before_ten_module_plan_20261106.md)：历史说明，不作当前启动依据。
 
-尚未获得自蒸馏的真实质量结论，也未因本次重构重训已有Base或重开评价。
+尚未获得自蒸馏的真实质量结论。已有三个Base继续使用；完整评价及后续实验按本地继续计划推进，旧停止记录保留。
