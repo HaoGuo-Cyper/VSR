@@ -2,7 +2,7 @@
 
 本项目研究：在Wan2.1-T2V-1.3B视频超分训练中，加入EMA teacher的特征监督，能否改善受损帧恢复和时间一致性，同时保持推理开销不变。
 
-**当前状态（2026-11-06）：主线已实际收拢为10个核心Python模块；130项CPU测试全部通过（0失败、0跳过），旧实现和记录已保留。见[验证报告](docs/code_refactor_20261106/cpu_validation.json)。GPU实验仍停止，H100尚未连接或迁移。** 已有3个Base各完成8192步；旧Base评价停在228/1152，G2未得出结论，自蒸馏正式训练未开始。
+**当前状态（2026-11-07）：10模块主线已通过一次真实5080开发验证：3次A2诊断更新、保存/学生重载、1次33帧推理全部通过。** 原重构的[130项CPU回归](docs/code_refactor_20261106/cpu_validation.json)及本次入口的[19项相关CPU检查](docs/development_smoke_20261107/cpu_preflight_review.json)均通过；见[GPU开发验证记录](docs/development_smoke_20261107/completion_audit.json)。验证已结束，完整实验继续停止、自动推进暂停，H100尚未连接或迁移。已有3个Base各完成8192步；旧Base评价仍停在228/1152，G2未得出结论，自蒸馏正式训练未开始。
 
 ## 模型路径
 
@@ -27,7 +27,7 @@ LRV → 上采样 → 冻结VAE编码 → LR latent条件 ─┐
 | [model.py](vsr/model.py) | Wan模型工厂、LoRA、LR残差注入、架构与精度设置、参数hash | 官方权重/配置及LR条件 → 模型、velocity和特征 |
 | [teacher.py](vsr/teacher.py) | trainable-only EMA、安全权重交换、teacher前向和特征捕获 | 学生/EMA参数、完整LR条件 → 无梯度teacher特征 |
 | [losses.py](vsr/losses.py) | flow-matching、学生投影头、masked cosine特征损失 | 预测/目标、学生/teacher特征/mask → 损失与诊断 |
-| [train.py](vsr/train.py) | 统一Base训练、G3资源验证、flow-only/C1/A2 pilot；优化器/RNG、日志及门槛检查 | 缓存/配置/可选matched Base与前置结果 → checkpoint、训练或资源报告 |
+| [train.py](vsr/train.py) | 统一Base训练、固定预算开发smoke、G3资源验证、flow-only/C1/A2 pilot；优化器/RNG、日志及门槛检查 | 缓存/配置/可选matched Base与前置结果 → checkpoint、开发/训练或资源报告 |
 | [infer.py](vsr/infer.py) | 仅LR推理、原生UniPC、空间tiling、视频CLI；使用固定文本缓存 | LR视频/学生checkpoint/采样设置 → HR视频 |
 | [evaluate.py](vsr/evaluate.py) | 统一3Base/3arm完整矩阵、协议与来源绑定、保存预测/行记录、G2/G4重算 | checkpoint列表/固定评价资产 → 完整观测、门槛与统计 |
 | [metrics.py](vsr/metrics.py) | RGB PSNR/SSIM、LPIPS、TecoGAN、固定帧/时间对池、seed/clip统计与特征诊断 | 保存像素或封存观测 → 指标、种子统计、配对区间 |
@@ -57,7 +57,7 @@ python -m vsr.evaluate --help
 | 日常任务 | 入口 |
 | --- | --- |
 | 准备/检查数据 | `vsr.data manifest / prepare-cache / check-cache` |
-| 训练或资源验证 | `vsr.train prepare / execute`，模式`base / resource / pilot` |
+| 训练或开发/资源验证 | `vsr.train prepare / execute`，模式`base / smoke / resource / pilot` |
 | 预览权重配置/视频超分 | `vsr.infer preview / run`；run要求显式`--execute` |
 | 完整评价/结果复核 | `vsr.evaluate prepare / execute / verify` |
 
@@ -78,6 +78,7 @@ CUDA_VISIBLE_DEVICES="" python -m unittest discover -s tests -v
 | 阶段 | 设置与当前状态 |
 | --- | --- |
 | Base | 3个训练seed各8192步，已完成并审计；继续使用 |
+| 5080开发验证 | 已通过3诊断updates＋保存/学生重载＋1次UniPC20恢复；0正式RE，不代替G2/G3/G4 |
 | Base评价G2 | H100新run完整1152 restores，待做；旧228条单独保留 |
 | 资源与语义G3 | 70诊断updates，待真实GPU执行；CPU代码检查不等于G3通过 |
 | Pilot | 同Base01分别续训flow-only、C1、A2，各2048步，共0.75RE，待做 |
@@ -94,7 +95,7 @@ CUDA_VISIBLE_DEVICES="" python -m unittest discover -s tests -v
 4. **逐层验证**：先H100环境和小样本兼容性，再完整评价/训练；每个run记录源码、配置、环境与资产hash。
 5. **同步结果**：代码、配置、协议、统计和文本日志可回GitHub；权重、原始视频、tensor缓存和凭证通过私有通道管理。
 
-旧checkpoint中的原配置保留，新的`--model-dir`/`--model-directory`只覆盖实际资产位置并另记审计。GPU执行共用租约，必须显式指定device/UUID；桌面进程需完整身份声明。新准入逻辑只经过CPU模拟检查，H100驱动、依赖、GPU数值和现场准入尚未验收。
+旧checkpoint中的原配置保留，新的`--model-dir`/`--model-directory`只覆盖实际资产位置并另记审计。GPU执行共用租约，必须显式指定device/UUID；桌面进程需完整身份声明。新准入逻辑已通过本机5080桌面身份与共享租约实测；H100驱动、依赖、GPU数值和现场准入尚未验收。
 
 ## 历史与研究记录
 

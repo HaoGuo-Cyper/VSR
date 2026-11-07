@@ -424,3 +424,25 @@ The oldvsr/scripts/tests144 tracked files were moved byte-identically under `leg
 The final relatedCPU suite ran130 tests (timing in the report):0failures,0errors,0skips,CUDAnot initialized. It includes numericalRNG/EMA/gradient tinyWan regressions, original officialLPIPS/TecoGAN CPU checks, canonicalG2 equivalence, frozenG4/PCG64 intervals, complete1152-row synthetic file-chain validation, failure/lease/source rejection, path relocation, and immutablearchive coverage. Real3Base payloads(488trainable tensors/6500992elements each) restored exactly into shape-only CPU fixtures; originalsealed trainingcache andval32 metadata read successfully without fullWan loading or evaluationpixel decoding. This does not establish GPU equality, new quality scores or H100 readiness. No scientificoptimizer updates or GPUexperiment occurred.
 
 Independent cross-reviews found and corrected scheduler-grid initialization, strictflags beforeCUDA, selected-device timing, pilot-to-finalcheckpoint provenance, dependency-source verification, JSONkey normalization and primary-preserving lease cleanup; affectedCPU regressions and the finalwhole relatedsuite passed. Validation sourcehashes, loghash, counts, pause state and unchangedactualcheckout are recorded in `docs/code_refactor_20261106/cpu_validation.json`, with fulltext log. README now describes actual files/CLIs and the fixedcommit two-host workflow. H100 transfer, GPU smoke tests, G2/G3/G4 real verdicts and latertraining remain pending.
+
+## Local5080 development smoke declared — 2026-11-07
+
+The human authorized a bounded local GPU closure only. A new fixedbudget smoke mode was added inside train.py, with exactly3A2 diagnosticupdates and1native20step restore from the first3training clips/matchedBase01. Save/reload uses a newdevelopment A2step3 checkpoint; students must match exactly and no trainingonlystate may enter inference. Existing numericalStep/G3 routines are AST-identical; resource/pilot gates remain unchanged. Prospective tests/scope are in `docs/development_smoke_20261107/protocol_brief.md`; execution result is not yet available at this declaration.
+
+Read-onlyhost preflight confirms originalBase/evaluation services inactive and noVSRmodel job. The sameowned regular sharedlock inode was tightened0664→0600 before any GPU attempt because the newlease refuses group-writable locks; receipt retains old/new inode/mode/UID. No lock replacement/guard relaxation, no GPU model loading or updates occurred during that metadata preflight. Automation staysPAUSED; H100 and full experiments remain out of scope.
+
+## Local5080 development smoke passed — 2026-11-07
+
+The unique fresh attempt `development_smoke_5080_20261107T035103Z` completed successfully under sharedactualGPU lease and freshhost desktop admission. Protocol rawSHA `117d2bfddccfd993294a681083380e445b822d354fa09e90e173a51cadda88f5`; service `vsr-development-smoke-5080-20261107t035103z.service` Restart=no,MainPID0,exit0.19targetedCPU preflight cases(6newsmoke cases) passed withoutCUDA; independentread-only reviews preceded launch. No retry or scientificgate waiver occurred.
+
+| Diagnostic step | Native timestep index | Teacher forward | FM loss | SD loss | Total | Gradient norm beforeclip | Full step seconds |
+| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 1 | 23 | yes | 0.21249740 | 1.00862157 | 1.01939464 | 1.43176341 | 0.709406 |
+| 2 | 954 | no | 0.51713431 | 0.00000000 | 0.51713431 | 0.58962911 | 0.366426 |
+| 3 | 808 | yes | 0.21527207 | 0.96174800 | 0.98467046 | 1.31979930 | 0.598189 |
+
+Allloss/gradients arefinite, frozenbackbone unchanged, EMAupdates3, teacheractive2. These differentclip/timestep diagnosticrows do not estimate convergence or aG3overheadratio. The checkpoint atnewrun/A2/checkpoint_000003.pt is explicitlydevelopment-only, SHA `105ec056beea5568432338fe66ace7169a86b7d6d68a2904c1d01770cf187ab7`; model/optimizer/EMA/projector were released before reload. The reloaded student's488trainabletensors/6500992elements match the savedstudent bytehash exactly; EMA/projector/optimizer/RNG were not restored for inference.
+
+Exactlyone originalnativeUniPC20/CFG1/CPUnoise42 restore usedtrainclip0's sealedLR and fixedtext, notHR/teacher. Outputis33×128×224; all33PNG hashes/dimensions and workerpixelreadback match, preview has33frames/29.97fps. Restore took2.949078s onthissinglecrop; PyTorchpeakallocated3.745697GiB/reserved3.886719GiB, nottotalprocess/desktopVRAM. This is an engineeringclosure ontrainingdata, not a methodquality conclusion orH100speed estimate.
+
+Independentcompletionreview rehashed protocol/sources/inputbindings/Base/outputcheckpoint/33PNGs/RGBtensor/MP4 and checked status/summary/rows/counts. Fullallowlisttext and audit are in `docs/development_smoke_20261107/`; media/tensor/checkpoint payloads remain privateoutsideGit.3diagnosticupdates add0formalRE. Original3Bases/actual41407b0checkout remain unchanged, oldevaluation228/1152 stillstopped, noG2/G3/G4verdictadded. GPUresourcesreleased; automationPAUSED and noH100connection/migration/fullGPUexperiment.

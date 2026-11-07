@@ -305,6 +305,9 @@ METHOD = {'training_seed':20261102,'frames':33,'latent_frames':9,'latent_shape':
           'rho':.25,'span':2,'gamma':.8,
           'student_layer':9,'teacher_layer':21,'hidden_dim':1024,'ema_decay':.999,
           'feature_diagnostics_first':True,'feature_diagnostics_every':512}
+SMOKE_BUDGET = {'scientific_updates':0,'diagnostic_updates':3,'restores':1,'inference_steps':20}
+SMOKE_BASE_SHA = '28356e22e4e718d3c378588793f60732dbc93825ec5d78b8a85c8150060da63f'
+
 G3_BUDGET = {'semantic_updates':4,'benchmark_updates':66,'benchmark_warmup_updates':6,
              'benchmark_timed_updates':60,'total_diagnostic_updates':70,
              'scientific_training_updates':0}
@@ -723,7 +726,7 @@ def _passed_g3(directory,g2_evidence):
 
 def collect_protocol(args):
     mode=args.mode
-    need(mode in {'base','resource','pilot'},'Unknown unified training mode')
+    need(mode in {'base','resource','pilot','smoke'},'Unknown unified training mode')
     config=read(args.config)
     need(config.get('reproducibility',{}).get('mode')=='strict','Original strict math precision is mandatory')
     data=config['data']
@@ -744,6 +747,7 @@ def collect_protocol(args):
     cap=args.memory_cap_gib
     need(type(cap) in (int,float) and math.isfinite(cap) and cap>0,'Positive prospective memory ceiling required')
     cache,inputs=_cache_spec(args.cache_root)
+    if mode=='smoke':inputs=inputs[:3]
     protocol={'schema':'vsr_training_protocol_v2','mode':mode,'sources':_source_bindings(),
         'config':config,'config_file':binding(args.config),'cache':cache,'inputs':inputs,
         'device':device,'admission':admission,'admission_file':binding(args.gpu_admission),
@@ -762,7 +766,17 @@ def collect_protocol(args):
                               for key in ('mode','config','cache_root','base_checkpoint','expected_base_sha',
                                   'allowed_checkpoint_root','g2_run','g3_run','device','gpu_admission','gpu_lock',
                                   'memory_cap_gib','g4_definitions','model_directory')}}
-    if mode=='base':
+    if mode=='smoke':
+        need(args.base_checkpoint and args.expected_base_sha==SMOKE_BASE_SHA,
+             'Development smoke uses the audited matched Base01 only')
+        protocol['matched_Base']=_base_spec(args.base_checkpoint,args.expected_base_sha,args.allowed_checkpoint_root,seed)
+        need(protocol['matched_Base']['config']==config,'Smoke source config must equal the matched Base')
+        need(not args.g2_run and not args.g3_run and not args.g4_definitions,
+             'Development smoke must not consume or masquerade as scientific gates')
+        protocol['development_only']=True
+        protocol['budget']=dict(SMOKE_BUDGET)
+        protocol['smoke']=_smoke_spec(protocol)
+    elif mode=='base':
         need(config['training'].get('updates')==8192 and config['training'].get('variants')==['Base'],
              'A fresh Base is exactly8192 updates with variants=[Base]')
     else:
@@ -824,7 +838,7 @@ def _load_inputs(protocol):
     from .data import PreparedTrainingData
     reader=PreparedTrainingData(protocol['cache']['root'],expected_seal_sha256=protocol['cache']['seal']['sha256'])
     need(reader.ids==protocol['cache']['selection']['training_ids'],'Training cache order changed')
-    pairs=[reader[i] for i in range(WARMUP+TIMED)]
+    pairs=[reader[i] for i in range(len(protocol['inputs']))]
     text=reader.text_for(0)
     need(isinstance(text,torch.Tensor) and torch.isfinite(text).all(),'Fixed finite text cache required, no T5 fallback')
     return reader,pairs,text.to(protocol['device'])
@@ -839,9 +853,165 @@ def _method_config(base_config,arm):
     return _canonical_config(config)
 
 
+
+
+def _smoke_config(base_config):
+    """A bounded development artifact; never a formal pilot checkpoint."""
+    config=copy.deepcopy(base_config)
+    config['restoration_architecture']='noref_base_v1'
+    config['stage']='development_smoke_5080'
+    config['experiment_name']='development_smoke_only_not_formal'
+    config['formal_training']={'enabled':False,'purpose':'development smoke, no scientific training RE'}
+    config['training'].update(variants=['A2'],updates=3,evaluate_at=[],checkpoint_at=[3])
+    return _canonical_config(config)
+
+
+def _smoke_spec(protocol):
+    """Freeze natural first3 native grid draws; do not select active steps."""
+    from diffusers import UniPCMultistepScheduler
+    scheduler=UniPCMultistepScheduler.from_pretrained(protocol['model_directory'],subfolder='scheduler',local_files_only=True)
+    scheduler.set_timesteps(1000,device='cpu')
+    generator=torch.Generator(device='cpu').manual_seed(METHOD['training_seed']+2)
+    indices=[int(torch.randint(0,1000,(),generator=generator)) for _ in range(3)]
+    sigmas=[float(scheduler.sigmas[index]) for index in indices]
+    need(indices==[23,954,808] and [value>SIGMA_BOUNDARY for value in sigmas]==[True,False,True],
+         'The original natural development grid/window changed; do not select or retry')
+    root=Path(protocol['cache']['root'])
+    seal=read(protocol['cache']['seal']['path'])
+    relative='clip_0/paired_rgb.pt'
+    need(relative in seal['artifact_sha256'],'Original first training RGB must be sealed')
+    return {'timestep_indices':indices,'sigmas':sigmas,'teacher_forward':[True,False,True],
+            'training_clip_indices':[0,1,2],'inference_clip_index':0,'inference_seed':42,
+            'input_RGB':binding(root/relative,seal['artifact_sha256'][relative]),
+            'shape_HR':[1,3,33,128,224],'shape_LR':[1,3,33,32,56],
+            'G2_G3_G4_passes_claimed':False,'checkpoint_reuse_for_formal_training':False}
+
+
+def _run_development_smoke(protocol,run,reader,pairs,text,scheduler,vae,counter):
+    """Exactly3 A2 diagnostic updates, atomic save/reload, one native restore."""
+    from .model import tensor_state_hashes
+    from .checkpoints import save_method_checkpoint,load_training_checkpoint
+    from .infer import restore_video,verify_output_video
+    from .evaluate import _crop_policy,_validate_restore,_save_pngs,_cleanup_preserving
+    from .metrics import quantize_rgb
+    from .data import write_video
+    from PIL import Image
+    import numpy as np
+    need(protocol.get('development_only') is True and protocol['budget']==SMOKE_BUDGET
+         and len(pairs)==3 and len(protocol['inputs'])==3,'The smoke budget is fixed, not a scientific gate bypass')
+    config=_smoke_config(protocol['matched_Base']['config'])
+    engine=model=None
+    role='development_smoke_A2'
+    saved_hash=None;training_rows=[];checkpoint=None;initialization=None
+    reference=None
+    try:
+        engine=_new_engine(protocol,'A2')
+        reference=weakref.ref(engine.model)
+        counter.attach(engine.optimizer,role)
+        initialization=engine.base_load_audit
+        before=tensor_state_hashes(engine.model)
+        frozen=_frozen_signature(engine.model)
+        for ordinal in range(3):
+            item=protocol['inputs'][ordinal]
+            need(item['record_id']==reader.ids[ordinal] and engine.data_index(len(reader))==ordinal,
+                 'Development must use the first3 fixed training clips in order')
+            torch.cuda.synchronize()
+            started=time.perf_counter()
+            result=engine.step(pairs[ordinal]['clean'].to(protocol['device']),pairs[ordinal]['low'].to(protocol['device']),text,scheduler)
+            torch.cuda.synchronize()
+            counter.by_role[role]['returned_steps']+=1
+            row=result|{'record_id':item['record_id'],'data_index':ordinal,'seconds':time.perf_counter()-started,
+                        'feature_diagnostics_CPU_outside_step_timing':engine.drain_feature_diagnostics(),
+                        'memory':_memory(torch,protocol['memory_cap_bytes'])}
+            need(row['timestep_index']==protocol['smoke']['timestep_indices'][ordinal]
+                 and row['sigma']==protocol['smoke']['sigmas'][ordinal]
+                 and row['teacher_forward']==protocol['smoke']['teacher_forward'][ordinal],
+                 'Development native RNG/window differs from the frozen first3 draws')
+            need(all(type(row[k]) in (int,float) and math.isfinite(row[k]) for k in ('fm','sd','total','grad_norm_before_clip'))
+                 and frozen==_frozen_signature(engine.model),'Nonfinite development update or frozen backbone changed')
+            training_rows.append(row);_append_row(run/'training.jsonl',row)
+            save(run/'progress.json',{'mode':'smoke','phase':'diagnostic_update','completed_diagnostic_updates':ordinal+1,
+                                      **_counts(counter,'smoke')},replace=True)
+        need(engine.steps==engine.ema.num_updates==3 and sum(row['teacher_forward'] for row in training_rows)==2,
+             'Incomplete3-step EMA/teacher development budget')
+        saved_hash=tensor_state_hashes(engine.model)
+        need(saved_hash['all_trainable']['sha256']!=before['all_trainable']['sha256'],'No student parameter update occurred')
+        destination=run/'A2/checkpoint_000003.pt'
+        checkpoint=save_method_checkpoint(destination,engine,config,allowed_root=run.parent,initialization=initialization)
+        save(run/'initialization.json',initialization)
+        save(run/'student_before_reload.json',{'before':before,'after3':saved_hash,'frozen_unchanged':True})
+    finally:
+        primary=sys.exc_info()[1]
+        def release_engine():
+            nonlocal engine
+            engine=None
+            _check_release(torch,reference,primary is None,counter,role)
+        _cleanup_preserving(primary,[lambda:_cleanup_engine(torch,engine,successful=primary is None,counter=counter),release_engine])
+    need(counter.snapshot()['diagnostic_optimizer_updates_applied']==3,'Exactly3 diagnostic AdamW calls required')
+    reload_audit=None;sampling=None;pngs=None;video=None
+    try:
+        load_started=time.perf_counter()
+        model,reload_audit=load_training_checkpoint(checkpoint['path'],device=protocol['device'],
+            allowed_root=run.parent,variant='A2',model_directory=protocol['model_directory'])
+        need(reload_audit['step']==3 and reload_audit['variant']=='A2'
+             and reload_audit['checkpoint_sha256']==checkpoint['sha256']
+             and reload_audit['training_only_state_restored'] is False and reload_audit['EMA_weights_selected'] is False,
+             'Development reload must restore the student only')
+        need(tensor_state_hashes(model)==saved_hash,'Saved and reloaded student parameter bytes differ')
+        save(run/'reload_audit.json',reload_audit)
+        model.eval()
+        rgb_spec=protocol['smoke']['input_RGB']
+        need(binding(rgb_spec['path'])==rgb_spec,'Original sealed LR input changed')
+        rgb=torch.load(rgb_spec['path'],map_location='cpu',weights_only=True)
+        low=rgb['lr'];need(list(low.shape)==protocol['smoke']['shape_LR'],'Development LRV geometry changed')
+        metadata=reader.record(0);fps=metadata['output_fps']
+        runtime_config=copy.deepcopy(config);runtime_config['model']['local_dir']=protocol['model_directory']
+        torch.cuda.reset_peak_memory_stats();torch.cuda.synchronize();started=time.perf_counter()
+        with _crop_policy(vae) as policy:
+            video,sampling=restore_video(model,vae,low,text,runtime_config,steps=20,seed=42,tile_hw=(256,448),overlap=64)
+            _validate_restore(video,sampling,model,42)
+            ledger=copy.deepcopy(policy.ledger)
+        policy=None
+        torch.cuda.synchronize();restore_seconds=time.perf_counter()-started
+        measured=quantize_rgb(video)
+        need(float(measured.std())>0,'Development restore is a constant image')
+        pngs=_save_pngs(measured,run/'restoration/png')
+        need(len(pngs)==33,'Development restore must save all33 PNGs')
+        for index,entry in enumerate(pngs):
+            actual=np.asarray(Image.open(entry['path']).convert('RGB')).copy()
+            expected=torch.round(measured[0,:,index].permute(1,2,0)*255).byte().numpy()
+            need(np.array_equal(actual,expected),'Saved PNG pixels do not reproduce the measured restore')
+        torch.save(measured,run/'restoration/student_RGB.pt')
+        preview=run/'restoration/student_preview.mp4';write_video(preview,measured,fps)
+        container=verify_output_video(preview,frames=33,height=128,width=224,fps=fps)
+        need(tensor_state_hashes(model)==saved_hash and all(p.grad is None for p in model.parameters()),
+             'Inference changed the student or retained gradients')
+        restore={'restores':1,'steps':20,'seed':42,'seconds':restore_seconds,'reload_and_restore_seconds':time.perf_counter()-load_started,
+                 'output_shape':list(measured.shape),'finite':True,'nonconstant':True,'PNG_count':33,
+                 'PNG_readback_exact':True,'PNG_artifacts':pngs,'preview':binding(preview),'preview_container':container,
+                 'RGB_tensor':binding(run/'restoration/student_RGB.pt'),'sampling':sampling,'VAE_ledger':ledger,
+                 'memory':_memory(torch,protocol['memory_cap_bytes']),
+                 'input_record_id':reader.ids[0],'input_split':'train','quality_conclusion':False,
+                 'teacher_used_for_inference':False,'HR_used_for_inference':False}
+        save(run/'restoration.json',restore)
+    finally:
+        primary=sys.exc_info()[1]
+        def release_restore():
+            nonlocal model,video,measured,rgb,low
+            model=video=measured=rgb=low=None
+        _cleanup_preserving(primary,[lambda:model.clear_features() if model is not None else None,
+                                     release_restore,gc.collect,torch.cuda.empty_cache])
+    need(counter.snapshot()['diagnostic_optimizer_updates_attempted']==3
+         and counter.snapshot()['completed_step_returns']==3,'Development update accounting differs')
+    return {'status':'completed','mode':'smoke','development_only':True,'budget':dict(SMOKE_BUDGET),
+            'training_rows':training_rows,'checkpoint':checkpoint,'student_exact_after_reload':True,
+            'reload_audit':reload_audit,'restoration':restore,'formal_checkpoint_reuse_allowed':False,
+            'G2_G3_G4_decisions_added':False,**counter.snapshot()}
+
+
 def _counts(counter,mode):
     value=counter.snapshot()
-    if mode!='resource':
+    if mode not in {'resource','smoke'}:
         value['scientific_training_updates']=value.pop('diagnostic_optimizer_updates_applied')
         value['scientific_optimizer_updates_attempted']=value.pop('diagnostic_optimizer_updates_attempted')
     return value
@@ -992,7 +1162,10 @@ def execute(args):
                     model_dir=protocol['model_directory']
                     scheduler=_training_scheduler(model_dir,protocol['device'])
                     vae=load_frozen_vae(model_dir,device=protocol['device'])
-                    if mode=='resource':
+                    if mode=='smoke':
+                        summary=_run_development_smoke(protocol,run,reader,pairs,text,scheduler,vae,counter)
+                        summary['protocol_sha256']=args.expected_protocol_sha
+                    elif mode=='resource':
                         semantics=run_semantics(torch,protocol,pairs,text,scheduler,counter)
                         for role in ROLES:
                             roles[role]=run_benchmark_role(torch,protocol,role,pairs,text,scheduler,counter,rows,run)
@@ -1073,7 +1246,7 @@ def build_parser():
     parser=argparse.ArgumentParser(description='Unified NoRef training: prepare metadata, then explicit fresh CUDA execution.')
     sub=parser.add_subparsers(dest='command',required=True)
     plan=sub.add_parser('prepare',help='Bind metadata and prerequisites; never load a GPU model')
-    plan.add_argument('--mode',choices=['base','resource','pilot'],required=True)
+    plan.add_argument('--mode',choices=['base','resource','pilot','smoke'],required=True)
     plan.add_argument('--model-directory',type=Path,help='Explicit migrated official model path; checkpoint config is not rewritten')
     plan.add_argument('--config',type=Path,required=True)
     plan.add_argument('--cache-root',type=Path,required=True)

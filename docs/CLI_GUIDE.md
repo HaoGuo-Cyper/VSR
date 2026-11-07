@@ -1,6 +1,6 @@
 # 当前主线入口说明
 
-2026-11-06。下列是已实现的接口，当前仅完成CPU验证；GPU实验及H100迁移仍暂停。示例中的`/private/...`、SHA与UUID需按未来真实机器和协议填写，不能直接当作当前启动命令。
+2026-11-07。下列是已实现接口；本机5080已完成一次固定预算开发smoke，完整GPU实验及H100迁移仍暂停。示例中的`/private/...`、SHA与UUID需按未来真实机器和协议填写，不能直接当作当前启动命令。
 
 ## 1. 开发时先看帮助和CPU测试
 
@@ -28,7 +28,7 @@ CUDA预处理额外要求`--gpu-lock`与`--gpu-admission`，使用和训练/推�
 
 ```text
 python -m vsr.train prepare
-  --mode base|resource|pilot
+  --mode base|smoke|resource|pilot
   --config /private/matched-Base-source-config.json
   --cache-root /private/sealed-training-cache
   --model-directory /private/official-Wan-directory
@@ -42,6 +42,7 @@ python -m vsr.train prepare
 ```
 
 - `base`：fresh official Base8192入口；现有三个Base已完成，本次及下一轮无需重训。
+- `smoke`：另加`--base-checkpoint`与`--expected-base-sha`，仅用Base01和首3训练clip；固定3A2诊断updates+保存/学生重载+1次UniPC20恢复，0正式RE。无需G2/G3，不能用于声称科学门槛通过；本次已完成，不自动重跑。
 - `resource`：另加`--base-checkpoint`、`--expected-base-sha`及`--g2-run`；必须重算完整G2通过，执行70诊断updates。
 - `pilot`：resource的参数外再加`--g3-run`和`--g4-definitions`；同Base01、fresh optimizer、flow-only/C1/A2各2048步。G4原定义在任何方法训练/评分之前绑定。
 
@@ -67,6 +68,6 @@ python -m vsr.train prepare
 
 ## 6. 设备身份与公开同步
 
-所有CUDA执行共用checkpoints.gpu_lease。admission声明`expected_gpu_uuid`，可选`desktop_processes`完整pin；空清单要求目标GPU无compute进程，不能仅按进程名字放行。CPU检查使用mock inventory，没有现场验证H100准入。
+所有CUDA执行共用checkpoints.gpu_lease。admission声明`expected_gpu_uuid`，可选`desktop_processes`完整pin；空清单要求目标GPU无compute进程，不能仅按进程名字放行。CPU检查使用mock inventory；本机5080已验证真实桌面准入/共享锁，H100准入尚未现场验证。
 
 GitHub只同步代码、配置、协议、统计和文本日志；模型、checkpoint、原视频、tensor缓存及凭证通过私有通道提供。实验期间固定commit与依赖，不git pull覆盖运行源码。

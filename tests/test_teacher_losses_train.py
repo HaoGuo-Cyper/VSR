@@ -947,5 +947,190 @@ class StrictRuntimeTests(unittest.TestCase):
             self.assertFalse(torch.cuda.is_initialized())
 
 
+
+
+class SmokeTests(unittest.TestCase):
+    """Bounded development-only loop; every object here is a CPU fixture."""
+
+    def setUp(self):
+        torch.set_num_threads(2)
+
+    def base_config(self, model_directory='/private/official'):
+        from vsr.checkpoints import OFFICIAL_REPO_ID, OFFICIAL_REVISION
+        return worker._canonical_config({
+            'seed':20261102,'stage':'matched_Base_source',
+            'model':{'repo_id':OFFICIAL_REPO_ID,'revision':OFFICIAL_REVISION,'local_dir':str(model_directory)},
+            'conditioning':{'rank':2,'alpha':2,'injection_layers':[0,5,9],'alignment_layer':9,
+                            'stem_channels':8,'projector_hidden':16,'teacher_dim':24},
+            'reproducibility':{'mode':'strict'},
+            'data':{'num_frames':33,'temporal_stride':1,'height':128,'width':224,'scale':4},
+            'training':{'seed':20261102,'updates':8192,'variants':['Base'],
+                        'learning_rate':.001,'weight_decay':.01,'max_grad_norm':1.,
+                        'gradient_checkpointing':True}})
+
+    def test_budget_and_cli_are_fixed_development_only(self):
+        self.assertEqual(worker.SMOKE_BUDGET,{'scientific_updates':0,'diagnostic_updates':3,
+                                             'restores':1,'inference_steps':20})
+        arguments=['prepare','--mode','smoke','--config','/private/Base/config.json',
+                   '--cache-root','/private/cache','--allowed-checkpoint-root','/private/runs',
+                   '--device','cuda:0','--gpu-admission','/private/admission.json',
+                   '--gpu-lock','/private/runs/stage2_gpu.lock','--memory-cap-gib','16',
+                   '--run-dir','/private/runs/new-smoke','--run-root','/private/runs']
+        parsed=worker.build_parser().parse_args(arguments)
+        self.assertEqual(parsed.mode,'smoke')
+        import contextlib,io
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):worker.build_parser().parse_args(arguments+['--updates','8192'])
+        self.assertFalse(torch.cuda.is_initialized())
+
+    def test_smoke_config_preserves_Base_but_has_three_A2_updates_and_new_hash(self):
+        original=self.base_config();before=copy.deepcopy(original)
+        config=worker._smoke_config(original)
+        self.assertEqual(original,before)
+        self.assertEqual(config['restoration_architecture'],'noref_base_v1')
+        self.assertEqual(config['training']['variants'],['A2'])
+        self.assertEqual(config['training']['updates'],3)
+        self.assertIn('smoke',config['stage'].lower())
+        self.assertEqual(config['model'],original['model'])
+        self.assertEqual(config['conditioning'],original['conditioning'])
+        self.assertEqual(config['data'],original['data'])
+        self.assertNotEqual(config['_sha256'],original['_sha256'])
+        from vsr.checkpoints import _check_config
+        self.assertEqual(_check_config(config),config['_sha256'])
+
+    def test_three_applied_smoke_updates_remain_diagnostic_not_formal(self):
+        counter=worker.UpdateCounter()
+        optimizer=SimpleNamespace(step=lambda:None)
+        counter.attach(optimizer,'A2')
+        for _ in range(3):
+            optimizer.step();counter.by_role['A2']['returned_steps']+=1
+        counts=worker._counts(counter,'smoke')
+        self.assertEqual(counts['scientific_training_updates'],0)
+        self.assertEqual(counts['diagnostic_optimizer_updates_applied'],3)
+        self.assertEqual(counts['diagnostic_optimizer_updates_attempted'],3)
+        self.assertEqual(counts['completed_step_returns'],3)
+
+    def test_metadata_smoke_does_not_call_scientific_G2_or_G3(self):
+        from contextlib import ExitStack
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);cache_root=root/'cache';official=root/'official'
+            (official/'scheduler').mkdir(parents=True);cache_root.mkdir()
+            scheduler_config={'_class_name':'UniPCMultistepScheduler','num_train_timesteps':1000,
+                'beta_start':.0001,'beta_end':.02,'beta_schedule':'linear','prediction_type':'flow_prediction',
+                'flow_shift':3.,'use_flow_sigmas':True,'solver_order':2,'solver_type':'bh2',
+                'lower_order_final':True,'timestep_spacing':'linspace','final_sigmas_type':'zero',
+                'predict_x0':True,'thresholding':False}
+            worker.save(official/'scheduler/scheduler_config.json',scheduler_config)
+            config=self.base_config(official);config_path=root/'config.json';worker.save(config_path,config)
+            admission=root/'admission.json';worker.save(admission,{'expected_gpu_uuid':'GPU-fixture'})
+            selection={'training_ids':[f'clip_{i}' for i in range(1641)],
+                       'validation_ids':[f'val_{i}' for i in range(32)],'test_accessed':False}
+            worker.save(cache_root/'selection.json',selection)
+            worker.save(cache_root/'config.json',config)
+            (cache_root/'fresh_text_embeddings.pt').write_bytes(b'CPU-metadata-fixture-not-a-tensor')
+            inputs=[];artifacts={}
+            for i in range(22):
+                directory=cache_root/f'clip_{i}';directory.mkdir()
+                worker.save(directory/'metadata.json',{'record_id':f'clip_{i}','split':'train',
+                    'source_indices':list(range(33)),'binding':{'fixture':'CPU only'}})
+                (directory/'fresh_latents.pt').write_bytes(b'CPU-latent-byte-fixture')
+                (directory/'paired_rgb.pt').write_bytes(b'CPU-RGB-byte-fixture')
+                for file in ('metadata.json','fresh_latents.pt','paired_rgb.pt'):
+                    artifacts[f'clip_{i}/{file}']=worker.file_sha(directory/file)
+                inputs.append({'index':i,'record_id':f'clip_{i}','binding':{'fixture':'CPU only'},
+                               'metadata':worker.binding(directory/'metadata.json'),
+                               'latents':worker.binding(directory/'fresh_latents.pt')})
+            artifacts['fresh_text_embeddings.pt']=worker.file_sha(cache_root/'fresh_text_embeddings.pt')
+            worker.save(cache_root/'cache_asset_seal.json',{'artifact_sha256':artifacts,'contains_task_initialization':False})
+            cache={'root':str(cache_root),'selection':selection,'selection_file':worker.binding(cache_root/'selection.json'),
+                   'config':worker.binding(cache_root/'config.json'),'seal':worker.binding(cache_root/'cache_asset_seal.json'),
+                   'text':worker.binding(cache_root/'fresh_text_embeddings.pt')}
+            cp=root/'base/Base/checkpoint_008192.pt';cp.parent.mkdir(parents=True);cp.write_bytes(b'CPU-base-fixture')
+            base={'config':config,'checkpoint':worker.binding(cp)|{'sha256':worker.SMOKE_BASE_SHA},
+                  'config_file':worker.binding(config_path)}
+            args=SimpleNamespace(mode='smoke',config=config_path,cache_root=cache_root,model_directory=official,
+                base_checkpoint=cp,expected_base_sha=base['checkpoint']['sha256'],allowed_checkpoint_root=root,
+                g2_run=None,g3_run=None,g4_definitions=None,device='cuda:0',gpu_admission=admission,
+                gpu_lock=root/'gpu.lock',memory_cap_gib=16.)
+            with ExitStack() as stack:
+                stack.enter_context(patch.object(worker,'_cache_spec',return_value=(cache,inputs)))
+                stack.enter_context(patch.object(worker,'_official_bindings',return_value={}))
+                stack.enter_context(patch.object(worker,'_dependency_bindings',return_value={}))
+                stack.enter_context(patch.object(worker,'_base_spec',return_value=base))
+                g2=stack.enter_context(patch.object(worker,'_passed_g2',side_effect=AssertionError('G2 forbidden in smoke')))
+                g3=stack.enter_context(patch.object(worker,'_passed_g3',side_effect=AssertionError('G3 forbidden in smoke')))
+                load=stack.enter_context(patch('torch.load',side_effect=AssertionError('metadata-only preparation deserialized a tensor')))
+                protocol=worker.collect_protocol(args)
+                g2.assert_not_called();g3.assert_not_called();load.assert_not_called()
+            self.assertTrue(protocol['development_only'])
+            self.assertEqual(protocol['budget'],worker.SMOKE_BUDGET)
+            smoke=protocol['smoke']
+            self.assertEqual(smoke['timestep_indices'],[23,954,808])
+            self.assertEqual(smoke['teacher_forward'],[True,False,True])
+            self.assertEqual(smoke['inference_seed'],42)
+            self.assertEqual(smoke['input_RGB'],worker.binding(cache_root/'clip_0/paired_rgb.pt'))
+            self.assertEqual(len(smoke['sigmas']),3)
+            self.assertGreater(smoke['sigmas'][0],.3);self.assertLess(smoke['sigmas'][1],.3);self.assertGreater(smoke['sigmas'][2],.3)
+            self.assertNotIn('G2_evidence',protocol);self.assertNotIn('G3_evidence',protocol)
+            self.assertEqual(protocol['budget']['scientific_updates'],0)
+            self.assertFalse(torch.cuda.is_initialized())
+
+    def test_smoke_prepare_is_fresh_only_and_stopped_smoke_cannot_resume(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);args=SimpleNamespace(run_dir=root/'runs/smoke',run_root=root/'runs')
+            protocol={'mode':'smoke','budget':dict(worker.SMOKE_BUDGET),'development_only':True}
+            with patch.object(worker,'collect_protocol',return_value=protocol),patch('vsr.checkpoints.gpu_lease') as lease:
+                result=worker.prepare(args);self.assertEqual(result['budget'],worker.SMOKE_BUDGET)
+                with self.assertRaisesRegex(ValueError,'Fresh-only'):worker.prepare(args)
+                lease.assert_not_called()
+            psha=worker.file_sha(args.run_dir/'protocol.json')
+            worker.save(args.run_dir/'status.json',{'status':'stopped_by_user','protocol_sha256':psha},replace=True)
+            execute=SimpleNamespace(run_dir=args.run_dir,run_root=args.run_root,expected_protocol_sha=psha)
+            with patch('vsr.checkpoints.gpu_lease') as lease:
+                with self.assertRaisesRegex(ValueError,'never-started'):worker.execute(execute)
+                lease.assert_not_called()
+            self.assertFalse((args.run_dir/'execute.lock').exists())
+
+    def test_three_CPU_A2_steps_save_and_reload_only_student(self):
+        from diffusers import UniPCMultistepScheduler
+        from vsr.checkpoints import save_method_checkpoint,load_training_checkpoint,OFFICIAL_REVISION
+        base_config=self.base_config();config=worker._smoke_config(base_config)
+        model=tiny_model()
+        engine=NoRefContinuationStep(model,arm='A2',training_seed=20261102,hidden_dim=16,
+                    learning_rate=base_config['training']['learning_rate'],
+                    weight_decay=base_config['training']['weight_decay'],
+                    max_grad_norm=base_config['training']['max_grad_norm'])
+        engine.base_load_audit={'config':base_config,'variant':'Base','step':8192,'checkpoint_sha256':'a'*64,
+            'optimizer_state_restored':False,'scheduler_state_restored':False,'rng_state_restored':False}
+        scheduler=UniPCMultistepScheduler(prediction_type='flow_prediction',use_flow_sigmas=True,flow_shift=3.,solver_type='bh2')
+        scheduler.set_timesteps(1000,device='cpu')
+        clean,low,text=inputs();rows=[]
+        for _ in range(3):
+            rows.append(engine.step(clean,low,text,scheduler))
+            engine.drain_feature_diagnostics()
+        self.assertEqual([x['timestep_index'] for x in rows],[23,954,808])
+        self.assertEqual([x['teacher_forward'] for x in rows],[True,False,True])
+        self.assertEqual(engine.steps,3);self.assertEqual(engine.ema.num_updates,3)
+        expected={n:p.detach().clone() for n,p in model.named_parameters() if p.requires_grad}
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);run=root/'smoke';cp=run/'A2/checkpoint_000003.pt'
+            record=save_method_checkpoint(cp,engine,config,allowed_root=root,initialization=engine.base_load_audit)
+            payload=torch.load(cp,map_location='cpu',weights_only=True)
+            self.assertEqual(payload['step'],3);self.assertEqual(payload['training_only']['completed_updates'],3)
+            self.assertEqual(payload['training_only']['EMA']['num_updates'],3)
+            self.assertTrue(payload['training_only']['student_projector'])
+            def factory(source_config,variant):
+                return tiny_model(),{'official_revision':OFFICIAL_REVISION,'fresh_official_initialization':True,
+                                     'legacy_state_loaded':False,'test_only_fixture':True}
+            restored,audit=load_training_checkpoint(cp,device='cpu',allowed_root=root,variant='A2',model_factory=factory)
+            self.assertEqual(audit['step'],3);self.assertEqual(audit['checkpoint_sha256'],record['sha256'])
+            self.assertFalse(audit['optimizer_state_restored']);self.assertFalse(audit['training_only_state_restored'])
+            self.assertFalse(audit['EMA_weights_selected']);self.assertEqual(audit['inference_weights'],'student')
+            for name,value in restored.named_parameters():
+                if value.requires_grad:torch.testing.assert_close(value.detach(),expected[name],rtol=0,atol=0)
+            with self.assertRaisesRegex(ValueError,'overwrite'):save_method_checkpoint(cp,engine,config,allowed_root=root)
+        self.assertFalse(torch.cuda.is_initialized())
+
+
 if __name__=='__main__':
     unittest.main()

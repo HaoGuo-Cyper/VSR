@@ -1,6 +1,6 @@
 # Python文件用途：主线与历史分开
 
-2026-11-06实际源码整理后，日常业务代码是`vsr/`的10个模块，加一个包入口。测试、第三方和保留的旧源码另列，不要求阅读全部历史文件才能运行主线。所有当前GPU实验仍暂停。
+2026-11-06实际源码整理后，日常业务代码是`vsr/`的10个模块，加一个包入口。测试、第三方和保留的旧源码另列，不要求阅读全部历史文件才能运行主线。本机5080已完成一次开发smoke；完整GPU实验仍暂停。
 
 本索引覆盖171个Python文件：10个业务模块、1个包入口、9个当前测试、138个归档Python、10个第三方文件、3个历史审计快照。归档总计144个受Git管理文件，另6个是支持文本。
 
@@ -13,7 +13,7 @@
 | [vsr/model.py](../vsr/model.py) | Wan/LoRA/LR分支构造、架构/精度设置和参数hash。 |
 | [vsr/teacher.py](../vsr/teacher.py) | trainable-only EMA、权重交换和teacher特征捕获。 |
 | [vsr/losses.py](../vsr/losses.py) | flow-matching、学生投影头和受损token余弦损失。 |
-| [vsr/train.py](../vsr/train.py) | 统一Base/resource/pilot、优化器/RNG、日志、预算和门槛。 |
+| [vsr/train.py](../vsr/train.py) | 统一Base/smoke/resource/pilot、优化器/RNG、日志、预算和门槛。 |
 | [vsr/infer.py](../vsr/infer.py) | 仅LR视频CLI、原生UniPC采样和空间tiling。 |
 | [vsr/evaluate.py](../vsr/evaluate.py) | 完整Base/pilot矩阵、来源/行文件链验证及G2/G4。 |
 | [vsr/metrics.py](../vsr/metrics.py) | RGB/LPIPS/TecoGAN、指标池、统计和特征诊断。 |
