@@ -10,7 +10,7 @@
 | 2 | 新目录完整评价3Base：3seed×32clip×6condition×2sample | 已完成1152次恢复、0训练更新 |
 | 3 | 完整输出/来源/hash复核，重算G2并报告seed统计 | G2通过，38016PNG及1152行链通过；seed统计已发布 |
 | 4 | G2通过后运行G3：70诊断更新，验证真实语义/显存/同设备开销 | 已通过，A2/flow1.406≤1.5，0科学更新 |
-| 5 | G3通过后flow-only/C1/A2各2048步，再完整pilot评价及G4 | 已启动；共6144科学更新=0.75RE；G4仍待完整评价 |
+| 5 | G3通过后flow-only/C1/A2各2048步，再完整pilot评价及G4 | 训练已完成6144步=0.75RE；完整1152评价正在运行，G4尚待结果 |
 
 已完成的Base评价run：`runs/base_evaluation_local_20261107T093027Z`。协议SHA256：`e63681c96413edddefb3a7077679e9d3d3077fdceb4a6f80135732a703c2aea7`。服务：`vsr-base-evaluation-local-20261107t093027z.service`，Restart=no。第一轮现场检查为active/running，7/1152已提交完成；该数字只是初始快照，后续以本目录run子目录的status/progress快照或实际runs声明为准。
 
@@ -27,3 +27,9 @@
 G2全量输出复核与独立公式审查通过，详见base_evaluation_completion_audit.json和base_seed_statistics.md。真实G3 run为resource_gate_local_20261107T105105Z，协议c38559f4ff0a4dfa66e3b71dc98de416424b74efae8245c4380fab406b5375ee；70诊断、0科学更新，精确GPU语义/显存通过，A2/flow全20平均比1.4061998794≤1.5，无删慢值。
 
 Pilot已启动：pilot_local_20261107T105630Z，SHA2c0badf42a34c83f7c67cd1b5d1a1c200c84ba144e11b7bc5fe9362ba6390af3；G4原定义与实际G2事前绑定。实际运行状态读runs/active_stage4_pilot.json和该run/status/progress。全部三arm必须freshBase01/freshAdamW，禁止诊断权重复用。
+
+## Pilot训练完成与完整评价
+
+三arm训练已结束，服务退出0、41.15分钟、6144连续有限科学更新、0诊断，全部freshBase01/AdamW/原G4事前绑定和12个checkpoint链已核对。独立A2及三arm总审计见pilot_A2_completion_audit.json和pilot_completion_independent_review.json。
+
+当前唯一run为pilot_evaluation_local_20261107T114256Z，协议eb1c9e2a758e5e364c380fb4ebeba42ae84bf79a881d433ac88e3e5a165dab3b，服务vsr-pilot-evaluation-local-20261107t114256z.service，目标1152次恢复、0训练。3arm均为同一训练seed20261102；不把sampler42/43当训练重复。G4定义/全数据/模型/native/runtime/量化/指标/mask-pairs均沿用冻结协议；完成全矩阵及verify后才给出G4/收益结论。当前状态读runs/active_stage4_evaluation.json。

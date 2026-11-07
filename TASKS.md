@@ -12,7 +12,7 @@ The human resumed the existing plan on localRTX5080 and delegated routine decisi
 - [x] **L0 Local readiness.**40 relevantCPU cases passed after the strict desktop compatibility update; independent numerical/asset andAST reviews passed. Fresh host admission verified pinned gjs/Nautilus/Ptyxis.
 - [x] **L1 / T2.4 Fresh complete Base evaluation.** (2026-11-07:1152/1152 rows,38016PNG/source/hash audit and independentformula/seedstatistics passedG2;0training. Prior228rows retained separately.)
 - [x] **L2 / G3 Actual resource and semantic check.** (2026-11-07:70diagnosticupdates complete, exactGPU semantic/cleanup/16GiB checks passed; all20 A2/flow=1.4061998794<=1.5.0scienceupdates,diagnosticweightsdiscarded.)
-- [~] **L3 / T4 Pilot andG4.** (2026-11-07:fullG2/G3 passed;freshpilot protocol2c0badf4 started with originalG4 definition bound before methodtraining;3arms×2048=6144scienceupdates=.75RE. Firsthostcheckactive/running,flow_only83updates;full1152pilot evaluation/G4 stillpending.)
+- [~] **L3 / T4 Pilot andG4.** (2026-11-07:threefresh2048arms COMPLETED,6144scienceupdates=.75RE;source/CP/log audit passed. Full1152 pilot evaluation is running,protocoleb1c9e2a;originalG4 rules unchanged andboundbeforemethodtraining. G4 remains pending.)
 
 ## Historical execution order — H100 planning update,2026-11-06
 
@@ -112,13 +112,13 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
 
 ## Stage 4. Pilot A2 (one seed, about 3 RE)
 
-- [~] **T4.1 Three arms.** (2026-11-07:fullG2/G3 passed;freshpilot running,originalG4 rulesbound beforetraining. Exact3×2048=6144scienceupdates=.75RE,independentfreshBase01/AdamW andno diagnosticstatereuse.) A2 defaults:
+- [x] **T4.1 Three arms.** (2026-11-07:flow_only/C1/A2each2048completed;6144finiteupdates,freshsameBase01/freshAdamWforeachFalse,allsource/init/CP/log/G4binding audited,no diagnosticweightreuse.) A2 defaults:
   - ρ = 0.25, in spans of 2 latent frames;
   - latent-level LR-branch corruption, excluding latent position0;
   - γ = 0.8, loss applied for t > 0.3;
   - EMA decay 0.999.
 - [ ] **T4.2 A2 sweep, one factor at a time.** ρ ∈ {0.1, 0.4}; γ ∈ {0.25, 0.5}; latent-level corruption.
-- [~] **T4.3 Evaluate.** (2026-11-06: staged full1152 method evaluator is CPU/source reviewed; actual scoring waits for completed pilot and prospectively frozen G4 definitions. Outputs descriptive paired metrics, no automatic G4 verdict.) Under the human-approved review, run every pilot arm on the fixed clean internal validation crops and the frame-varying validation set. Reserve REDS4/YouHQ40 external evaluation for final models; do not launch the old external backlog.
+- [~] **T4.3 Evaluate.** (2026-11-07:realpilottrainingcomplete;freshfull1152arm×clip×condition×samplematrixrunningatpilot_evaluation_local_20261107T114256Z,protocol eb1c9e2a758e5e364c380fb4ebeba42ae84bf79a881d433ac88e3e5a165dab3b;allBaseG2numeric/data/metricsettingsandoriginalG4definitionsretained. Fullverify/G4pending, no partialselection.)
 
 **Gate G4:** A2 beats C1 on corrupted-frame recovery by more than the Base seed spread, with no loss on the clean sets. If it fails: check the diagnostics and try K = 4,096. If it still fails, report and stop.
 
