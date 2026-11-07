@@ -1,0 +1,89 @@
+{
+  "status": "passed_independent_recalculation_G4_failed_stop",
+  "reviewer": "Codex /root/local_continuation_audit",
+  "observed_at_UTC": "2026-11-07T13:00:51.859403+00:00",
+  "run_dir": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/VSR-sync/runs/pilot_evaluation_local_20261107T114256Z",
+  "evaluation_completed": true,
+  "evaluation_execution_failure": false,
+  "pilot_observations": 1152,
+  "Base_observations": 1152,
+  "evaluation_training_updates": 0,
+  "checks": {
+    "all1152unique_arm_clip_condition_sampler_keys": true,
+    "all1152Base_keys_also_verified": true,
+    "all_CP_source_cohort_mask_and_all33pool_indices_correct": true,
+    "finite_point_metric_values": true,
+    "actual3final2048private_CP_hashes_without_payload_loading": true,
+    "source_and_fixed_Base_protocol_fields_unchanged": true,
+    "protocol_status_summary_observation_definition_hashchain": true,
+    "G4_original_definition_bound_in_training_protocol_before_method_training": true,
+    "previous_Base_only_S_matches_exactly": true,
+    "all_independent_unrounded_point_values_match_published_summary_exactly": true
+  },
+  "independent_point_gates": {
+    "recovery": {
+      "C1_corrupt_masked_LPIPS_mean": 0.43215737412683664,
+      "A2_corrupt_masked_LPIPS_mean": 0.42296172107453456,
+      "Delta_C1_minus_A2": 0.009195653052302077,
+      "Base_corrupt_masked_LPIPS_means": {
+        "20261102": 0.49737327664333864,
+        "20261103": 0.4941535994585138,
+        "20261104": 0.502733294837526
+      },
+      "Base_seed_sample_SD_ddof1_S": 0.004334114461900804,
+      "rule": "Delta>S, strictly",
+      "passes": true
+    },
+    "clean_all33_guards": {
+      "psnr_rgb_db": {
+        "C1_mean": 21.892487878919056,
+        "A2_mean": 21.759450232075682,
+        "A2_minus_C1_paired_mean": -0.13303764684337582,
+        "required_minimum": 0,
+        "tolerance": 0,
+        "passes": false
+      },
+      "ssim_rgb": {
+        "C1_mean": 0.7068318729429985,
+        "A2_mean": 0.7012774260771094,
+        "A2_minus_C1_paired_mean": -0.00555444686588915,
+        "required_minimum": 0,
+        "tolerance": 0,
+        "passes": false
+      }
+    },
+    "overall_G4_passes": false,
+    "overall_G4_status": "failed_G4_stop"
+  },
+  "failure_reason": "Corrupt-masked LPIPS recovery gain exceeds the prespecified Base-seed spread, but A2 is worse than C1 on both clean all33 RGB PSNR and RGB SSIM. Both unchanged zero-tolerance fidelity guards fail, so the AND gate fails.",
+  "formulas": {
+    "recovery": "sampler42/43 mean within clip/type; equal five corrupt-type macro within clip; mean32 paired(C1-A2) clip differences",
+    "Base_S": "equal sampler/clip/five-type absolute masked LPIPS means for each of3Base training seeds, then sampleSD(ddof1)",
+    "clean_fidelity": "clean condition all_frames indices0..32; sampler mean per clip, then mean32 paired(A2-C1) clip differences; >=0 with zero tolerance",
+    "G4": "recovery AND cleanPSNR AND cleanSSIM; temporal and bootstrapCI are not extra point conditions"
+  },
+  "bindings": {
+    "pilot_evaluation_protocol_sha256": "eb1c9e2a758e5e364c380fb4ebeba42ae84bf79a881d433ac88e3e5a165dab3b",
+    "pilot_status_sha256": "3bf3d63d7ad3810b93c5f62a726aa443b403df3fab8da63e1a60f411ef58ecf4",
+    "pilot_summary_sha256": "b75ae21162827edf5402e6597ec76e2d513a079d5cb259498e878cd426d359af",
+    "pilot_observations_sha256": "a68c04aa31cc6488507d46ec58b71c5fae97fa5b8f1b01704e1e1343f8ad6b51",
+    "Base_protocol_sha256": "e63681c96413edddefb3a7077679e9d3d3077fdceb4a6f80135732a703c2aea7",
+    "Base_observations_sha256": "5af43149b6c1e151aebb8854de7d9d24156195a9e1193194dbc00b966bbe54b2",
+    "pilot_training_protocol_sha256": "2c0badf42a34c83f7c67cd1b5d1a1c200c84ba144e11b7bc5fe9362ba6390af3",
+    "G4_definition_sha256": "d552dbb136223d246e05af202f25b072a2c822ad4eeaecead0aa0d6360b1ca58",
+    "Base_only_reference_sha256": "90af20a47659719508c9f40b65c5a15db71368dc90dcf90a3fc0519e2be92019",
+    "method_checkpoint_hashes": {
+      "flow_only": "4e2d61749f195763aa01f170bfbb350830e56687a344e84fa581d8672ff3f756",
+      "C1": "81da8914d780bf7a4fa72f9751a2be1b1100996d28cacd0b328314f480a08b4f",
+      "A2": "13ee4af6fa5064497b2c4ebdcc9f5ff5b3e8666fd3a8162d9be983eee00716c5"
+    }
+  },
+  "limitations": "One method training seed20261102. Two sampler seeds and paired-clip bootstrap draws are not independent training repeats; this is a pilot point-gate result, not Stage5 significance or multi-seed reproducibility. BootstrapCIs were not independently recomputed by this point-only audit.",
+  "rules_thresholds_or_tolerances_changed": false,
+  "GPU_queried_or_used": false,
+  "checkpoint_payload_deserialized": false,
+  "fullPNG_verification_repeated": false,
+  "tests_rerun": false,
+  "4096_or_Stage5_started": false,
+  "automatic_continuation_allowed_by_this_result": false
+}

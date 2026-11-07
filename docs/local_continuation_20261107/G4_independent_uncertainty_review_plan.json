@@ -1,0 +1,152 @@
+{
+  "status": "prepared_before_accessing_any_pilot_method_scores",
+  "prepared_UTC": "2026-11-07T12:56:30.742818+00:00",
+  "intended_run": "pilot_evaluation_local_20261107T114256Z",
+  "execution_prerequisite": "Wait for explicit parent completed instruction; check completed1152 status and exact protocol/summary/observations SHA before reading final method scores. Parent runs fullsource/PNG validator separately.",
+  "source_read_for_plan": [
+    "vsr/metrics.py:_score_vector,index_observations,summarize_pilot",
+    "configs/stage4_g4_definitions_20261106.json",
+    "docs/stage2_eval_20261105/cohort_seal.json"
+  ],
+  "definition_raw_sha256": "d552dbb136223d246e05af202f25b072a2c822ad4eeaecead0aa0d6360b1ca58",
+  "definition_unchanged": true,
+  "independent_implementation": "Do not call/import summarize_pilot or _score_vector. Extract all frozen scalar fields explicitly from final observation score dictionaries, index exact full matrices, independently form per-clip arrays. Use NumPy only for PCG64 index generation and vector arithmetic; compute empirical quantile from sorted draws with an explicit linear interpolation implementation.",
+  "complete_matrix_requirements": {
+    "pilot_roles": [
+      "flow_only",
+      "C1",
+      "A2"
+    ],
+    "pilot_training_seed": 20261102,
+    "Base_training_seeds": [
+      20261102,
+      20261103,
+      20261104
+    ],
+    "clips": 32,
+    "conditions": [
+      "clean",
+      "blur",
+      "noise",
+      "codec_allintra",
+      "drop_repeat",
+      "drop_black"
+    ],
+    "sampling_seeds": [
+      42,
+      43
+    ],
+    "pilot_rows": 1152,
+    "Base_rows": 1152,
+    "duplicate_or_missing_rows": "reject",
+    "checkpoint_mask_source_seal_binding": "exact"
+  },
+  "ordered_record_ids": [
+    "oHeY69nSZkk_9_0to379",
+    "wWEHytppDHQ_76_0to204",
+    "YUodQ53uwxo_7_0to312",
+    "mzNClRdC1kU_1_0to114",
+    "tR5QXi7zNes_11_21to261",
+    "kNTBvWDej7s_1_0to137",
+    "xBdjO2EmlGY_193_22to126",
+    "upEVbyT8gEU_18_20to696",
+    "5vtyLRr_Dcs_20_0to449",
+    "xx7pIUY9AyI_39_534to685",
+    "bZ0lYSDsceU_59_0to109",
+    "Oixw-C5h8zc_12_0to166",
+    "YP9bXXzkDRw_44_0to118",
+    "v28kSd17dKY_5_0to339",
+    "LlWVu0EP-wg_39_0to260",
+    "kVuiHbFuScE_10_19to354",
+    "XstZTuKVrMw_89_24to230",
+    "fP7UA5WZ2x4_44_0to160",
+    "pD9wxKJS9Nc_23_0to176",
+    "yY4UvfDzfT4_2_102to479",
+    "EDH_K3x6Jo4_3_23to219",
+    "c3aBxTsyOpg_19_0to137",
+    "jr5ltz0fm4E_7_89to195",
+    "t9RermEXJkA_1_0to265",
+    "Jk7Wr6x609g_75_68to180",
+    "96A5DQ8VtRA_67_23to139",
+    "V9OGQNaUoJY_34_23to132",
+    "HwVjSfI-tto_15_435to627",
+    "05f1WZFgmCY_5_107to336",
+    "wmnPWHlHEsg_23_0to286",
+    "gbCrfgUnCRU_44_0to876",
+    "J-zJIUdg2yE_3_0to114"
+  ],
+  "aggregation": [
+    "First average sampling42/43 within each clip/condition/arm.",
+    "For equal_five_type_macro, average the five corrupt type vectors within each clip, preserving all32paired clips.",
+    "Point means equally average the32 clip values. Descriptive between_clip_sample_SD uses ddof1.",
+    "For Base spread only, get one mean corrupt-masked LPIPS per original training seed, then sample SD(ddof1) of those3 means. Keep the observed spread fixed for bootstrap."
+  ],
+  "G4_point_gate": {
+    "primary_gain": "mean(C1 masked absolute LPIPS five-corrupt macro) - mean(A2 masked absolute LPIPS five-corrupt macro)",
+    "recovery_condition": "Delta strictly > observed sample SD of3Base masked absolute LPIPS macro seed means",
+    "clean_guards": "A2-C1 all33-frame clean PSNR >=0 AND SSIM>=0, using unrounded means and zero tolerance",
+    "final_rule": "recovery AND both clean guards; temporal/CI are not additional gates",
+    "automatic4096_or_retry": false
+  },
+  "bootstrap": {
+    "draws": 10000,
+    "seed": 20261102,
+    "generator": "np.random.Generator(np.random.PCG64(seed))",
+    "index_generation": "integers(0,32,size=(10000,32),dtype=int64)",
+    "indices_sha256_little_endian_i8": "138800fce3662d71660db5a7db379ce06635503115eabb5940772245208eebe8",
+    "sampling_unit": "32 paired clips with replacement after within-clip sampler/type averaging",
+    "common_draws": "One index matrix reused for every metric, condition and comparison, including recovery CI",
+    "independent_reduction_option": "Convert shared indices to per-draw32clip count weights, then weighted means; compare to final summary to floating roundoff only.",
+    "interval": "Sort10000 means; quantile q at position(9999*q), linearly interpolate adjacent order statistics for q=.025/.975.",
+    "CI_scope": "pointwise descriptive paired-clip interval conditional on one trained method seed; not training repeat uncertainty, not simultaneous CI or a p-value",
+    "additional_gate": false,
+    "Base_seed_spread_bootstrapped": false
+  },
+  "summary_fields_to_recompute": {
+    "scalar_metrics": [
+      "masked/psnr_rgb_db",
+      "masked/ssim_rgb",
+      "masked/lpips_alex_v0_1",
+      "neighbors/psnr_rgb_db",
+      "neighbors/ssim_rgb",
+      "neighbors/lpips_alex_v0_1",
+      "all_frames/psnr_rgb_db",
+      "all_frames/ssim_rgb",
+      "all_frames/lpips_alex_v0_1",
+      "temporal/mask_touch_tLP100",
+      "temporal/all28pairs_tLP100",
+      "raw_harm_gap/psnr_rgb_db",
+      "raw_harm_gap/lpips_alex_v0_1"
+    ],
+    "metrics_count": 13,
+    "per_arm_absolute_tables": "3arms x(clean+5types+equal5macro)x13 metrics: mean,between_clip_sample_SD,n=32",
+    "Base_per_seed_tables": "3Base trainingseeds x7conditions/macros x13metrics, same statistics",
+    "paired_comparisons": [
+      "A2_minus_C1",
+      "A2_minus_flow_only",
+      "C1_minus_flow_only",
+      "flow_only_minus_matched_Base",
+      "C1_minus_matched_Base",
+      "A2_minus_matched_Base"
+    ],
+    "matched_Base": "OriginalBase training seed20261102 only, not three-seed ensemble",
+    "paired_table_fields": "7conditions/macros x13metrics: mean(left-right),between_clip_sample_SD,n=32,paired_clip95pctCI",
+    "paired_CI_cells": 546,
+    "recovery_CI_cells": 1,
+    "sign_convention": "left-right for every paired table; positive PSNR/SSIM and negative LPIPS/tLP100 favor left. Recovery alone is C1-A2 to make benefit positive."
+  },
+  "descriptive_report_fields": [
+    "Completion/protocol/source/finalcheckpoint/1152unique identities and Base evidence.",
+    "Exact G4 gain,3Base raw threshold means/SD,and both clean guard means with unrounded pass/fail.",
+    "All five types separately and clean/equal5macro for A2,C1,flow_only and matchedBase; masked/neighbors/all-frame PSNR/SSIM/LPIPS.",
+    "Both frozen temporal tLP100 pools and all method/flow/Base contrasts, retaining9mask-touch/28original cutfr2 pairs.",
+    "Clean-subtracted masked recovery and clean-subtracted harm-gap changes may be added as descriptive derived quantities; never alter the frozen gate.",
+    "Optional tOF supplement can only be derived from completed verified full_frame_pair_metrics original pairs, not mislabeled as present in current13-vector summary.",
+    "One training seed limitation, no Stage5 significance or multi-seed method repeat claim; gate failure stops the dependent plan."
+  ],
+  "roundoff_comparison": "Compare independently recomputed summary scalars to saved scalars within1e-12 arithmetic roundoff; scientific point gates retain exact zero/strict> rules, no tolerance added.",
+  "new_pilot_partial_scores_read": false,
+  "GPU_work_performed": false,
+  "numerical_source_or_protocol_modified": false,
+  "old_tests_repeated": false
+}

@@ -12,7 +12,7 @@ The human resumed the existing plan on localRTX5080 and delegated routine decisi
 - [x] **L0 Local readiness.**40 relevantCPU cases passed after the strict desktop compatibility update; independent numerical/asset andAST reviews passed. Fresh host admission verified pinned gjs/Nautilus/Ptyxis.
 - [x] **L1 / T2.4 Fresh complete Base evaluation.** (2026-11-07:1152/1152 rows,38016PNG/source/hash audit and independentformula/seedstatistics passedG2;0training. Prior228rows retained separately.)
 - [x] **L2 / G3 Actual resource and semantic check.** (2026-11-07:70diagnosticupdates complete, exactGPU semantic/cleanup/16GiB checks passed; all20 A2/flow=1.4061998794<=1.5.0scienceupdates,diagnosticweightsdiscarded.)
-- [~] **L3 / T4 Pilot andG4.** (2026-11-07:threefresh2048arms COMPLETED,6144scienceupdates=.75RE;source/CP/log audit passed. Full1152 pilot evaluation is running,protocoleb1c9e2a;originalG4 rules unchanged andboundbeforemethodtraining. G4 remains pending.)
+- [!] **L3 / T4 Pilot andG4.** (2026-11-07:all3×2048training and1152evaluation completed/audited. G4FAILED:recovery+.00919565>.00433411 passed,butclean PSNR-.13303765dB/SSIM-.00555445 failed. DependentGPU stopped,no4096/sweep/Stage5;automaticmonitor deleted. Newprotocoloptions are planningonly.)
 
 ## Historical execution order — H100 planning update,2026-11-06
 
@@ -118,9 +118,11 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
   - γ = 0.8, loss applied for t > 0.3;
   - EMA decay 0.999.
 - [ ] **T4.2 A2 sweep, one factor at a time.** ρ ∈ {0.1, 0.4}; γ ∈ {0.25, 0.5}; latent-level corruption.
-- [~] **T4.3 Evaluate.** (2026-11-07:realpilottrainingcomplete;freshfull1152arm×clip×condition×samplematrixrunningatpilot_evaluation_local_20261107T114256Z,protocol eb1c9e2a758e5e364c380fb4ebeba42ae84bf79a881d433ac88e3e5a165dab3b;allBaseG2numeric/data/metricsettingsandoriginalG4definitionsretained. Fullverify/G4pending, no partialselection.)
+- [x] **T4.3 Evaluate.** (2026-11-07:full1152/38016PNG/source/hash audit andpoint/547CI independentrecomputation completed;G4FAILEDclean-fidelityguards. Alltypes andtemporal/controlcomparisonsreported,0evaluationtrainingupdates.)
 
 **Gate G4:** A2 beats C1 on corrupted-frame recovery by more than the Base seed spread, with no loss on the clean sets. If it fails: check the diagnostics and try K = 4,096. If it still fails, report and stop.
+
+**Latest measured G4 disposition,2026-11-07:** FAILED. Recovery gain passes the original Base-spread rule, but both clean fidelity guards fail. Preserve all completed outputs and stop dependent GPU stages. The later DECISIONS.md operationalization requires a report and a new concrete protocol before the4096 option;it is not an automatic retry. No sweep/4096/Stage5 has started. See `docs/local_continuation_20261107/G4_report.md`.
 
 ## Stage 5. Formal comparison (three seeds, about 4 RE)
 

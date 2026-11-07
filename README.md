@@ -2,7 +2,7 @@
 
 本项目研究：在Wan2.1-T2V-1.3B视频超分训练中，加入EMA teacher的特征监督，能否改善受损帧恢复和时间一致性，同时保持推理开销不变。
 
-**当前状态（2026-11-07）：本地5080完整Base评价G2及真实资源检查G3均已通过；三组pilot训练已完成，完整评价正在运行。** 3个Base各8192步已完成，旧228/1152评价保留为历史，不拼接新结果。10模块主线此前通过[130项CPU回归](docs/code_refactor_20261106/cpu_validation.json)、[19项开发入口检查](docs/development_smoke_20261107/cpu_preflight_review.json)及[真实5080保存/重载/推理闭环](docs/development_smoke_20261107/completion_audit.json)。本次严格桌面兼容修正另通过[40项相关CPU检查](docs/local_continuation_20261107/desktop_cpu_validation.json)和独立审查。当前进度见[本地继续计划与状态](docs/local_continuation_20261107/plan.md)；G2完成1152次恢复和38,016张PNG/来源复核；G3完成70诊断更新，A2/flow平均耗时比1.406≤1.5。G4和方法质量结论仍待pilot及完整评价，H100未连接或迁移。
+**当前状态（2026-11-07）：首轮pilot完整评价结束，G4未通过，后续GPU实验已停止。** A2相对C1的受损帧LPIPS改善0.00920，超过Base seed波动门槛0.00433；但clean PSNR下降0.133dB、SSIM下降0.00555，未满足原定保真要求。三组各2048步训练、1152次评价及38,016张PNG/来源链已完整复核；[结果与全部类型](docs/local_continuation_20261107/G4_report.md)和[完整指标表](docs/local_continuation_20261107/pilot_metrics_table.md)已记录。结果限于一个方法训练seed；G2/G3通过，正式三seed比较尚未开始。代码仍为下述10个核心模块，H100迁移延期。
 
 ## 模型路径
 
@@ -82,7 +82,7 @@ CUDA_VISIBLE_DEVICES="" python -m unittest discover -s tests -v
 | Base评价G2 | 已完成1152 restores及完整输出复核，G2通过；旧228条单独保留 |
 | 资源与语义G3 | 已完成70诊断updates，精确语义/显存通过；A2/flow=1.406≤1.5 |
 | Pilot | flow-only、C1、A2各2048步已完成，共0.75RE，初始化/日志/权重来源链已审计 |
-| Pilot评价G4 | 3arm完整1152 restores正在运行；按事前定义判断，尚无方法收益结论 |
+| Pilot评价G4 | 1152次完整评价与审计已完成；恢复收益通过，两个clean保真项失败，G4未通过 |
 | 正式比较与扩展 | 前述门槛通过后再做多seed、消融、最终外评 |
 
 最重要的是**A2超过C1**：C1采用同样条件破坏但没有teacher监督，flow-only衡量普通续训收益。首轮保持33连续帧/stride1、128×224 HR、×4、train1641/val32。显存增加不自动改变科学设置。
@@ -107,4 +107,4 @@ H100迁移方案保留为历史计划，当前延期，不是本地主线的前�
 - [TASKS](TASKS.md)、[DECISIONS](DECISIONS.md)、[RESULTS](RESULTS.md)：任务、决策及真实实验记录。
 - [旧README](docs/history/README_before_ten_module_plan_20261106.md)：历史说明，不作当前启动依据。
 
-尚未获得自蒸馏的真实质量结论。已有三个Base继续使用；完整评价及后续实验按本地继续计划推进，旧停止记录保留。
+首轮单训练seed结果显示受损帧恢复与clean保真之间的权衡；G4未通过，正式三seed实验尚未启动。所有完成、停止和失败记录保留。
