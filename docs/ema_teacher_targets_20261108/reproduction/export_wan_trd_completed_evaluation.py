@@ -19,6 +19,7 @@ METRICS = ('psnr_rgb_db', 'ssim_rgb', 'lpips_alex_v0_1',
            'tLP_alex_v0_1_TecoGAN_crop', 'tLP100_alex_v0_1_TecoGAN_crop',
            'tOF_Farneback_TecoGAN_crop')
 SAFE_NAME = re.compile(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}')
+SAFE_CLIP = re.compile(r'[-A-Za-z0-9_][A-Za-z0-9_.-]{0,127}')
 SHA = re.compile(r'[0-9a-f]{64}')
 SINGLE_LIMIT = 1_000_000
 CHUNK_BYTES = 800_000  # Escaped connector JSON stays below its 2.6 MB payload cap.
@@ -169,7 +170,7 @@ def protocol_shape(protocol):
     records, sources = set(), set()
     for item in cohort:
         record, source = item['record']['id'], item['record']['source_id']
-        need(isinstance(record, str) and SAFE_NAME.fullmatch(record) and record not in records, 'Unsafe/duplicate clip')
+        need(isinstance(record, str) and SAFE_CLIP.fullmatch(record) and record not in records, 'Unsafe/duplicate clip')
         need(isinstance(source, str) and source not in sources, 'Duplicate source video')
         records.add(record); sources.add(source)
         need(isinstance(item['source_indices'], list) and len(item['source_indices']) == 33, 'Wrong source window')

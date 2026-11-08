@@ -2,7 +2,9 @@
 
 这是独立的 CPU 后处理工具，不增加项目业务模块，不修改训练、评价核心或现有 exporter。只有当前轮完整 val640 或 test192 **已经 completed，且原生 `trd-verify` 收据已保存**后才能运行。编写和测试期间只用了合成数据，没有读取真实未完成矩阵的 observations／metrics，没有实际导出当前矩阵。
 
-工具：[export_wan_trd_completed_evaluation.py](/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/export_wan_trd_completed_evaluation.py)。SHA256：`cbfa89ae3fb6f76f0f764c7d631fb648c104086e9d20b6cc8a3f3a6a2c69d03d`。
+工具：[export_wan_trd_completed_evaluation.py](/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/export_wan_trd_completed_evaluation.py)。SHA256：`131cc207f523571728c31fd179fb4aff3e5a4bf492fcbb28a742d265491ff3c8`。
+
+发布前元数据兼容修正：封存test清单包含合法首字符为`-`的clip ID。新版本仅为clip引入允许该首字符的独立安全规则；role／目标目录规则、路径逃逸拒绝和数值协议均不变。旧版`cbfa89...`尚未执行真实导出；原合成验证记录保留。
 
 先读 completed 状态、protocol、完整 native verify 收据和 summary 哈希链，随后才读取质量文本。检查全部 role×32clip×2seed、规范顺序、每行 metrics SHA／complete marker、33帧／28时序对、推理输入声明和学生载入／状态审计。缺行、重复、路径逃逸、符号链接或绑定改变均拒绝；从不打开权重、checkpoint、tensor、PNG 或 MP4，也不重复 hash PNG。
 
@@ -69,6 +71,6 @@ for entry in manifest['files']:
 
 ## 合成 CPU 验证
 
-8项测试方法（含11个子场景）通过，0失败／0错误，用时2.753秒。覆盖完整 val640／test192逐字节保留、running提前拒绝、缺／重复行、逃逸／符号链接、SHA／marker变化、未知二进制排除，以及大文本／多字节UTF-8／CRLF无损分块。完整记录：[CPU validation JSON](/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/scratch/wan_trd_completed_evaluation_exporter_cpu_validation_20261108.json)。
+9项测试方法（含17个子场景）通过，0失败／0错误，用时3.033秒。覆盖完整 val640／test192逐字节保留、running提前拒绝、缺／重复行、逃逸／符号链接、SHA／marker变化、未知二进制排除，以及大文本／多字节UTF-8／CRLF无损分块。新增完整test192合法首`-`clip，以及空值、`..`、`../escape`、斜杠和反斜杠拒绝。完整记录：[CPU validation v2 JSON](/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/scratch/wan_trd_completed_evaluation_exporter_cpu_validation_v2_20261108.json)。
 
 该工具只验证和导出已保存文本及收据链，不能代替真正的原生 `trd-verify` 对媒体、模型、数据和完整数值来源的检查；它也不作质量收益判断。
