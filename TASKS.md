@@ -10,8 +10,8 @@ Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
 - [x] **F0 Assets/papers/data integrity.** Three original methods and adaptations recorded; repaired val32/test32 screened1705 clips,1val/3test excluded by data-only rule; source splits/train/Base/history unchanged. Test history and automated integrity-only thumbnails disclosed.
 - [x] **F1 Implement and CPU validate.**107 tests passed,0fail/0skip,0CUDA;6 realtinyWan/18VJP queries and source11-independent audit passed. Still10 business modules.
 - [x] **F2 Cache and real preflight.** DINO1673/55209 cache and all feature/source hashes passed; calibration protocol8cea87...c5868 prepared/reviewed; unique27-diagnostic GPU closure passed afterexit0,0scientific updates; VAE.11/1.1/DINO.094/.94 fixed.
-- [~] **F3 Five paired trajectories.** Trainingprotocol7b620...1509 active via vsr-fixed-teacher-training-20261108t034113z.service;5×2048=10240/1.25RE, sameBase/freshAdamW/commondata-noise. After-training continuationparent034645 waits only, thenval/test/analysisserial; no secondtrain.
-- [ ] **F4 Validation and selection.** All16roles/1024 restores, intermediate512/1024/2048, finalLPIPS select perteacher; all candidates retained.
+- [x] **F3 Five paired trajectories.** Completed10240/20CP/0discardedsteps andexit0. RealCPU full20CP/data/σ/4RNG/student+head/AdamW audit passed0flags. SameBase/freshAdamW/commondata-noise; v2continuationparent042551 nowval/test/analysisserial.
+- [~] **F4 Validation and selection.** Protocolb638fd326211724d9f3b561d2bc1d0fa87c3deb478aff4ca2d1810d2acb64c0a actualGPUrunning withcompletedrows;16roles/1024, intermediate512/1024/2048, finalLPIPSselect perteacher. No partialqualityinterpretation.
 - [ ] **F5 Final heldout-source test.** Only afterselectionreceipt, formaltestRGB+3finalroles/192 restores.
 - [ ] **F6 Analysis/reproducible delivery.** Fullmetrics/costs/two curves/fixedvideos, exploratorysingle-seed conclusion andround2suggestions; alltextGitHubsync, no privatebinary publication.
 

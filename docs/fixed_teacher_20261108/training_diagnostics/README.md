@@ -1,0 +1,7 @@
+# 完整训练诊断
+
+已核对5条轨迹各2048步、共10240步及20个checkpoint；完整数据/σ/timestep序列与四条显式RNG在相同checkpoint逐字节一致。这里只公开digest，不导出RNG状态或权重。
+
+arm_windows.csv列出首/末256步FM、辅助损失、总损失及裁剪前梯度；arm_noise_bins.csv按原σ分箱汇总。aux/FM同时列单位辅助量与乘权重后的比值，不能跨VAE和DINO直接当作同一物理量。checkpoint_update_evidence.csv以源Base参数及隔离seed+5的单层CPU投影头初始化为参照。没有构建Wan、VAE或DINO teacher，没有GPU调用。
+
+这些是优化与公平性检查，不能据此宣称超分效果变好或选参。质量结论仍依赖前瞻冻结的完整验证/测试结果；单训练种子的局限保持不变。
