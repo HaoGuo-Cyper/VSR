@@ -602,3 +602,14 @@ All baseline/frozen/EMA arms completed2048, total6144 scientific updates plus41 
 ## VideoMAEv2 / Wan implementation andCPU checks — 2026-11-08
 
 Prior WanTRD P6 fullydelivered/publishedc4b66a1e. NewindependentVideoMAEv2 sourceimplementsteacher/projection/pairedtraining/fullresume/native448+128evaluation. GroupedCPU suites andindependentreview passed; actualmetadata1641HR andofficialweights validatedwithoutCUDA. See docs/videorepa_videomaev2_20261108/execution.md andcpu receipts. No newGPUforward orscientificupdate claimed inthisentry; realpreflightandtrainingmustfollowdeclaredgates.
+
+
+## 真实预检通过，正式训练与完整评价链启动 — 2026-11-08
+
+预检 `preflight_20261108T145516Z` 完成26诊断更新、31教师前向、15案例/30VJP；15/15案例梯度为正并覆盖3个噪声档。零权重精确基线、教师重复特征、学生原生加载、学生/head/AdamW/显式与全局RNG完整恢复、16GiB限制全部通过。独立文本/算术/source复核0flags；无额外GPU诊断。6个timed诊断均值baseline0.386927s、VideoMAEv2 0.422034s，ratio1.090734，方法peakallocated4.04GiB；短测仅表示开销，不证明质量或加速。
+
+正式训练 `paired_training_20261108T150511Z`，protocol `5292bbd39d21303ac4f57541d80c2e897b02782291b4e73817eb01bd97676bdf`，服务 `vsr-videomaev2-training-20261108t151157z.service` 已开始实际更新。两组fresh Base01/freshAdamW，各2048，共4096科学更新、8CP，诊断参数不复用；本次训练0新诊断。数值源11文件保持预检相同SHA。
+
+唯一CPU父 `vsr-videomaev2-continuation-20261108t151223z.service` 正等待既有训练，不启动第二次训练；后续按完整4096/8CP/RNG审计→448验证→双方final2048锁定→128测试→两阶段分析顺序继续。父与训练均Restart=no，失败保留记录不自动重试。父完成不等于研究交付完成，仍需root独立统计、六份固定视频实际复核、最终报告与文本同步。
+
+元数据及完整日志使用白名单无损UTF8分块公开；protocol约26.8MB的完整1641RGB绑定保持原字节，通过parts_manifest依序拼回原SHA。该持续导出器不含每行metrics/complete，完整评价后另显式导出这些文本。禁止公开权重/CP/PNG/MP4/tensor。

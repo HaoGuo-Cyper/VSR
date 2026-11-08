@@ -135,3 +135,7 @@ At the end of each stage, add a short section to `RESULTS.md` containing:
 - any questions for the human.
 
 Human authorization on 2026-11-05 permits automatic continuation through the existing plan after successful checks. Report each stage, continue when its gate passes, and ask only for failed gates, problematic results or exceptional changes; do not repeatedly request permission for already-authorized training.
+
+
+## Current VideoMAEv2 execution — 2026-11-08T15:12Z
+The previous WanTRD P6 is closed. This accepted follow-on is now executing in this new videomaev2 worktree: real26diagnostic/31teacher preflight and independent review passed. Unique training unit vsr-videomaev2-training-20261108t151157z.service, run WORK/videomaev2_runs/paired_training_20261108T150511Z, protocol5292bbd39d21303ac4f57541d80c2e897b02782291b4e73817eb01bd97676bdf. Unique CPU parent vsr-videomaev2-continuation-20261108t151223z.service waits existingtraining then audit/val448/test128/analysis. Read WORK/active_videomaev2.json and continuation.pipeline_status before any action; do not duplicate jobs. All11 numeric source and parentbindings frozen. Only docs/logs or unbound scratch may change. No repeatdiagnostics/weights/steps; V5 requires actual final stats/video visual/report/publictext completion.

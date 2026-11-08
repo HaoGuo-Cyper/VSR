@@ -211,3 +211,7 @@ All baseline/frozen/EMA arms completed2048, total6144 scientific updates plus41 
 ## VideoMAEv2 implementation freeze preparation — 2026-11-08
 
 Human-authorized follow-on begins only after oldTRD P6, now completed atc4b66a1e. Use independentvideomaev2worktree and immutableplan SHA609d79334e4afb295336e1f022e41c3e323bc8655eb77146e20aca020d822655. FixedB0/R.5,block17,onlineofficialfrozenVideoMAEv2,original3Linear/fullGram.1/eps1e-12 withdeclaredWan映射. Budget4096science/26diagnostic/448val/128test; noEMA/noextraweights/noofflinecache. Bindactualtimmcode, protectallglobalRNG andstopupdated-parameternonfinite immediately. Engineeringchecks do notchange scientificdesign.
+
+
+### 2026-11-08 VideoMAEv2 preflight passed, original settings retained
+The accepted original-teacher adaptation passed its real26-update/31forward viability and correctness checks without calibration or scientific changes. Lambda.5,margin.1,eps1e-12,block17,officialteacher/time-space mapping and4096/448/128 budgets remain exactly prospective. Training and one wait-only continuation started. Independent checks and all timing/VRAM observations are in docs/videorepa_videomaev2_20261108/reviews; no quality inference from auxiliary loss or preflight throughput.

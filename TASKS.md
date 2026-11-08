@@ -261,3 +261,10 @@ Preflight protocolSHA `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361c
 - [ ] V3 Two fresh matched2048-step arms,4096scientific/8CP; full audit.
 - [ ] V4 Completeval448, bothfinal2048 lock, test128 andnativeverify.
 - [ ] V5 Independentstats/costs/two curves/6fixedvideos/actualvisual/reproducible report/text sync. No extraarm/weight/EMA ormultiseed.
+
+
+### VideoMAEv2 actual preflight/paired training — 2026-11-08
+- [x] V2: real26diag/31teacher/15cases30VJP,15positive across3sigma,exactzero/resume/repeat/source/memory andindependentreview passed. No diagnostic weights reused.
+- [~] V3: unique paired training5292bbd… started, B/R fresh2048 each=4096/8CP; numericalsource frozen.
+- [~] V4 orchestration: soleCPUparent waits existingtraining, thenfullaudit→val448→bothfinals→test128→analysis; no extra training.
+- [ ] V5: complete stats/6fixedvideos/actualrootvisual/report/text sync still pending.
