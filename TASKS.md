@@ -172,7 +172,7 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
 2026-11-05 accepted review: wherever the earlier T4.1 description chooses pixel-level A2 first, use latent-level LR-branch corruption excluding position0 instead. Pixel-level evaluation stress tests remain required in T2.2 and are not the pilot training intervention. Keep three seeds as explicitly authorized; five seeds and a full33-frame external tile probe remain possible future decisions, not silently added runs.
 
 
-## Current independent task: HR VAE latent supervision,2026-11-08
+## Superseded unexecuted draft: HR VAE-only latent supervision,2026-11-08
 
 - [x] H0 Audit assets/splits/cache/idleGPU; preserve cancelled unexecuted gamma prototype.
 - [~] H1 Implement meanSmoothL1 HRlatentpatch head and pairedtraining/resume; verifyzeroalign/frozen/grad/patch/checkpoint.
@@ -192,5 +192,5 @@ Latest human scope,2026-11-08: baseline + HR-VAE + HR-DINOv2 fixed-teacher study
 
 - [x] F3: all5×2048=10240 finite updates/20CP; shared data/noise/4RNG/initialization and student/head updates independently audited.
 - [x] F4: fullval1024/33792 predictionPNGs verified; final2048 selection baseline/VAE.11/DINO.094 independently reproduced. Sharedinitial31 retainedwindows/2046PNG exact historical regression passed.
-- [~] F5: selected3×32×2 test192 running under uniqueexisting parent; no new training or selection changes.
-- [ ] F6: complete test nativeverify/pairedstats/curves/video review/finalreport and text publication.
+- [x] F5: fulltest192/6336 predictionPNG source/hash/nativeverify and independent5metric/pairedCI audit passed; originalselectionunchanged.
+- [x] F6: completedpairedstats/twoqualitycurves/6fixed33framevideos/contactandall33ROIreview/reproindex/finalreport; independentreportreviewpassed. Authorizedtextpublicationinthisclosurecommit; weights/media/cacheexcluded. No automaticround2.

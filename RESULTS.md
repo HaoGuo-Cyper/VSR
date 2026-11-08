@@ -537,3 +537,23 @@ Fullval1024 all33frames/33792 predictionPNG+1024MP4 completed; native source/has
 CPU-only sharedinitialregression passed31 retainedwindows×2samplers×33=2046 byteidenticalPNG againsthistorical Base01/clean; replacementwindowexcluded. ReportSHA69e5dda01aa708249a3f481072591902611e10a55d633562bfe39bca0042bdb6; noadditionalrestore/GPUwork.
 
 Parent subsequentlymaterializedformaltestRGB afterselection andstartedunique192rowtest protocol d1572aeb22f736d1c1823aae858f8c1aaba838a748c4875610507aaa2c011869. Same3finalCP/sampler/model/metrics/data settings; noqualityconclusion beforefulltestverify/analysis.
+
+### Fixed-teacher final test,analysis anddelivery completed,2026-11-08
+
+Run paired_training_20261108T033800Z; config configs/fixed_teacher_study_20261108.json SHA13206686e3c6513867f25131967d48949d75cdb0f958f08e716ecdf79bb61216; trainingseed20261102; allfreshmatchedBase01 SHA28356e22e4e718d3c378588793f60732dbc93825ec5d78b8a85c8150060da63f/AdamW;2048 each. All11numericfilesremainidenticaltothefirstfixed-teacherrelease80703e1; protocol retainsactualruntimeprovenance, latestdocumentationcommitsarenottrainingversions. Exacttraining/val/testprotocols,20CPmetadataandall10240scalarrowsarepreserved.
+
+| Arm | Updates | Stepwall sec | FinalFM | Finalunitaux | PeakallocatedGiB |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| baseline | 2048 | 704.994464 | 0.067088701 | 0.000000000 | 3.581323 |
+| vae_low | 2048 | 708.137600 | 0.066604577 | 0.049348176 | 3.585673 |
+| vae_high | 2048 | 708.563893 | 0.070011057 | 0.037723590 | 3.585673 |
+| dino_low | 2048 | 712.342463 | 0.067733772 | 0.510961890 | 3.604440 |
+| dino_high | 2048 | 711.588288 | 0.075872362 | 0.503072202 | 3.604440 |
+
+Finalstep scalarvaluesarenotcross-lossqualityevidence; exactrows/total/grad/sigma/dataandCPmetadataareinfinal_training_scalar_and_CP_metadata.json andfulltraininglogs.
+
+Fulltest protocol d1572aeb22f736d1c1823aae858f8c1aaba838a748c4875610507aaa2c011869;192rows/6336predictionPNG/192MP4/coreverify and independentformularecalculationpassed. LPIPSbaseline.11481968141125629, VAE.11355254953289687, DINO.11465890101460514. VAEgain.0012671318783594103 withsingle-training-seed descriptiveCI[.00022181269988791823,.002402614163601708]; PSNRdifference-.021366360403166196dB andSSIM-.002747138849262039. DINO LPIPSCIcrosses0, PSNR/SSIM/tLP100worse; noaccelerationsignal. All5metrics/32clipSD/perclipdiffs/costsandallcandidates see docs/fixed_teacher_20261108/analysis/{val,test}.
+
+Sixfixed33frame25FPSvideos andcontactsheets deliveredlocally; rootactuallyreviewedall6contactsheets andall33-frame localROIsequencesdecodedfromthe6MP4s, notablindsubjectiveplaybacktest. Fullreport9cea6e7d6638bd81834d0003c48905cf54e313ab8af38727d07adb01ef0f344a passedindependentreview, providesvisualfailures/LPIPS-SSIMtradeoff/curves/commands/CPpaths/datahistoricalexposure/single-seed/headcapacitylimits. Correctedtworeportwordingissueswithreviewdraftpreserved, noexperimentdatachanged. Wholetrainingattempt3705.880411s;step3545.626707s;DINOcache174.456727s separately;valexecute3806.600437s/test750.562376s, notpureGPUtime.
+
+Closureverdict: FIRST-ROUNDDELIVERIESCOMPLETE, notuniversalresearchsuccess. Noadditionalcandidate/seed/update/EMA/H100job. Training/parentnormalexit0/MainPID0, lockreleased,actual414/oldcanonicala91cleanunchanged. Endmonitoringafterauthorizedtextsync; weights/CP/PNG/MP4/tensor/privateassetsremainoutsideGit.
