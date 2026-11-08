@@ -1,6 +1,6 @@
 # VSR：带教师特征监督的 Latent Diffusion 视频超分辨率
 
-**当前实验：保留冻结 VideoMAEv2 教师的 Wan 视频超分适配（2026-11-08）。** 前一轮Wan冻结/EMA教师比较已[完整交付](docs/ema_teacher_targets_20261108/final_report.md)，对原始基线的EMA收益证据不足。用户授权本轮保留原VideoREPA的VideoMAEv2、三层MLP及关系损失，比较baseline与固定lambda0.5方法；明确Wan通道/时空对应、小crop和LoRA等适配。预算两组各2048、26诊断、val448/test128。[方案与必须修改的部分](docs/videorepa_videomaev2_20261108/plan.md) · [执行入口与CPU验收](docs/videorepa_videomaev2_20261108/execution.md)。实现已通过CPU检查，真实GPU预飞/质量结果尚待实际run。下方保留各历史轮记录。
+**最新完成：VideoMAEv2 / Wan 视频超分适配（2026-11-08 UTC）。** 两组各2048步、26次诊断、完整val448/test128及独立复算和固定视频逐帧复核完成。本配置未显示明确LPIPS增益或训练加速，并有PSNR/SSIM保真度代价。见[最终报告](docs/videorepa_videomaev2_20261108/final_report.md)、[逐视频指标](docs/videorepa_videomaev2_20261108/analysis/test/per_clip_metrics.csv)、[复现与8检查点索引](docs/videorepa_videomaev2_20261108/reproduce_and_checkpoints.md)。[事前方案与必要适配](docs/videorepa_videomaev2_20261108/plan.md)保留原样；图像/视频/权重只保留本机，公开文本发布完成状态见最终closure记录。下方保留各历史轮记录。
 
 **已完成的 Wan TRD 第二轮（2026-11-08）：教师目标对照。** 保留现有Wan框架，比较原始基线、冻结Base教师、EMA教师，固定VideoREPA代码式关系损失与共同训练条件。预算3×2048步、41次独立预飞诊断、val640/test192，先检查目标与梯度可用性。方案见[教师目标计划](docs/ema_teacher_targets_20261108/plan.md)和[本轮执行记录](docs/ema_teacher_targets_20261108/execution.md)。上一轮完整结果保留如下。
 
@@ -124,4 +124,4 @@ H100迁移方案保留为历史计划，当前延期，不是本地主线的前�
 旧EMA结果存在恢复与保真的权衡；本轮固定教师比较尚未出分，不据辅助损失推断收益。所有历史记录保留。
 
 
-Latest completed study (2026-11-08): [Wan TRD final report](docs/ema_teacher_targets_20261108/final_report.md), [reproduction and checkpoints](docs/ema_teacher_targets_20261108/reproduce_and_checkpoints.md). Full evaluation completed; EMA improvement over the original baseline remains insufficient, with additional training cost. The separately authorized [VideoMAEv2/Wan prospective plan](docs/videorepa_videomaev2_20261108/plan.md) retains the original fixed video teacher and starts only after this delivery and its own correctness/resource checks.
+Previous completed study (2026-11-08): [Wan TRD final report](docs/ema_teacher_targets_20261108/final_report.md), [reproduction and checkpoints](docs/ema_teacher_targets_20261108/reproduce_and_checkpoints.md). Full evaluation completed; EMA improvement over the original baseline remains insufficient, with additional training cost. The separately authorized [VideoMAEv2/Wan prospective plan](docs/videorepa_videomaev2_20261108/plan.md) retains the original fixed video teacher and starts only after this delivery and its own correctness/resource checks.

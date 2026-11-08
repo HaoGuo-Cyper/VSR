@@ -622,3 +622,10 @@ Both arms completed2048 updates each (4096 science/0 newdiagnostics),8 complete 
 Synchronized committed Step cost: baseline757.491272s, method822.207155s, total1579.698428s. Method HR CPU reads62.567083s are outside Step but already inside total attempt1707.996856s; do not add them again to attemptwall. Method made2048online fixedteacher forwards,0teacher parameter updates/0EMA. Auxiliary loss or participation is not quality evidence.
 
 The sole CPU parent passed fullaudit and prepared/reviewed validation448, now executing protocol950cce2ced2b8d0adf914b9c2d7b6beaafe7b5050c599ccc4b70cdd48f72e60c in pipeline/validation. No quality interpretation before the complete matrix. Both final2048 remain prospectively fixed;test128 and complete independent analysis/video delivery are pending. No retraining/resume/extra configuration.
+
+
+## VideoMAEv2 final evaluation and delivery materials — 2026-11-08
+
+Completed4096science/26diagnostics,8CP,full448validation/128test,19008predictionPNG/576MP4 andsource/nativeverification. Independent576rows/50armmetricstatistics/25pairedCI passed. Sixfixed33framefourpanelvideos/contact+all33centerROI andactualroot12image/twofigureinspection complete; all services exit0/sharedlockreleased;11numericfilesandoldcheckouts preserved.
+
+FinaltestLPIPS B.1148196814,R.1156371699;B−R−.0008174885,descriptive95%CI[−.0026020365,+.0007840820]:gain evidenceinsufficient. R−B PSNR−.1009125853dB/SSIM−.0050030714;conditionalclipCIsnegative. Temporal differences bothCIsoverlap0. No acceleration: R didnot reach Bfinalvaltarget atany measuredcheckpoint. Step+8.543%,Step+extraHRread+16.803%;notpureGPUorwholearmwall. Fullscope/limits/tables/commands in final_report.md and reproduce_and_checkpoints.md. No new qualityANDgate or extra scientific job. Finaltext publication is being sealed separately.

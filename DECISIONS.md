@@ -215,3 +215,7 @@ Human-authorized follow-on begins only after oldTRD P6, now completed atc4b66a1e
 
 ### 2026-11-08 VideoMAEv2 preflight passed, original settings retained
 The accepted original-teacher adaptation passed its real26-update/31forward viability and correctness checks without calibration or scientific changes. Lambda.5,margin.1,eps1e-12,block17,officialteacher/time-space mapping and4096/448/128 budgets remain exactly prospective. Training and one wait-only continuation started. Independent checks and all timing/VRAM observations are in docs/videorepa_videomaev2_20261108/reviews; no quality inference from auxiliary loss or preflight throughput.
+
+
+### 2026-11-08 VideoMAEv2 completed outcome under the original criteria
+Fullval448/test128 andindependentstatistics completed. TestLPIPS B−R−.0008174885191362022 with95%pairedclipdescriptiveCI[−.002602036507927219,.0007840819831471862],classifiedinsufficient_evidence byprospectivezero boundary. FidelitycostPSNR−.10091258527737534dB/SSIM−.005003071361870469 reportedseparately;no inheritedG4/temporalAND gate or tuned tolerance. No acceleration at sparse observedcheckpoints. No nextscientificexperiment authorizedbythisoutcome. Preserveallnumbers/source/CPs; finalresearchdelivery records thisvalidnull/exploratory result.
