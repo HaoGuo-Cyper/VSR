@@ -196,3 +196,8 @@ The human explicitly replied “好的，按你这个思路开始吧” to the d
 ## VideoMAEv2 follow-on authorization after current delivery — 2026-11-08
 
 The human explicitly authorized planning and then starting a separate Wan VSR study that preserves the VideoMAEv2 teacher and adheres as closely as feasible to original VideoREPA. Complete the existing TRD round first; this is not an extra arm within its fixed budget. Before launching, document exact original/code settings, necessary adaptations, retained choices, prospective data/metrics and a bounded paired-study budget. Normal implementation/checks and successful continuation are authorized; no automatic scientific/resource fallback.
+
+
+### VideoMAEv2 prospective choices recorded before current method scores
+
+`docs/videorepa_videomaev2_20261108/plan.md` preserves official VideoMAEv2-B,cleanHR,last-block targets,one-based18 student layer,three-layerMLP,margin.1/lambda.5 and mixed studentBF16/teacherFP32 relation path. Online teacher is preferred to preserve the original execution and avoid unnecessary cache adaptation. Wan grid mapping, omitted stride3 Conv and small-crop/LoRA/budget departures are explicit. Budget4096science/26diagnosticupdates/15probe-cases(30VJP)/31diagnosticteacherforwards/448val128test is fixed prospectively. Official weightbytes/SHA and158-key strict CPU encoder load passed. NoGPUforward/newtraining occurred. Actual implementation/preflight and currentP6 closure remain prerequisites.

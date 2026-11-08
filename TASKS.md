@@ -238,8 +238,8 @@ Preflight protocolSHA `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361c
 
 ## VideoMAEv2 follow-on, queued after Wan TRD P6 — 2026-11-08
 
-- [~] V0: Read-only official VideoREPA/VideoMAEv2 implementation and local-asset review; unbound scratch only, no GPU.
-- [ ] V1: After current P6 delivery, publish prospective adaptation matrix, budget, data and evaluation criteria.
+- [x] V0: Official fixed-version fidelity/resource review and real CPU strict teacher loading passed; no teacher forward/GPU.
+- [~] V1: Prospective adaptation/budget/data/criteria plan independently reviewed and recorded before current scores; execution waits current P6 delivery.
 - [ ] V2: Isolated implementation and relevant CPU/teacher/checkpoint correctness checks.
 - [ ] V3: Bounded GPU preflight; launch the new paired study only after current round completion and successful checks.
 - [ ] V4: Complete normal inference, independent analysis, fixed-video review and reproducible delivery.

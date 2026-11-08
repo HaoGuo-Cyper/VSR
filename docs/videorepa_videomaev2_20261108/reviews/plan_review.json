@@ -1,0 +1,118 @@
+{
+  "schema": "videorepa_videomaev2_prospective_independent_final_review_v1",
+  "status": "passed_prospective_scientific_plan",
+  "reviewed_UTC": "2026-11-08T14:00:01.425263+00:00",
+  "evidence": {
+    "prospective_plan": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/scratch/videorepa_videomaev2_prospective_plan_20261108.md",
+      "bytes": 13635,
+      "sha256": "609d79334e4afb295336e1f022e41c3e323bc8655eb77146e20aca020d822655"
+    },
+    "fidelity_review": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/scratch/videorepa_videomaev2_fidelity_review_20261108.md",
+      "bytes": 20851,
+      "sha256": "9a633b11a0321f59246052edd2b661f8b5f9e4b992d4d84fc235b88fb8fdf403"
+    },
+    "resource_plan_v2": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/scratch/videorepa_videomaev2_resource_plan_20261108_v2.md",
+      "bytes": 22048,
+      "sha256": "9f5b693bdda0b490577c7e33f6ae8d67aa356e005d16db3f349e64fe3c1410e4"
+    },
+    "download_receipt": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/videomaev2_assets_20261108/download_receipt.json",
+      "bytes": 744,
+      "sha256": "1d5f6faea3fec83cb33f7bb8cbe76c94dc914016176b00a94fa03dd683a05cc6"
+    },
+    "CPU_audit": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/videomaev2_assets_20261108/checkpoint_cpu_audit.json",
+      "bytes": 2019,
+      "sha256": "58222d45e6c88e7563b1ec9eb404add51bf4fc1de3a4541e4de580547ec71720"
+    },
+    "CPU_environment": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/videomaev2_assets_20261108/checkpoint_cpu_audit_environment.json",
+      "bytes": 773,
+      "sha256": "d4cc974a4458d6831cd89756ca148b2ea89e208b49523240cf47e0a81484000d"
+    },
+    "CPU_harness": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/videomaev2_assets_20261108/checkpoint_cpu_audit.py",
+      "bytes": 3270,
+      "sha256": "d0be85ba156b7834beb181df5bd216a7e17b845754430f42205103e451bb5dbc"
+    },
+    "input_assets_audit": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/videomaev2_assets_20261108/reusable_input_assets_audit.json",
+      "bytes": 4013,
+      "sha256": "79b836c148ff0c7eed943689fd1d0ca940ea370c57804c2c6607718803c43814"
+    },
+    "official_feature_source": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/videomaev2_assets_20261108/VideoREPA_VideoMAEv2_8d581dc.py",
+      "bytes": 20471,
+      "sha256": "a2d7cb25263bc96566c6dcfd3ce163c3fc32ebd016a4e0603443abbce48673f7"
+    }
+  },
+  "findings": {
+    "scientific_comparison_answerable": true,
+    "claim_scope": "Complete clean-HR VideoMAEv2/TRD Wan VSR configuration versus paired baseline; not paper-number reproduction or isolated teacher-identity causality across prior studies.",
+    "fairness": "Same Base8192/fresh optimizer/data/noise/native timesteps/augmentation/inference; isolated teacher/head construction RNG; baseline avoids online teacher/head costs.",
+    "target_mapping": "Same paired HR[0,1], discard only auxiliary RGBframe0/latent0; tubelet2 frames1..32 ->16x8x14; student time8->16 align_corners=False; original positional sincos8x14x14 spatial then time interpolation; approximate VAE receptive-field correspondence disclosed.",
+    "dtype_contract": "Teacher forward+normalize+Gram FP32 with autocast disabled; student relation bf16, mixed difference FP32; capture actual stages; failure stops rather than precision fallback.",
+    "inference_and_statistics": "Raw student-only nativeUniPC20/CFG1/42,43; complete frozen crops; LPIPS primary paired-clip bootstrap conditional single-training-seed; all fidelity/temporal tradeoffs and historical test reuse disclosed.",
+    "stop_gates": "Current round complete delivery first, then new isolated source CPU audit, finite15 probes with >=8 positive shared-student gradients spanning>=2sigma bins,26diagnostic updates and exact repeat/fullresume; OOM/nonfinite/target/semantic failure stops without cache/dtype/grid/lambda fallback."
+  },
+  "counts": {
+    "scientific_updates": 4096,
+    "RE": 0.5,
+    "diagnostic_optimizer_updates": 26,
+    "gradient_probe_cases": 15,
+    "gradient_VJP_calls": 30,
+    "repeat_teacher_forwards": 4,
+    "teacher_forwards_in_diagnostic_updates": 12,
+    "teacher_forwards_in_zero_update_checks": 19,
+    "teacher_forwards_total_preflight": 31,
+    "teacher_forwards_science": 2048,
+    "training_checkpoints": 8,
+    "validation_restores": 448,
+    "test_restores": 128,
+    "quality_restores": 576,
+    "prediction_PNGs": 19008,
+    "MLP_parameters": 8917760,
+    "MLP_parameter_tensors": 6,
+    "teacher_target_elements": 1376256,
+    "teacher_target_FP32_bytes": 5505024,
+    "tokens": 1792,
+    "all_ordered_Gram_pairs": 3211264,
+    "same_time_pairs": 200704,
+    "cross_time_pairs": 3010560,
+    "same_time_fraction": 0.0625,
+    "teacher_one_attention_FP32_bytes": 154140672
+  },
+  "notes": [],
+  "blocking_scientific_issues": [],
+  "implementation_requirements": [
+    "Use a new checkpoint/head contract supporting the actual three-Linear MLP six parameter tensors; do not reuse old two-tensor identity-head assertions.",
+    "No teacher features persist across steps; measure teacher preprocessing/forward within full synchronized method step and disclose additional HR disk read outside that boundary.",
+    "Teacher Gram must remain FP32 even if loss helper runs inside a student autocast context.",
+    "Actual GPU dtype/value/gradient, complete restore, target geometry and memory gates remain unperformed; CPU strict weight-load is limited evidence."
+  ],
+  "CPU_evidence_scope": "Independently read JSON/harness/text and stat the checkpoint size only; did not repeat teacher construction, torch.load, whole weight hash, model forward or runtime tests.",
+  "read_only_review": true,
+  "large_weight_rehashed": false,
+  "checkpoint_tensors_loaded": false,
+  "teacher_forward_executed": false,
+  "GPU_started": false,
+  "current_partial_quality_read": false,
+  "science_or_diagnostic_updates": 0,
+  "new_implementation_written": false,
+  "supersedes_preliminary_review": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/scratch/videorepa_videomaev2_plan_independent_review_20261108.json",
+    "bytes": 7584,
+    "sha256": "b9f562cf7787d41c4e8c8b65cebfeabe6aa0e6c0364b0bac9a830464cc00fc65"
+  },
+  "resolved_document_alignment_notes": [
+    "Prospective reference now names actual resource_plan_20261108_v2 file.",
+    "Both define all nine latent positions through MLP before dropping latent0.",
+    "Native restore total remains exactly576; optional extra diagnostic native restore removed.",
+    "Both reserve >=30GiB.",
+    "15 gradient probe cases explicitly mean30 FM/aux VJP calls and15teacher forwards; diagnostic/check teacher total31."
+  ],
+  "implementation_authorization_boundary": "Review accepts the forward-looking plan only. Current Wan TRD P6 full delivery must finish first, then new isolated implementation+CPU audit and declared measured GPU gates. This review does not itself authorize immediate concurrent GPU work or claim numeric/resource gates passed."
+}
