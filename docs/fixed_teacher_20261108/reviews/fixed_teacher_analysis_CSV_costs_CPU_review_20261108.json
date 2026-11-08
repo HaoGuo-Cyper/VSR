@@ -1,0 +1,75 @@
+{
+  "schema": "fixed_teacher_analysis_CSV_costs_CPU_review_v1",
+  "status": "passed_10_targeted_synthetic_CPU_tests_no_new_real_quality_read",
+  "observed_UTC": "2026-11-08T03:43:35.641064+00:00",
+  "sources": [
+    {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/analyze_fixed_teacher_study.py",
+      "bytes": 44879,
+      "sha256": "e5df05b1fb023dfc76fef7ab4a842d0c160b2dfa7dcd591c52542012c24fbcf7"
+    },
+    {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/test_analyze_fixed_teacher_study.py",
+      "bytes": 22804,
+      "sha256": "626444ca8768b1324eac39b7d3d267e6e46fd7d49638e374d01008776f10151e"
+    },
+    {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/analyze_hr_vae_study.py",
+      "bytes": 21602,
+      "sha256": "260a4e9673771a31033528293c09610b225ac551bd9778f2527caec8d4d3b83f"
+    }
+  ],
+  "test_result": {
+    "tests": 10,
+    "passed": 10,
+    "seconds": 2.752,
+    "command": "python -m unittest test_analyze_fixed_teacher_study -v",
+    "scope": "New generic analysis helper only; core11 unchanged and no GPU"
+  },
+  "deliverables": {
+    "retained": [
+      "analysis.json",
+      "report.md",
+      "quality_vs_updates.png",
+      "quality_vs_training_seconds.png"
+    ],
+    "new_CSV": {
+      "per_clip_metrics.csv": "Each actual role x32 clips, mean of paired samplers42/43; val512/test96 rows, sharedinitial appears once.",
+      "paired_clip_differences.csv": "All candidate updates versus baseline plus selectedVAE-v-DINO final; val544/test96 rows; metric-specific signed differences positivefavorsmethod.",
+      "summary.csv": "Actual unique role means/clipSD; val16/test3 rows,5metrics, CPidentity/step/time.",
+      "paired_summary.csv": "All5metric paired means/clipSD/10000PCG64 95CI; val85/test15 rows.",
+      "candidate_settings.csv": "All5baseline/VAE/DINO settings retained in val/test reports; finalval LPIPS andselected/evaluated flags.",
+      "costs.csv": "Separate committedstepwall/knownwastedsteps/allattemptworkertimers/cache/calibration/evaluation; sourcebindings/units/scope/overlap/availability; neverinventmissingduration.",
+      "calibration_diagnostics.csv": "All scalar leaves of bound complete calibration resource/gradient/nativesigma/headnorm/resume/reconstructiondiagnostics; fullnestedJSON preserved."
+    },
+    "delivery_manifest.json": "File SHA/byte bindings for allCSV/JSON/Markdown/plots, linked to protocol/study."
+  },
+  "cost_contract": {
+    "curve": "Committed synchronized successfulstep wall only, not pureGPUelapsed/kernel/end-to-end total.",
+    "overlap": "Gradient timing is inside calpreflight; committed/wastedsteps inside attempttimer; cachefeature+IO partitioncachetotal. Do not add total andcontainedcomponents.",
+    "overall_total_seconds": null,
+    "unknown_is_not_zero": true,
+    "evaluation_wall_receipt": "Optional immutable run/execution_wall_time.json with same run/protocol and evaluation_val/evaluation_test stage. Pipeline captures execute subprocess start to exit including cleanup; no mtime inference.",
+    "canonical_restore_seconds": "Sum only full canonical successfulrestore calls; excludes failedattempts,loads,metrics/mediaIO.",
+    "DINO_actual_completed_receipt": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_runs/dinov2_cache_20261108T032522Z/completion_receipt.json",
+      "bytes": 1510,
+      "sha256": "3bc0dcf51ec62521eec74e587740c13ece5b0d7630864825a92cd42410a94dcc"
+    },
+    "DINO_cache_build_seconds": 174.45672749297228,
+    "DINO_cache_scope": "1673 records (1641train +32historical cachevalextras); original cacheval not thisround repaired evaluation cohort.",
+    "common_VAE_Base": "Sunk shared priorpreparation, no falsezero-total claim."
+  },
+  "negative_checks": [
+    "Missing/duplicated observations rejected",
+    "Wrong validation selection rejected before testobservations read",
+    "Tampered integrity audit/omitted disclosure rejected",
+    "Changed execution wall protocol/stage rejected",
+    "Incomplete inputphase rejected",
+    "Missing costs stay empty/availablefalse, notzero"
+  ],
+  "new_real_method_scores_read": false,
+  "GPU_work_performed": false,
+  "frozen_core_source_modified": false,
+  "analysis_execution_on_real_run": false
+}

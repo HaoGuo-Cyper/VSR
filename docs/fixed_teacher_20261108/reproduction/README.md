@@ -1,0 +1,9 @@
+# 本轮复现和审计工具
+
+主运行实现仍在vsr的10个业务模块；本目录只保留本次研究的CPU数据完整性、配置生成、串行调度和分析工具副本，训练/推理不导入本目录。文件与工作区实际运行helper逐字节相同，见helper_manifest.json。
+
+当前实验仍运行中，不能执行本目录启动重复队列。主配置和资产绑定含这台机器的显式绝对路径；在其他机器复现须准备私有数据/权重，创建对应目录并生成新的路径绑定协议，不直接重用现有run。没有权重、媒体或tensor缓存随GitHub提供。
+
+原工作区helper集中在workspace/work，交付必须在workspace/outputs；pipeline默认after-training、拒绝正在running/planned的训练，只有显式include-training才可执行全新planned训练。waiter只等待已有服务，不启动第二个训练。每GPU子进程独立取得同一租约并校验设备/桌面身份，失败停止，没有自动加预算或改变科学设置。
+
+先读上层plan.md、preflight_and_budget.md和CLI_GUIDE，再按实际新资产配置核心ft命令。完整试验结束后将补实际复现/恢复命令与结果位置。

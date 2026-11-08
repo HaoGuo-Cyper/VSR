@@ -506,3 +506,10 @@ Only calibration GPU job vsr-fixed-teacher-calibration-20261108t033537z.service 
 ### Fixed-teacher real preflight completed before method scores
 
 Calibration8cea87...c5868 exited0/MainPID0;27diagnostic/0science. Three originalbaseline steps exact, bothheads/student-only reload/fullAdamW+RNG restore exact, train0/1VAE/DINOonline/cache exact. CalibratedVAEweights.11/1.1,DINO.094/.94 bytrainonlygradients. Baseline/VAE/DINO timed6mean .355745/.355342/.360189s, peakallocated3.582/3.586/3.605GiB; sixsamples include slowrows, no precise speed claim. Finalstudy13206686...1216 andplannedtraining7b620162...1509 fixed5×2048=10240/1.25RE beforeval/testquality. See preflight_and_budget.md andcompletecalibration summary.
+
+
+### Fixed-teacher scientific training and serialized handoff started
+
+Unique trainingservice vsr-fixed-teacher-training-20261108t034113z.service isrunning; run paired_training_20261108T033800Z/protocol7b620162ea4518f52ff7bb84a18ff955b2030ca4cdc94fd357547ece11021509, budget10240. Independent formalpreexecution review passed. Source/first-round configurations and realpreflight were publicly synchronized as80703e16fc91184db2d44b498f6b2478d61c271c/tree2e74df8c...; oldcanonicala91 andactual41407b0 unchanged.
+
+18synthetic pipeline/waiter CPUcases passed. Parent vsr-fixed-teacher-continuation-20261108t034645z.service waits for existingtraining exit0 andcompleted10240; it starts no training. Onlythen serialval1024→verify→select→formaltestRGB→test192→verify→analysis. A transientcompletedstatus whileMainPIDalive still waits forcleanup. Anyfailure/sourceorhelperchange stops withoutautomaticretry. Outputplanned workspace/outputs/FixedTeacher_20261108; finalrootreview/video/evidence/report stillrequired, noqualityclaim yet.
