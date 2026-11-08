@@ -1,12 +1,14 @@
 # VSR：带教师特征监督的 Latent Diffusion 视频超分辨率
 
-当前研究问题：在相同训练条件下，用真实 HR 视频的冻结 **VAE latent** 或 **DINOv2 patch 特征**监督学生中间层，能否改善 ×4 视频超分质量或训练效率。
+**当前第二轮（2026-11-08，已获执行授权）：Wan TRD 教师目标对照。** 保留现有Wan框架，比较原始基线、冻结Base教师、EMA教师，固定VideoREPA代码式关系损失与共同训练条件。预算3×2048步、41次独立预飞诊断、val640/test192，先检查目标与梯度可用性。方案见[教师目标计划](docs/ema_teacher_targets_20261108/plan.md)和[本轮执行记录](docs/ema_teacher_targets_20261108/execution.md)。上一轮完整结果保留如下。
 
-**当前任务（2026-11-08）：基线、HR-VAE、HR-DINOv2 三组探索实验。** 一个训练种子，基线一条轨迹，两种对齐各最多两个权重，共最多五条轨迹。先测真实梯度尺度与开销，再锁定每条2048步的统一预算；所有候选保留，验证集选权重，再打开最终测试评价。方案见[执行计划](docs/fixed_teacher_20261108/plan.md)、[数据与指标定义](docs/fixed_teacher_20261108/data_and_metric_protocol.md)和[原论文与适配](docs/fixed_teacher_20261108/method_references.md)。本轮已完成：5×2048步、完整val1024和冻结选择后的test192，均通过来源/全帧/hash及独立统计核验。见[完整报告](docs/fixed_teacher_20261108/final_report.md)、[全部候选与逐视频CSV](docs/fixed_teacher_20261108/analysis/val/report_text_public.md)、[测试指标与配对区间](docs/fixed_teacher_20261108/analysis/test/report_text_public.md)及[准确复现/恢复命令和20个checkpoint索引](docs/fixed_teacher_20261108/reproduce_and_checkpoints.md)。
+第一轮研究问题：在相同训练条件下，用真实 HR 视频的冻结 **VAE latent** 或 **DINOv2 patch 特征**监督学生中间层，能否改善 ×4 视频超分质量或训练效率。
+
+**已完成第一轮：基线、HR-VAE、HR-DINOv2 三组探索实验。** 一个训练种子，基线一条轨迹，两种对齐各最多两个权重，共最多五条轨迹。先测真实梯度尺度与开销，再锁定每条2048步的统一预算；所有候选保留，验证集选权重，再打开最终测试评价。方案见[执行计划](docs/fixed_teacher_20261108/plan.md)、[数据与指标定义](docs/fixed_teacher_20261108/data_and_metric_protocol.md)和[原论文与适配](docs/fixed_teacher_20261108/method_references.md)。本轮已完成：5×2048步、完整val1024和冻结选择后的test192，均通过来源/全帧/hash及独立统计核验。见[完整报告](docs/fixed_teacher_20261108/final_report.md)、[全部候选与逐视频CSV](docs/fixed_teacher_20261108/analysis/val/report_text_public.md)、[测试指标与配对区间](docs/fixed_teacher_20261108/analysis/test/report_text_public.md)及[准确复现/恢复命令和20个checkpoint索引](docs/fixed_teacher_20261108/reproduce_and_checkpoints.md)。
 
 **本轮结果（单训练seed，探索性）：** 验证选定VAE λ0.11、DINO λ0.094。test LPIPS Baseline **0.114820**、VAE **0.113553**、DINO **0.114659**；VAE配对收益0.001267，95%描述区间[0.000222,0.002403]，同时SSIM下降。DINO的LPIPS收益区间跨0。两者未显示训练加速；不能据本轮宣称多seed普遍收益或综合质量全面提升。完整两种训练曲线、6份固定片段对比视频保存在本机outputs；本仓库只同步文本与CSV，不上传权重/媒体/cache。
 
-本地 RTX5080 负责本轮开发与实验；H100迁移延期。旧 EMA pilot 的[完整结果](docs/local_continuation_20261107/G4_report.md)保留，其 clean 保真门槛未通过。EMA／Self-Flow 留到第二轮讨论，本轮不启动。
+本地 RTX5080 负责本轮开发与实验；H100迁移延期。旧 EMA pilot 的[完整结果](docs/local_continuation_20261107/G4_report.md)保留，其 clean 保真门槛未通过。旧EMA运行保持封存；新第二轮按上述独立协议执行。
 
 ## 模型路径
 
@@ -20,7 +22,7 @@ LR视频 → 双三次上采样 → 冻结VAE编码 → LR latent条件 ─┐
 
 学生主干冻结，训练 rank8 LoRA 和 LR 残差分支，原 flow-matching 损失保持不变。两种对齐都从第8个 block（index7，共30层）取特征，使用单层 FP32 Linear：VAE输出64维，以元素平均 Smooth L1 对齐同一次干净HR latent patch；DINO输出768维，以通道归一化后的平均余弦损失对齐局部patch表示。DINO逐帧编码后按首帧独立、后续每4帧均值映射到9个latent时间位置。
 
-不使用EMA、LR条件破坏或额外噪声门槛。推理只加载学生；HR、教师、辅助头和优化器均不进入推理。
+第一轮不使用EMA、LR条件破坏或额外噪声门槛。各轮推理均只加载学生；HR、教师、辅助头和优化器均不进入推理。
 
 ## 每个Python文件做什么
 

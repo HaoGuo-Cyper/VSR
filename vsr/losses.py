@@ -298,3 +298,77 @@ def calibrated_auxiliary_weights(observations):
             "weights": [row["weight"] for row in candidates], "candidates": candidates,
             "scope": "all_shared_restoration_trainables_excluding_auxiliary_head",
             "validation_used": False, "optimizer_updates": 0}
+
+
+class FullGramTRD(nn.Module):
+    """VideoREPA code-style full-pair relation objective, same-Wan adaptation.
+
+    Keep every ordered token pair (diagonal included), without time masks or
+    per-component reweighting. FP32 normalized Gram arithmetic follows an
+    explicit eps. Identity Linear is a study-specific same-width adapter, not
+    VideoREPA's cross-encoder MLP. Teacher features have no gradient path.
+    """
+    def __init__(self, dimension, *, margin=.1, normalize_eps=1e-6):
+        super().__init__()
+        _require(type(dimension) is int and dimension > 0, 'Positive TRD feature width required')
+        _require(type(margin) in (int,float) and math.isfinite(margin) and 0 <= margin <= 2,
+                 'TRD margin must be finite in [0,2]')
+        _require(type(normalize_eps) in (int,float) and math.isfinite(normalize_eps) and normalize_eps > 0,
+                 'TRD normalization epsilon must be finite and positive')
+        self.dimension,self.margin,self.normalize_eps = dimension,float(margin),float(normalize_eps)
+        # Linear construction normally consumes CPU RNG. Restore that stream
+        # even though every weight/bias is then overwritten by exact identity.
+        with torch.random.fork_rng(devices=[]):
+            self.projector = nn.Linear(dimension,dimension,dtype=torch.float32)
+        with torch.no_grad():
+            self.projector.weight.copy_(torch.eye(dimension,dtype=torch.float32))
+            self.projector.bias.zero_()
+
+    def forward(self,student,teacher,grid):
+        _require(isinstance(student,torch.Tensor) and isinstance(teacher,torch.Tensor)
+                 and student.ndim == teacher.ndim == 3 and student.shape == teacher.shape
+                 and student.shape[-1] == self.dimension and student.device == teacher.device
+                 and student.is_floating_point() and teacher.is_floating_point(),
+                 'TRD requires matched floating student/teacher [B,N,C]')
+        _require(len(grid) == 3 and all(type(v) is int and v > 0 for v in grid)
+                 and math.prod(grid) == student.shape[1], 'TRD token order must match the complete T,H,W grid')
+        _require(all(p.dtype == torch.float32 for p in self.projector.parameters()), 'Keep TRD projector FP32')
+        _require(bool(torch.isfinite(student).all()) and bool(torch.isfinite(teacher).all()),
+                 'TRD features must be finite')
+        with torch.autocast(student.device.type,enabled=False):
+            projected = self.projector(student.float())
+            target = teacher.detach().float()
+            s = F.normalize(projected,dim=-1,eps=self.normalize_eps)
+            t = F.normalize(target,dim=-1,eps=self.normalize_eps)
+            difference = (torch.bmm(s,s.transpose(1,2))-torch.bmm(t,t.transpose(1,2))).abs()
+            pair_loss = F.relu(difference-self.margin)
+            loss = pair_loss.mean()
+        _require(bool(torch.isfinite(loss)), 'Nonfinite full Gram TRD loss')
+        with torch.no_grad():
+            batch,tokens,_ = student.shape
+            frames,height,width = grid
+            positions = height*width
+            time_ids = torch.arange(tokens,device=student.device)//positions
+            spatial = time_ids[:,None] == time_ids[None,:]
+            temporal = ~spatial
+            active = difference > self.margin
+            def mean_where(value,mask):
+                return float(value[:,mask].mean()) if bool(mask.any()) else None
+            diagnostic = {'all_pairs':batch*tokens*tokens,'tokens_per_example':tokens,
+                'all_tokens_supervised':True,'diagonal_included':True,'ordered_pairs':True,
+                'margin':self.margin,'normalize_eps':self.normalize_eps,'arithmetic':'FP32',
+                'active_pairs':int(active.sum()),'active_pair_fraction':float(active.float().mean()),
+                'spatial_pairs':batch*frames*positions*positions,
+                'temporal_pairs':batch*frames*(frames-1)*positions*positions,
+                'spatial_loss_mean':mean_where(pair_loss,spatial),
+                'temporal_loss_mean':mean_where(pair_loss,temporal),
+                'spatial_difference_mean':mean_where(difference,spatial),
+                'temporal_difference_mean':mean_where(difference,temporal),
+                'spatial_active_pair_fraction':mean_where(active.float(),spatial),
+                'temporal_active_pair_fraction':mean_where(active.float(),temporal),
+                'student_feature_norm_mean':float(student.float().norm(dim=-1).mean()),
+                'projected_feature_norm_mean':float(projected.norm(dim=-1).mean()),
+                'teacher_feature_norm_mean':float(target.norm(dim=-1).mean()),
+                'relation_absolute_difference_max':float(difference.max()),
+                'gram_elements_per_example':tokens*tokens}
+        return loss,diagnostic

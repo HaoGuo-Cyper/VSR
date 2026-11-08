@@ -349,3 +349,109 @@ class FrozenDINOv2(torch.nn.Module):
     def close(self):
         import gc
         self.model=None;gc.collect()
+
+
+class FP32TrainableTeacher(TrainableEMA):
+    """Same-Wan frozen or EMA target; only restoration trainables are shadowed.
+
+    Frozen backbone storage is shared through the inherited exception-safe swap.
+    Shadows are FP32 regardless of the student's parameter dtype; the temporary
+    teacher copy uses the student's execution dtype. The auxiliary head never
+    belongs to the restoration model and is therefore never a teacher parameter.
+    """
+    def __init__(self, model, *, mode, decay=.999):
+        _require(mode in ('frozen', 'ema'), 'Teacher mode must be frozen or ema')
+        super().__init__(model, decay=decay)
+        self.mode = mode
+        self._shadow = {name:value.float() for name,value in self._shadow.items()}
+
+    @property
+    def shadow(self):
+        return self._shadow
+
+    def _validate(self, model):
+        params = _trainables(model)
+        _require(set(params) == set(self._spec) and set(self._shadow) == set(self._spec),
+                 'Teacher trainable parameter names changed')
+        _require(type(self.num_updates) is int and self.num_updates >= 0
+                 and (self.mode != 'frozen' or self.num_updates == 0), 'Invalid teacher update count')
+        checks = []
+        for name,p in params.items():
+            shape,dtype,device = self._spec[name]
+            value = self._shadow[name]
+            _require((tuple(p.shape),p.dtype,p.device) == (shape,dtype,device),
+                     'Teacher source shape/dtype/device changed: '+name)
+            _require(isinstance(value,torch.Tensor) and tuple(value.shape) == shape
+                     and value.dtype == torch.float32 and value.device == device
+                     and not value.requires_grad, 'Teacher shadow shape/dtype/device mismatch: '+name)
+            checks.extend((('Nonfinite student trainable: '+name,p), ('Nonfinite teacher shadow: '+name,value)))
+        _require_finite(checks)
+        return params
+
+    @torch.no_grad()
+    def update(self, model):
+        _require(self.mode == 'ema', 'Frozen teacher cannot be updated')
+        _require(not self._swapping, 'Cannot update teacher during a temporary swap')
+        params = self._validate(model)
+        frozen = _frozen_signature(model)
+        for name,p in params.items():
+            self._shadow[name].mul_(self.decay).add_(p.detach().float(),alpha=1-self.decay)
+        self.num_updates += 1
+        _require_finite(('Nonfinite updated teacher shadow: '+name,value) for name,value in self._shadow.items())
+        _require(frozen == _frozen_signature(model), 'Frozen parameters changed during teacher update')
+
+    def state_dict(self):
+        return {'schema':'vsr_fp32_trainable_teacher_v1','mode':self.mode,'decay':self.decay,
+                'num_updates':self.num_updates,'trainable_names':list(self.names),
+                'shadow':{name:value.detach().clone() for name,value in self._shadow.items()}}
+
+    def load_state_dict(self,state):
+        _require(not self._swapping, 'Cannot load teacher during a temporary swap')
+        _require(isinstance(state,dict) and state.get('schema') == 'vsr_fp32_trainable_teacher_v1'
+                 and state.get('mode') == self.mode and state.get('decay') == self.decay,
+                 'Teacher state schema/mode/decay mismatch')
+        count = state.get('num_updates')
+        _require(type(count) is int and count >= 0 and (self.mode != 'frozen' or count == 0),
+                 'Teacher state update count mismatch')
+        _require(state.get('trainable_names') == list(self.names) and isinstance(state.get('shadow'),dict)
+                 and set(state['shadow']) == set(self._spec), 'Teacher state parameter names mismatch')
+        for name,value in state['shadow'].items():
+            shape,_,device = self._spec[name]
+            _require(isinstance(value,torch.Tensor) and (tuple(value.shape),value.dtype)
+                     == (shape,torch.float32) and value.device in (torch.device('cpu'),device) and not value.requires_grad,
+                     'Teacher state shape/dtype/device mismatch: '+name)
+        _require_finite(('Nonfinite teacher state: '+name,value) for name,value in state['shadow'].items())
+        staged = {name:value.detach().to(device=self._spec[name][2],copy=True) for name,value in state['shadow'].items()}
+        self._shadow,self.num_updates = staged,count
+
+
+def select_paired_teacher_timestep(scheduler, student_index, *, ratio=.5):
+    """Nearest valid native timestep to half sigma, deterministic tie breaking.
+
+    Only the first1000 paired sigma/timestep entries are eligible: an unpaired
+    trailing sigma=0 is not a valid teacher time. Teacher sigma never exceeds
+    the student sigma; ties prefer smaller sigma, then smaller native index.
+    """
+    _require(type(student_index) is int and 0 <= student_index < 1000
+             and len(scheduler.timesteps) == 1000 and len(scheduler.sigmas) >= 1000,
+             'Use a valid index from the paired native1000 training grid')
+    _require(type(ratio) in (int,float) and math.isfinite(ratio) and 0 < ratio <= 1,
+             'Teacher sigma ratio must lie in (0,1]')
+    sigmas = scheduler.sigmas[:1000].detach().to(device='cpu',dtype=torch.float32)
+    times = scheduler.timesteps.detach().to(device='cpu')
+    _require(sigmas.ndim == times.ndim == 1 and bool(torch.isfinite(sigmas).all())
+             and bool(torch.isfinite(times).all()) and bool(((sigmas >= 0) & (sigmas <= 1)).all()),
+             'Native paired grid must be finite with sigmas in [0,1]')
+    values = sigmas.tolist()
+    student_sigma = values[student_index]
+    target_sigma = student_sigma * float(ratio)
+    eligible = [i for i,value in enumerate(values) if value <= student_sigma]
+    teacher_index = min(eligible,key=lambda i:(abs(values[i]-target_sigma),values[i],i))
+    teacher_sigma = values[teacher_index]
+    return {'student_index':student_index,'student_sigma':student_sigma,
+            'student_native_timestep':float(times[student_index]),
+            'teacher_index':teacher_index,'teacher_sigma':teacher_sigma,
+            'teacher_native_timestep':float(times[teacher_index]),
+            'requested_sigma_ratio':float(ratio),'requested_teacher_sigma':target_sigma,
+            'realized_sigma_ratio':teacher_sigma/student_sigma if student_sigma > 0 else None,
+            'paired_grid_entries':1000,'tie_rule':'absolute_distance_then_smaller_sigma_then_smaller_index'}

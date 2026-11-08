@@ -563,3 +563,12 @@ Closureverdict: FIRST-ROUNDDELIVERIESCOMPLETE, notuniversalresearchsuccess. Noad
 Prepared `docs/ema_teacher_targets_20261108/plan.md` for the human-requested baseline/frozen Base/EMA Base study. Official VideoREPA code at8d581dc301e18546a1808436c724f59d259d09f9 was checked; full-Gram margin loss, paper/code reduction discrepancy and Wan teacher/input/projection adaptations are documented. Independent scientific and budget reviews passed after clarifying all-nonfinite failure, valid paired scheduler grid only, and normalization epsilon differences.
 
 Planned counts:6144 science updates (.75RE),41 future diagnostics,640 validation/192 test restores; estimated2-3h GPU window after implementation/authorization, not a measurement. Observed counts for this planning task:0 optimizer updates,0 new restores,0 GPU launches. Existing studies and all11 numeric modules remain unchanged. Only planning/tracking text is published. No quality result or new scientific gate passed; implementation, preflight and experiments remain unstarted under the explicit human instruction.
+
+### Wan TRD implementation started under new explicit authorization, 2026-11-08
+
+The human accepted execution of the previouslydeliveredplan. Newisolatedcheckout from18e6582 is used to preserve completedfixedteacher sources. Initialhostinspection foundonly pinneddesktop GPUprocesses and552GiB availabledisk. Implementation/CPUwork starts; no newGPUjob oroptimizerupdate has yetoccurred. Autoapproval initiallyrejected onecheckpointsourcewrite becauseAGENTS stilldescribedplanning-only;thatcommand madezerochanges. Thecurrent authorizationis nowrecordedbefore anysourcewrite retry.
+
+
+### Wan TRD metadata prepared and CPU checks passed, 2026-11-08
+
+Protocol `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361ceb6c650` binds11 newworktree sources, commonBase28356e22 andcompleteoriginal1641cache.70combinedCPU checks0fail/0skip/CUDAfalse, plusfinalbuilderintegration12relatedcases; independentreviewpassed.0GPUupdatesatpreparation. Nextdeclaredrun `/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/wan_trd_runs/preflight_20261108T123515Z` is the onlypreflight,41diagnosticmaximum/0science;15gradientcasesare0update. Numericalsourcewillremainfixed.

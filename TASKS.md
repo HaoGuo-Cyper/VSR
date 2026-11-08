@@ -206,3 +206,24 @@ Latest human scope,2026-11-08: baseline + HR-VAE + HR-DINOv2 fixed-teacher study
 - [ ] P6: paired tables, curves, fixed six videos, costs and reproducible delivery; not started.
 
 No automation or second-round experiment is active. This planning request does not reopen any oldrun.
+
+## Wan TRD accepted execution, 2026-11-08
+
+- [x] P0 accepted: human instructed “好的，按你这个思路开始吧”. Planning-only restriction superseded for thisstudy.
+- [~] P1 isolated implementation: relationloss/teacherstep,fullstate checkpoints andnormal evaluation controllers inprogress innewworktree.
+- [ ] P2 targetedCPU andindependentreview.
+- [ ] P3 accepted41-update preflight andtrain-onlycommonlambda calibration; notstarted yet.
+- [ ] P4 fresh3x2048 scientifictraining afterP3passes.
+- [ ] P5 val640/test192 andfullverification.
+- [ ] P6 pairedanalysis/curves/fixedvideos/reproducibledelivery.
+
+Prior planning checklist records the earlier stop,not thelatest authorization.
+
+
+### Wan TRD actual implementation and CPU closure, 2026-11-08
+
+- [x] P1: new10-module isolated implementation complete.
+- [x] P2:70 combinedCPU tests passed0fail0skip/CUDAuninitialized;12 relatedTRD evaluation/builder cases passed afterbuilderintegration; independent source andcheckpoint/evaluation reviews passed.
+- [~] P3: metadata prepared with41diagnostic/0science budget; next exclusivehostpreflight firstchecks15train-onlygradientcases.
+
+Preflight protocolSHA `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361ceb6c650`; numericalsource now frozen for this attempt. P4/P5/P6 remainunstarted.

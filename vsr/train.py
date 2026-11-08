@@ -1,8 +1,8 @@
 """Unified NoRef training primitives and explicit prepare/execute entry points.
 
 No command, training queue, model load or CUDA initialization runs on import.
-The teacher sees the SAME noised HR and native timestep as the student; only
-its LR condition is clean. EMA swapping finishes before the student graph is
+The legacy A2 teacher shares the student noisy HR and timestep. The independent
+Wan TRD study uses matched clean LR and a separately paired lower-noise timestep. EMA swapping finishes before the student graph is
 built. Device-batched finite checks are CPU-tested, but do not establish the
 G3 <=1.5 GPU cost requirement; actual GPU profiling and gates remain pending.
 """
@@ -1276,12 +1276,21 @@ def build_parser():
         if name in ('ft-prepare','ft-calibration-prepare'):command.add_argument('--config',type=Path,required=True)
         else:command.add_argument('--expected-protocol-sha',required=True)
         if name=='ft-execute':command.add_argument('--resume',action='store_true')
+    for name in ('trd-prepare','trd-preflight','trd-execute'):
+        command=sub.add_parser(name,help='Paired Wan TRD baseline, frozen Base and EMA teacher study')
+        command.add_argument('--run-dir',type=Path,required=True)
+        if name=='trd-prepare':command.add_argument('--config',type=Path,required=True)
+        else:command.add_argument('--expected-protocol-sha',required=True)
+        if name=='trd-execute':command.add_argument('--resume',action='store_true')
     return parser
 
 
 def main(argv=None):
     args=build_parser().parse_args(argv)
-    if args.command=='ft-calibration-prepare':result=prepare_ft_calibration(args.config,args.run_dir)
+    if args.command=='trd-prepare':result=prepare_trd(args.config,args.run_dir)
+    elif args.command=='trd-preflight':result=execute_trd_preflight(args.run_dir,args.expected_protocol_sha)
+    elif args.command=='trd-execute':result=execute_hr(args.run_dir,args.expected_protocol_sha,resume=args.resume)
+    elif args.command=='ft-calibration-prepare':result=prepare_ft_calibration(args.config,args.run_dir)
     elif args.command=='ft-calibrate':result=execute_ft_calibration(args.run_dir,args.expected_protocol_sha)
     elif args.command=='ft-prepare':result=prepare_hr(args.config,args.run_dir)
     elif args.command=='ft-execute':result=execute_hr(args.run_dir,args.expected_protocol_sha,resume=args.resume)
@@ -1372,6 +1381,7 @@ class HRLatentStep(NoRefContinuationStep):
 
 def collect_hr_protocol(config_path):
     study=read(config_path)
+    if study.get('schema')=='wan_trd_study_v1':return collect_trd_protocol(config_path)
     if study.get('schema')=='fixed_teacher_study_v1':return collect_fixed_teacher_protocol(config_path)
     need(study.get('schema')=='hr_vae_study_v1','Wrong HR study config')
     need(study['updates']==2048 and study['eval_updates']==[512,1024,2048]
@@ -1588,14 +1598,15 @@ def execute_hr(run_dir,expected,*,resume=False):
     run,p=_hr_protocol(run_dir,expected);s=p['study'];state=read(run/'status.json')
     need(state['status']=='planned' or (resume and state['status'] in ('running','failed_recoverable')), 'Explicit checkpoint resume required for an interrupted study')
     fixed=p.get('schema')=='fixed_teacher_training_protocol_v1'
+    trd=p.get('schema')=='wan_trd_training_protocol_v1'
     expected_budget=p['scientific_update_budget'];expected_arms=len(s['arms'])
     need(expected_budget==s['updates']*expected_arms,'Scientific budget differs from the declared arm/update matrix')
-    if fixed:
+    if fixed or trd:
         cal=p['calibration'];cal_protocol=binding(cal['protocol']['path'],cal['protocol']['sha256'])
         cal_summary=binding(cal['summary']['path'],cal['summary']['sha256'])
         need(cal_protocol==cal['protocol'] and cal_summary==cal['summary'],'Fixed teacher preflight binding changed')
         preflight_protocol=read(cal_protocol['path']);probe=read(cal_summary['path'])
-        need(probe.get('status')=='passed_fixed_teacher_preflight'
+        need(probe.get('status')==('passed_trd_preflight' if trd else 'passed_fixed_teacher_preflight')
              and probe.get('protocol_sha256')==cal_protocol['sha256']
              and probe.get('sources')==p['sources'] and preflight_protocol.get('sources')==p['sources']
              and probe.get('scientific_updates')==0,'Require the passed same-source fixed-teacher preflight')
@@ -1636,19 +1647,20 @@ def execute_hr(run_dir,expected,*,resume=False):
             save(run/'status.json',{'status':'running','protocol_sha256':expected,'scientific_updates':0},replace=True)
             for arm in s['arms']:
                 label,weight=arm['label'],arm['weight'];directory=run/'arm_runs'/label
-                family,setting=(arm['family'],arm['setting']) if fixed else (None,None)
+                family,setting=((label,'common') if trd else ((arm['family'],arm['setting']) if fixed else (None,None)))
                 dino=fixed and family=='hr_dino'
                 directory.mkdir(parents=True,exist_ok=True)
-                config=_hr_config(p,weight,kind='dino') if dino else _hr_config(p,weight)
+                config=_trd_config(p,label,weight) if trd else (_hr_config(p,weight,kind='dino') if dino else _hr_config(p,weight))
                 torch.cuda.reset_peak_memory_stats()
-                engine=_hr_engine(p,weight,kind='dino') if dino else _hr_engine(p,weight)
+                engine=_trd_engine(p,label,weight) if trd else (_hr_engine(p,weight,kind='dino') if dino else _hr_engine(p,weight))
                 initial=tensor_state_hashes(engine.model)
+                teacher_initial=_trd_teacher_hashes(engine) if trd else None
                 cumulative=0.;cp_records=[];log=directory/'training.jsonl'
                 completion=directory/'completion.json'
                 if completion.exists():
                     record=read(completion)
                     need(record['updates']==s['updates'] and record['weight']==weight and record['initial_student_hashes']==initial,'Completed arm differs')
-                    if fixed:need(record.get('family')==family and record.get('setting')==setting,'Completed arm family/setting differs')
+                    if fixed or trd:need(record.get('family')==family and record.get('setting')==setting,'Completed arm family/setting differs')
                     for cp in record['checkpoint_files']:binding(cp['path'],cp['sha256'])
                     need(binding(log)==record['full_training_log'],'Completed training log changed')
                     completed[label]=record;effective+=s['updates'];_hr_release(engine);engine=None
@@ -1657,7 +1669,9 @@ def execute_hr(run_dir,expected,*,resume=False):
                 if checkpoints:
                     need(resume,'Existing checkpoints require explicit resume')
                     last=checkpoints[-1]
-                    audit=restore_hr_latent_training_state(engine,last,allowed_root=run,expected_protocol_sha256=expected,expected_config=config)
+                    from .checkpoints import restore_trd_training_state
+                    restore=restore_trd_training_state if trd else restore_hr_latent_training_state
+                    audit=restore(engine,last,allowed_root=run,expected_protocol_sha256=expected,expected_config=config)
                     cumulative=audit['cumulative_training_seconds']
                     raw_log=log.read_bytes();raw_lines=raw_log.splitlines();lines=[];partial_tail=False
                     for ordinal,line in enumerate(raw_lines):
@@ -1672,7 +1686,7 @@ def execute_hr(run_dir,expected,*,resume=False):
                     for i,row in enumerate(prefix):
                         need(row['arm']==label and row['weight']==weight and row['data_index']==i%len(reader)
                              and row['record_id']==reader.ids[i%len(reader)],'Resume log role/data order differs')
-                        if fixed:need(row.get('family')==family and row.get('setting')==setting,'Resume log family/setting differs')
+                        if fixed or trd:need(row.get('family')==family and row.get('setting')==setting,'Resume log family/setting differs')
                         need(all(type(row[k]) in (int,float) and math.isfinite(row[k])
                                  for k in ('fm','align','total','grad_norm_before_clip','sigma','seconds','cumulative_training_seconds')),
                              'Nonfinite resume log prefix')
@@ -1713,14 +1727,23 @@ def execute_hr(run_dir,expected,*,resume=False):
                     cumulative+=seconds
                     row=row|{'arm':label,'weight':weight,'record_id':reader.ids[index],'data_index':index,
                              'seconds':seconds,'cumulative_training_seconds':cumulative,'gpu_event_seconds':gpu_seconds}
-                    if fixed:row.update(family=family,setting=setting)
+                    if fixed or trd:row.update(family=family,setting=setting)
+                    if trd:
+                        row['teacher_kind']=label
+                        row['noise_bin']='low' if row['sigma']<.33 else 'mid' if row['sigma']<.67 else 'high'
+                        pairing=row.get('teacher_timestep')
+                        if pairing is not None:
+                            row.update(teacher_sigma=pairing['teacher_sigma'],teacher_timestep_index=pairing['teacher_index'],
+                                       teacher_native_timestep=pairing['teacher_native_timestep'])
                     _append_row(log,row)
                     _memory(torch,p['memory_cap_bytes'])
                     save(run/'progress.json',{'status':'running','arm':label,'step':engine.steps,
                          'scientific_updates':effective+engine.steps,'protocol_sha256':expected},replace=True)
                     if engine.steps in s['checkpoint_updates']:
                         destination=directory/'Base'/f'checkpoint_{engine.steps:06d}.pt'
-                        record=save_hr_latent_checkpoint(destination,engine,config,allowed_root=run,protocol_sha256=expected,
+                        from .checkpoints import save_trd_checkpoint
+                        publish=save_trd_checkpoint if trd else save_hr_latent_checkpoint
+                        record=publish(destination,engine,config,allowed_root=run,protocol_sha256=expected,
                             cumulative_training_seconds=cumulative,initialization=engine.base_load_audit)
                         cp_records.append(binding(destination)|{'step':engine.steps,'update':engine.steps,'variant':'Base',
                               'cumulative_training_seconds':cumulative})
@@ -1731,11 +1754,19 @@ def execute_hr(run_dir,expected,*,resume=False):
                     'head_parameters':sum(x.numel() for x in engine.alignment.parameters()) if engine.alignment is not None else 0,
                     'memory':_memory(torch,p['memory_cap_bytes'])}
                 if fixed:record.update(family=family,setting=setting,teacher_kind='dino' if dino else 'vae')
+                if trd:
+                    record.update(family=family,setting=setting,teacher_kind=label,teacher_initial_hashes=teacher_initial,
+                        teacher_final_hashes=_trd_teacher_hashes(engine),teacher_is_frozen_cached_HR=False,
+                        EMA_updates=engine.teacher.num_updates if label=='ema' else 0,
+                        teacher_updates=engine.teacher.num_updates if engine.teacher else 0)
+                    need(record['EMA_updates']==(2048 if label=='ema' else 0),'Incorrect TRD teacher update count')
+                    if label=='frozen':need(record['teacher_final_hashes']==teacher_initial,'Frozen teacher changed')
                 save(completion,record);completed[label]=record;effective+=engine.steps
                 _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
             need(effective==expected_budget and len(completed)==expected_arms,'Incomplete paired HR study')
             need(len({json.dumps(x['initial_student_hashes'],sort_keys=True) for x in completed.values()})==1,'Unequal student initialization')
-            summary={'schema':'fixed_teacher_training_summary_v1' if fixed else 'hr_vae_training_summary_v1','status':'completed','protocol_sha256':expected,
+            if trd:need(completed['frozen']['teacher_initial_hashes']==completed['ema']['teacher_initial_hashes'],'Unequal initial TRD teachers')
+            summary={'schema':('wan_trd_training_summary_v1' if trd else ('fixed_teacher_training_summary_v1' if fixed else 'hr_vae_training_summary_v1')),'status':'completed','protocol_sha256':expected,
                      'scientific_updates':effective,'arms':completed,'wall_seconds_this_attempt':time.perf_counter()-started,
                      'diagnostic_updates_in_this_training':0,'selection_or_evaluation_done':False}
             rollbacks=[read(path) for path in (run/'arm_runs').glob('*/rollback_attempt_*.json')]
@@ -1988,6 +2019,437 @@ def execute_ft_calibration(run_dir,expected):
         if not (run/'failure.json').exists():failure(error)
         raise
     finally:_hr_cleanup_preserving(cleanup,sys.exc_info()[1])
+
+
+
+class TRDStep(NoRefContinuationStep):
+    """Matched FM plus full-Gram relation guidance from a same-Wan target.
+
+    B/F/E differ only in the auxiliary branch and its teacher update rule.
+    objectives() permits forced native index and exact epsilon for diagnostics;
+    it owns neither an optimizer update nor model mode / graph cleanup. Callers
+    must finish backward before clear_features(), as with native checkpointing.
+    """
+    def __init__(self,model,*,weight,teacher_kind=None,trd_arm=None,training_seed=20261102,
+                 student_layer=9,margin=.1,normalize_eps=1e-6,normalization_eps=None,
+                 teacher_noise_ratio=.5,ema_decay=.999,**options):
+        from .teacher import FP32TrainableTeacher
+        from .losses import FullGramTRD
+        _need(teacher_kind is None or trd_arm is None or teacher_kind == trd_arm, 'TRD arm aliases disagree')
+        teacher_kind = teacher_kind if teacher_kind is not None else trd_arm
+        if normalization_eps is not None:
+            _need(normalize_eps == 1e-6 or normalize_eps == normalization_eps, 'TRD epsilon aliases disagree')
+            normalize_eps = normalization_eps
+        _need(teacher_noise_ratio == .5, 'This protocol fixes teacher noise ratio at .5')
+        self.teacher_noise_ratio = float(teacher_noise_ratio)
+        _need(teacher_kind in ('baseline','frozen','ema'), 'Unknown TRD teacher kind')
+        _need(type(weight) in (int,float) and math.isfinite(weight) and weight >= 0,
+              'TRD weight must be finite and nonnegative')
+        _need(teacher_kind != 'baseline' or weight == 0, 'Baseline cannot use auxiliary loss')
+        # Reuse the native clean-FM optimizer/RNG/parameter contract. The old
+        # cross-depth teacher is never constructed or called by this subclass.
+        super().__init__(model,arm='flow_only',training_seed=training_seed,
+                         student_layer=student_layer,teacher_layer=student_layer+1,**options)
+        self.teacher_kind = self.trd_arm = teacher_kind
+        self.weight,self.student_layer,self.teacher_layer = float(weight),student_layer,student_layer
+        self.margin,self.normalize_eps = float(margin),float(normalize_eps)
+        self.normalization_eps = self.normalize_eps
+        self.teacher = (FP32TrainableTeacher(model,mode=teacher_kind,decay=ema_decay)
+                        if teacher_kind != 'baseline' else None)
+        if teacher_kind != 'baseline':
+            dimension = model.transformer.config.num_attention_heads * model.transformer.config.attention_head_dim
+            self.alignment = FullGramTRD(dimension,margin=margin,normalize_eps=normalize_eps).to(next(model.parameters()).device)
+            named = [(name,p) for name,p in self._named_optimizer_parameters]
+            named.extend(('student_projector.'+name,p) for name,p in self.alignment.projector.named_parameters())
+            self._named_optimizer_parameters = tuple(named)
+            self.parameters = [p for _,p in named]
+            _need(len({id(p) for p in self.parameters}) == len(self.parameters), 'TRD optimizer aliases forbidden')
+            self.optimizer = torch.optim.AdamW(self.parameters,lr=options.get('learning_rate',1e-4),
+                weight_decay=options.get('weight_decay',.01),foreach=False)
+
+    def teacher_features(self,noisy,timestep,text,low,*,layer=None):
+        from .teacher import capture_block_output
+        _need(self.teacher is not None, 'Baseline has no teacher')
+        _need(layer is None or layer == self.student_layer, 'TRD uses the same layer for both features')
+        def call():
+            try:return capture_block_output(self.model,self.student_layer,noisy,timestep,text,low)[1]
+            finally:self.model.clear_features()
+        return self.teacher.teacher_forward(self.model,call)
+
+    def objectives(self,clean,low,text,scheduler,*,index=None,noise=None):
+        from .teacher import select_paired_teacher_timestep,capture_block_output
+        _need(torch.is_grad_enabled(), 'TRD objectives require enabled student autograd')
+        _need(clean.ndim == 5 and clean.shape == low.shape and clean.shape[2] == 9
+              and clean.dtype == low.dtype == torch.float32 and clean.device == low.device
+              and not clean.requires_grad and not low.requires_grad
+              and bool(torch.isfinite(clean).all()) and bool(torch.isfinite(low).all()),
+              'Use frozen finite matched FP32 HR/LR latents with nine time positions')
+        _need(clean.device == self.rng.device and len(scheduler.timesteps) == 1000 and len(scheduler.sigmas) >= 1000,
+              'TRD requires the original native1000 training grid and matched device')
+        _need((index is None) == (noise is None), 'Force both native index and epsilon, or neither')
+        forced = index is not None
+        if not forced:
+            index = int(torch.randint(0,1000,(),generator=self.rng.timestep))
+        _need(type(index) is int and 0 <= index < 1000, 'Invalid forced native timestep index')
+        sigma = scheduler.sigmas[index].to(device=clean.device,dtype=torch.float32)
+        timestep = scheduler.timesteps[index].to(clean.device).expand(clean.shape[0])
+        _need(sigma.ndim == 0 and bool(torch.isfinite(sigma)) and 0 <= float(sigma) <= 1,
+              'Invalid native sigma')
+        if not forced:
+            noise = torch.randn(clean.shape,generator=self.rng.noise,device=clean.device,dtype=torch.float32)
+        _need(isinstance(noise,torch.Tensor) and noise.shape == clean.shape and noise.dtype == torch.float32
+              and noise.device == clean.device and not noise.requires_grad and bool(torch.isfinite(noise).all()),
+              'Forced epsilon must be frozen finite matched FP32 noise')
+        # Exact native operation order and the same epsilon tensor are used by
+        # both inputs; never reconstruct epsilon from (epsilon-clean)+clean.
+        noisy = (1-sigma)*clean+sigma*noise
+        target = noise-clean
+        diagnostic = {'timestep_index':index,'native_timestep':float(timestep[0]),'sigma':float(sigma),
+                      'sigma_bin':'low' if float(sigma) < .3 else ('mid' if float(sigma) < .7 else 'high'),
+                      'forced_inputs':forced,'student_layer':self.student_layer,'teacher_layer':self.teacher_layer,
+                      'teacher_forward':self.teacher is not None,
+                      'teacher_student_same_epsilon':True,'teacher_student_same_clean_HR':True,
+                      'teacher_student_same_LR':True,'teacher_student_same_noisy_HR_and_timestep':False,
+                      'condition_corruption':False}
+        if self.teacher is not None:
+            pairing = select_paired_teacher_timestep(scheduler,index,ratio=self.teacher_noise_ratio)
+            teacher_index = pairing['teacher_index']
+            teacher_sigma = scheduler.sigmas[teacher_index].to(device=clean.device,dtype=torch.float32)
+            teacher_time = scheduler.timesteps[teacher_index].to(clean.device).expand(clean.shape[0])
+            teacher_noisy = (1-teacher_sigma)*clean+teacher_sigma*noise
+            teacher = self.teacher_features(teacher_noisy,teacher_time,text,low)
+            diagnostic['teacher_timestep'] = pairing
+            flow,student = capture_block_output(self.model,self.student_layer,noisy,timestep,text,low.clone())
+            _need(not teacher.requires_grad, 'TRD teacher must be detached')
+            aux,relation = self.alignment(student,teacher,tuple(self.model.token_grid))
+            diagnostic['alignment'] = relation
+        else:
+            with _autocast(clean.device):flow,projection = self.model(noisy,timestep,text,low.clone())
+            _need(projection is None, 'Baseline model must not contain a historical projector')
+            aux = flow.reshape(-1)[:0].sum()
+            diagnostic['alignment'] = None
+        fm = flow_matching_loss(flow,target)
+        return fm,aux,diagnostic
+
+    def step(self,clean,low,text,scheduler):
+        # This exact native branch is the regression contract; projector
+        # parameters have grad=None and AdamW therefore does not update them.
+        if self.weight == 0:
+            if self.teacher is not None:self.teacher._validate(self.model)
+            result = super().step(clean,low,text,scheduler)
+            if self.teacher_kind == 'ema':self.teacher.update(self.model)
+            result.update({'arm':self.trd_arm,'teacher_kind':self.teacher_kind,'align':0.,'weight':self.weight,
+                           'teacher_forward':False,'alignment':None,'teacher_layer':self.teacher_layer,
+                           'EMA_updates':self.teacher.num_updates if self.teacher_kind == 'ema' else 0,
+                           'teacher_updates':self.teacher.num_updates if self.teacher else 0})
+            return result
+        model_modes = _modes(self.model)
+        head_modes = _modes(self.alignment)
+        frozen = _frozen(self.model)
+        self.optimizer.zero_grad(set_to_none=True)
+        self.model.clear_features()
+        try:
+            self.model.train();self.alignment.train()
+            fm,aux,diagnostic = self.objectives(clean,low,text,scheduler)
+            total = fm+self.weight*aux
+            _need(bool(torch.isfinite(total)), 'Nonfinite TRD objective')
+            total.backward()
+            _need(any(p.grad is not None for p in self.model.parameters() if p.requires_grad), 'Missing restoration gradients')
+            _need(all(p.grad is None for p in self.model.parameters() if not p.requires_grad), 'Frozen backbone received gradients')
+            _require_finite(('Nonfinite TRD gradients: '+name,p.grad)
+                            for name,p in self._named_optimizer_parameters if p.grad is not None)
+            def norm_of(parameters):
+                values = [p.grad.detach().float().square().sum() for p in parameters if p.grad is not None]
+                return float(torch.stack(values).sum().sqrt()) if values else 0.
+            student_norm = norm_of(p for p in self.model.parameters() if p.requires_grad)
+            head_norm = norm_of(self.alignment.projector.parameters())
+            norm = torch.nn.utils.clip_grad_norm_(self.parameters,self.max_grad_norm,error_if_nonfinite=True)
+            self.optimizer.step()
+            _require_finite(('Nonfinite updated TRD parameter: '+name,p) for name,p in self._named_optimizer_parameters)
+            if self.teacher_kind == 'ema':self.teacher.update(self.model)
+            _need(frozen == _frozen(self.model), 'Frozen backbone parameters changed')
+            self.steps += 1
+            return {**diagnostic,'step':self.steps,'arm':self.trd_arm,'teacher_kind':self.teacher_kind,
+                    'weight':self.weight,'fm':float(fm.detach()),'align':float(aux.detach()),'sd':float(aux.detach()),
+                    'total':float(total.detach()),'grad_norm_before_clip':float(norm),
+                    'student_total_grad_norm_before_clip':student_norm,'head_total_grad_norm_before_clip':head_norm,
+                    'EMA_updates':self.teacher.num_updates if self.teacher_kind == 'ema' else 0,
+                    'teacher_updates':self.teacher.num_updates,'optimizer_state_fresh_at_initialization':True}
+        finally:
+            self.optimizer.zero_grad(set_to_none=True)
+            self.model.clear_features()
+            _restore_modes(model_modes);_restore_modes(head_modes)
+
+
+# Wan teacher-target metadata, calibration and controller adapters.
+TRD_ARMS=('baseline','frozen','ema')
+
+
+def collect_trd_protocol(config_path):
+    study=read(config_path)
+    need(study.get('schema')=='wan_trd_study_v1' and study.get('mode') in ('calibration','training'), 'Explicit Wan TRD study required')
+    need(study['training_seed']==20261102 and study['updates']==2048
+         and study['student_layer']==9 and study['eval_updates']==[512,1024,2048]
+         and study['checkpoint_updates']==[512,1024,1536,2048], 'Keep the accepted paired TRD budget and layer')
+    need(study['margin']==.1 and study['normalization_eps']==1e-6
+         and study['teacher_noise_ratio']==.5 and study['ema_decay']==.999, 'TRD scientific settings changed')
+    need(study['calibration_indices']==list(range(5)) and study['calibration_sigmas']==[.2,.5,.8]
+         and study['minimum_positive_cases']==8 and study['relative_aux_gradient_strength']==.1,
+         'Keep the prospectively fixed train-only calibration')
+    base=_base_spec(study['base_checkpoint'],SMOKE_BASE_SHA,study['allowed_base_root'],20261102)
+    need(read(study['base_config'])==base['config'] and base['config']['reproducibility']['mode']=='strict', 'Original strict matched Base config required')
+    cache,inputs=_cache_spec(study['cache_root'])
+    need(cache['config']==base['config_file'], 'Use original full producer cache')
+    for value in study['evaluation'].values():
+        if isinstance(value,dict) and 'path' in value and 'sha256' in value:
+            need(binding(value['path'],value['sha256'])==value,'Evaluation asset changed')
+    p={'schema':'wan_trd_calibration_protocol_v1' if study['mode']=='calibration' else 'wan_trd_training_protocol_v1',
+       'study':study,'study_file':binding(config_path),'sources':_source_bindings(),'base':base,'cache':cache,'inputs':inputs,
+       'official_model_files':_official_bindings(study['model_directory']),'dependencies':_dependency_bindings(),
+       'admission':read(study['gpu_admission']),'admission_file':binding(study['gpu_admission']),
+       'gpu_lock':study['gpu_lock'],'device':study['device'],'memory_cap_bytes':16*1024**3,
+       'optimizer':{k:base['config']['training'][k] for k in ('learning_rate','weight_decay','max_grad_norm')},
+       'strict_environment':STRICT_ENVIRONMENT,'scientific_update_budget':0 if study['mode']=='calibration' else 6144,
+       'diagnostic_optimizer_budget':41 if study['mode']=='calibration' else 0,
+       'ordinary_inference_weight_EMA':False,'online_teacher_forward':True}
+    if study['mode']=='calibration':
+        need(study['arms']==[{'label':x,'weight':0. if x=='baseline' else 1.} for x in TRD_ARMS], 'Calibration unit-weight arms changed')
+    else:
+        report=Path(study['calibration_report']).resolve();caldir=report.parent
+        cal=read(report);calp=read(caldir/'protocol.json');status=read(caldir/'status.json')
+        need(status['status']=='completed' and cal['status']=='passed_trd_preflight'
+             and status['summary_sha256']==file_sha(report) and status['protocol_sha256']==file_sha(caldir/'protocol.json')
+             and cal['protocol_sha256']==status['protocol_sha256'] and not (caldir/'failure.json').exists(), 'Require completed successful TRD preflight')
+        need(calp==collect_trd_protocol(calp['study_file']['path']) and cal['sources']==p['sources']
+             and cal['scientific_updates']==0 and cal['diagnostic_optimizer_updates']==41, 'Preflight source/count chain changed')
+        for key in ('base','cache','inputs','official_model_files','dependencies','optimizer','admission','gpu_lock','device'):
+            need(p[key]==calp[key], 'Final TRD study differs from preflight: '+key)
+        for key in ('student_layer','margin','normalization_eps','teacher_noise_ratio','ema_decay','evaluation','metric_weights',
+                    'calibration_indices','calibration_sigmas','minimum_positive_cases','relative_aux_gradient_strength'):
+            need(study[key]==calp['study'][key],'Calibrated TRD design changed: '+key)
+        weight=cal['calibration']['weight']
+        need(study['arms']==[{'label':x,'weight':0. if x=='baseline' else weight} for x in TRD_ARMS], 'F/E must use the one common calibrated weight')
+        p['calibration']={'protocol':binding(caldir/'protocol.json'),'summary':binding(report),'status_file':binding(caldir/'status.json')}
+    return p
+
+
+def prepare_trd(config_path,run_dir):
+    p=collect_trd_protocol(config_path);run,_=_safe_run(Path(run_dir),Path(p['study']['run_root']))
+    need(not run.exists(),'Use a new TRD run directory')
+    run.mkdir(parents=True);save(run/'protocol.json',p)
+    result={'status':'planned','protocol_sha256':file_sha(run/'protocol.json'),'scientific_updates':0,'GPU_loaded':False}
+    save(run/'status.json',result);return result|{'run_dir':str(run)}
+
+
+def _trd_engine(protocol,arm,weight):
+    from .checkpoints import load_training_checkpoint
+    s=protocol['study'];b=protocol['base']['checkpoint']
+    model,audit=load_training_checkpoint(b['path'],device=s['device'],allowed_root=s['allowed_base_root'],variant='Base',model_directory=s['model_directory'])
+    need(audit['checkpoint_sha256']==b['sha256'] and audit['step']==8192 and audit['config']==protocol['base']['config'],'TRD Base load differs')
+    engine=TRDStep(model,trd_arm=arm,weight=weight,training_seed=s['training_seed'],student_layer=9,
+                   margin=.1,normalization_eps=1e-6,teacher_noise_ratio=.5,ema_decay=.999,**protocol['optimizer'])
+    engine.base_load_audit=audit;engine.training_clip_count=1641
+    return engine
+
+
+def _trd_config(protocol,arm,weight):
+    config=copy.deepcopy(protocol['base']['config']);config.pop('restoration_architecture',None)
+    config['stage']='wan_trd_teacher_targets';config['training'].update(variants=['Base'],updates=2048)
+    config['auxiliary_supervision']={'family':'wan_trd','arm':arm,'weight':float(weight),'student_layer':9,
+       'teacher_layer':9,'teacher_noise_ratio':.5,'ema_decay':.999 if arm=='ema' else None,
+       'head':'identity_init_Linear1536to1536_FP32' if arm!='baseline' else None,'margin':.1,'normalization_eps':1e-6,
+       'loss':'mean_relu_abs_full_Gram_difference_minus_margin','condition_corruption':False,
+       'inference_parameters':'student','teacher_updates':'successful_optimizer_steps_only'}
+    return _canonical_config(config)
+
+
+def _trd_teacher_hashes(engine):
+    if engine.teacher is None:return None
+    state=engine.teacher.state_dict()
+    return {key:hashlib.sha256(value.detach().contiguous().cpu().numpy().tobytes()).hexdigest()
+            for key,value in state['shadow'].items()}
+
+
+def _trd_snapshot(engine):
+    from .checkpoints import _cpu_owned
+    return _cpu_owned({'student':{n:v for n,v in engine.model.named_parameters() if v.requires_grad},
+        'head':None if engine.alignment is None else engine.alignment.state_dict(),
+        'teacher':None if engine.teacher is None else engine.teacher.state_dict(),
+        'optimizer':engine.optimizer.state_dict(),
+        'shared_optimizer':{name:engine.optimizer.state.get(parameter,{})
+                            for name,parameter in engine._named_optimizer_parameters if name.startswith('restoration.')},
+        'steps':engine.steps,
+        'RNG':{n:getattr(engine.rng,n).get_state() for n in ('noise','timestep','mask','corruption')}})
+
+
+def _trd_norm(grads):
+    present=[g.detach() for g in grads if g is not None]
+    _require_finite(('Nonfinite TRD calibration gradient',g) for g in present)
+    value=math.sqrt(math.fsum(float(g.double().square().sum()) for g in present))
+    need(math.isfinite(value),'Nonfinite TRD calibration norm')
+    return value
+
+
+def _trd_calibration_weight(rows):
+    need(len(rows)==15 and [x['data_index'] for x in rows]==[i for i in range(5) for _ in range(3)],'TRD calibration matrix incomplete')
+    need([x['nominal_sigma'] for x in rows]==[.2,.5,.8]*5,'Calibration noise matrix changed')
+    need(all(all(type(x[k]) in (int,float) and math.isfinite(x[k]) and x[k]>=0
+                 for k in ('fm','unit_aux','fm_grad_norm','aux_grad_norm','head_grad_norm')) for x in rows), 'Nonfinite calibration is never discarded')
+    positive=[x for x in rows if x['fm_grad_norm']>0 and x['aux_grad_norm']>0]
+    eligible=len(positive)>=8 and len({x['nominal_sigma'] for x in positive})>=2
+    result={'cases':15,'positive_gradient_cases':len(positive),'noise_levels_with_positive_gradients':sorted({x['nominal_sigma'] for x in positive}),
+        'minimum_positive_cases':8,'minimum_noise_levels':2,'eligible':eligible,'rows':rows,
+        'selection_uses_validation_or_test':False,'optimizer_updates':0,'weight':None}
+    if eligible:
+        ratio=statistics.median(x['fm_grad_norm']/x['aux_grad_norm'] for x in positive)
+        result.update(median_FM_to_aux_gradient_ratio=ratio,weight=float(format(.1*ratio,'.2g')),relative_strength=.1)
+        need(math.isfinite(result['weight']) and result['weight']>0,'Invalid TRD calibration weight')
+    return result
+
+
+def execute_trd_preflight(run_dir,expected):
+    from .data import PreparedTrainingData
+    from .vae import load_frozen_vae
+    from .model import tensor_state_hashes
+    from .checkpoints import _hr_equal,save_trd_checkpoint,restore_trd_training_state
+    run=Path(run_dir).resolve();p=read(run/'protocol.json');s=p['study']
+    run,_=_safe_run(run,Path(s['run_root']))
+    need(p['schema']=='wan_trd_calibration_protocol_v1' and file_sha(run/'protocol.json')==expected
+         and p==collect_trd_protocol(p['study_file']['path']), 'TRD calibration protocol/source changed')
+    need(read(run/'status.json')['status']=='planned','One preflight attempt per run')
+    need(all(os.environ.get(k)==v for k,v in STRICT_ENVIRONMENT.items()),'Strict offline environment required')
+    engine=reader=vae=scheduler=None;updates=0;rows=[];started=time.perf_counter()
+    counter=UpdateCounter();engine_serial=0
+    fm=aux=info=grads=head_grads=clean=low=text=noise=params=gfm=gaux=semantic_flow=target_features=student_features=semantic_loss=noisy=None
+    def cleanup():
+        nonlocal engine,reader,vae,scheduler,fm,aux,info,grads,head_grads,clean,low,text,noise,params,gfm,gaux,semantic_flow,target_features,student_features,semantic_loss,noisy
+        _hr_release(engine)
+        if reader is not None:reader.close()
+        engine=reader=vae=scheduler=fm=aux=info=grads=head_grads=clean=low=text=noise=params=gfm=gaux=semantic_flow=target_features=student_features=semantic_loss=noisy=None
+        gc.collect()
+        if torch.cuda.is_initialized():torch.cuda.empty_cache()
+    def failure(error):
+        result={'status':'failed_trd_preflight','protocol_sha256':expected,'error':str(error),'traceback':traceback.format_exc(),
+                'scientific_updates':0,'diagnostic_optimizer_updates_returned':updates,'calibration_cases_completed':len(rows),'optimizer_counter':counter.snapshot()}
+        if not (run/'failure.json').exists():save(run/'failure.json',result)
+        save(run/'status.json',result,replace=True)
+    def new_engine(arm,weight):
+        nonlocal engine_serial
+        created=_trd_engine(p,arm,weight);engine_serial+=1
+        counter.attach(created.optimizer,f'{engine_serial:02d}_{arm}')
+        return created
+    def diagnostic_step(current,pair,embedding,scheduler,device):
+        result=_hr_step(current,pair,embedding,scheduler,device)
+        counter.by_role[counter.role]['returned_steps']+=1
+        return result
+    try:
+        with _hr_gpu_session(p,cleanup,failure) as admission:
+            save(run/'GPU_admission.json',admission);save(run/'runtime.json',_configure_runtime(p['base']['config']))
+            save(run/'status.json',{'status':'running','phase':'train_only_gradient_calibration','protocol_sha256':expected,'scientific_updates':0},replace=True)
+            reader=PreparedTrainingData(p['cache']['root'],expected_seal_sha256=p['cache']['seal']['sha256'])
+            vae=load_frozen_vae(s['model_directory'],device=s['device']);scheduler=_training_scheduler(s['model_directory'],s['device'])
+            engine=new_engine('frozen',1.);engine.model.train();engine.alignment.train()
+            before=tensor_state_hashes(engine.model);teacher_initial=_trd_teacher_hashes(engine)
+            from .teacher import capture_block_output
+            semantic_pair=reader[0];clean=semantic_pair['clean'].to(s['device']);low=semantic_pair['low'].to(s['device'])
+            text=reader.text_for(0).to(s['device'])
+            native=int((scheduler.sigmas[:1000].detach().float().cpu()-.5).abs().argmin())
+            sigma=scheduler.sigmas[native].to(clean.device).float();timestep=scheduler.timesteps[native].to(clean.device).expand(clean.shape[0])
+            noise=torch.randn(clean.shape,device=clean.device,generator=torch.Generator(device=clean.device).manual_seed(s['training_seed']+100))
+            noisy=(1-sigma)*clean+sigma*noise
+            target_features=engine.teacher_features(noisy,timestep,text,low)
+            semantic_flow,student_features=capture_block_output(engine.model,9,noisy,timestep,text,low.clone())
+            need(not target_features.requires_grad and student_features.requires_grad
+                 and torch.equal(target_features,student_features),'Same-noise same-layer teacher semantics differ')
+            semantic_loss,semantic_info=engine.alignment(student_features,target_features,tuple(engine.model.token_grid))
+            need(float(semantic_loss.detach())==0. and semantic_info['active_pairs']==0,'Identity TRD should be zero on identical features')
+            save(run/'same_input_semantics.json',{'same_features_exact':True,'teacher_detached':True,'student_requires_grad':True,
+                 'TRD_exact_zero':True,'optimizer_updates':0,'sigma':float(sigma),'native_index':native})
+            engine.model.clear_features();semantic_flow=target_features=student_features=semantic_loss=noisy=None
+            for data_index in range(5):
+                pair=reader[data_index];clean=pair['clean'].to(s['device']);low=pair['low'].to(s['device']);text=reader.text_for(data_index).to(s['device'])
+                for sigma_index,nominal in enumerate((.2,.5,.8)):
+                    native=int((scheduler.sigmas[:1000].detach().float().cpu()-nominal).abs().argmin())
+                    noise_seed=s['training_seed']+101+data_index*3+sigma_index
+                    noise=torch.randn(clean.shape,device=clean.device,generator=torch.Generator(device=clean.device).manual_seed(noise_seed))
+                    fm,aux,info=engine.objectives(clean,low,text,scheduler,index=native,noise=noise)
+                    need(math.isfinite(float(fm.detach())) and math.isfinite(float(aux.detach())),'Nonfinite calibration objective')
+                    params=tuple(v for v in engine.model.parameters() if v.requires_grad)
+                    head_grads=torch.autograd.grad(aux,tuple(engine.alignment.parameters()),retain_graph=True,allow_unused=True)
+                    head_norm=_trd_norm(head_grads);head_grads=None
+                    gfm=torch.autograd.grad(fm,params,retain_graph=True,allow_unused=True);fm_norm=_trd_norm(gfm)
+                    gaux=torch.autograd.grad(aux,params,allow_unused=True);aux_norm=_trd_norm(gaux)
+                    dot=math.fsum(float((a.detach().double()*b.detach().double()).sum())
+                                  for a,b in zip(gfm,gaux) if a is not None and b is not None)
+                    cosine=dot/(fm_norm*aux_norm) if fm_norm>0 and aux_norm>0 else None
+                    gfm=gaux=params=None
+                    row={'data_index':data_index,'record_id':reader.ids[data_index],'nominal_sigma':nominal,
+                         'noise_seed':noise_seed,'fm':float(fm.detach()),'unit_aux':float(aux.detach()),
+                         'fm_grad_norm':fm_norm,'aux_grad_norm':aux_norm,'head_grad_norm':head_norm,'FM_aux_gradient_cosine':cosine,**info}
+                    rows.append(row);_append_row(run/'calibration_rows.jsonl',row)
+                    engine.model.clear_features();fm=aux=info=None
+                    save(run/'progress.json',{'phase':'train_only_gradient_calibration','cases':len(rows),'total_cases':15,
+                         'diagnostic_optimizer_updates':updates,'scientific_updates':0,'protocol_sha256':expected},replace=True)
+            need(before==tensor_state_hashes(engine.model) and engine.steps==0 and not engine.optimizer.state
+                 and teacher_initial==_trd_teacher_hashes(engine),'Calibration mutated student or teacher')
+            calibration=_trd_calibration_weight(rows);save(run/'gradient_calibration.json',calibration)
+            need(calibration['eligible'],f"TRD target viability failed: {calibration['positive_gradient_cases']}/15 positive gradients, {len(calibration['noise_levels_with_positive_gradients'])} noise levels; require >=8 and >=2")
+            weight=calibration['weight'];engine=None;fm=aux=info=clean=low=text=noise=None;gc.collect();torch.cuda.empty_cache()
+            pair=reader[0];text=reader.text_for(0);zero_snapshots={};zero_rows={}
+            for arm in TRD_ARMS:
+                engine=new_engine(arm,0.);role_rows=[]
+                for i in range(3):
+                    value,seconds,gpu_seconds=diagnostic_step(engine,reader[i],reader.text_for(i),scheduler,s['device'])
+                    updates+=1;role_rows.append({k:value[k] for k in ('fm','sigma','timestep_index')})
+                zero_snapshots[arm]=_trd_snapshot(engine);zero_rows[arm]=role_rows
+                _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            for arm in ('frozen','ema'):
+                need(zero_rows[arm]==zero_rows['baseline'],'Zero auxiliary FM trajectory mismatch')
+                for key in ('student','shared_optimizer','steps','RNG'):
+                    need(_hr_equal(zero_snapshots[arm][key],zero_snapshots['baseline'][key]),'Zero auxiliary student state mismatch: '+key)
+            zero_snapshots=None;resume_reports={}
+            for arm in ('frozen','ema'):
+                engine=new_engine(arm,weight)
+                for i in range(2):diagnostic_step(engine,reader[i],reader.text_for(i),scheduler,s['device']);updates+=1
+                reference=_trd_snapshot(engine);_hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+                engine=new_engine(arm,weight);diagnostic_step(engine,reader[0],reader.text_for(0),scheduler,s['device']);updates+=1
+                config=_trd_config(p,arm,weight);path=run/'resume_checks'/arm/'Base/checkpoint_000001.pt'
+                save_trd_checkpoint(path,engine,config,allowed_root=run,protocol_sha256=expected,cumulative_training_seconds=0.,initialization=engine.base_load_audit)
+                _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+                engine=new_engine(arm,weight)
+                restore_trd_training_state(engine,path,allowed_root=run,expected_protocol_sha256=expected,expected_config=config)
+                diagnostic_step(engine,reader[1],reader.text_for(1),scheduler,s['device']);updates+=1
+                need(_hr_equal(reference,_trd_snapshot(engine)),'TRD save/resume trajectory mismatch: '+arm)
+                resume_reports[arm]={'completed_steps':2,'exact_full_engine_state':True,'checkpoint':binding(path)}
+                reference=None;_hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            resources={};initials={};teacher_initials={}
+            for arm in TRD_ARMS:
+                engine=new_engine(arm,0. if arm=='baseline' else weight)
+                initials[arm]=tensor_state_hashes(engine.model);teacher_initials[arm]=_trd_teacher_hashes(engine)
+                torch.cuda.reset_peak_memory_stats();role_rows=[]
+                for i in range(8):
+                    value,seconds,gpu_seconds=diagnostic_step(engine,reader[i],reader.text_for(i),scheduler,s['device']);updates+=1
+                    row=value|{'arm':arm,'seconds':seconds,'gpu_event_seconds':gpu_seconds,'warmup':i<2}
+                    role_rows.append(row);_append_row(run/'benchmark.jsonl',row);_memory(torch,p['memory_cap_bytes'])
+                timed=[r['seconds'] for r in role_rows[2:]]
+                resources[arm]={'all8_rows':role_rows,'timed6_mean_seconds':statistics.mean(timed),'timed6_SD_seconds':statistics.stdev(timed),
+                   'memory':_memory(torch,p['memory_cap_bytes']),'EMA_updates':engine.teacher.num_updates if engine.teacher is not None else 0}
+                _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            need(len({json.dumps(x,sort_keys=True) for x in initials.values()})==1,'Unequal preflight Base initialization')
+            need(teacher_initials['frozen']==teacher_initials['ema']==teacher_initial,'Teacher initial shadows differ')
+            need(updates==41 and counter.snapshot()['diagnostic_optimizer_updates_applied']==41
+                 and counter.snapshot()['completed_step_returns']==41,'TRD diagnostic count must be exactly41')
+            result={'status':'passed_trd_preflight','protocol_sha256':expected,'sources':p['sources'],'scientific_updates':0,
+                    'diagnostic_optimizer_updates':updates,'optimizer_counter':counter.snapshot(),'calibration':calibration,'zero_weight_exact':True,'resume_reports':resume_reports,
+                    'resources':resources,'teacher_initial_hashes':teacher_initial,'wall_seconds':time.perf_counter()-started}
+        save(run/'summary.json',result)
+        save(run/'status.json',{'status':'completed','protocol_sha256':expected,'summary_sha256':file_sha(run/'summary.json'),
+                              'scientific_updates':0,'diagnostic_optimizer_updates':updates},replace=True)
+        return result
+    except BaseException as error:
+        if not (run/'failure.json').exists():failure(error)
+        raise
+
 
 if __name__=='__main__':
     main()

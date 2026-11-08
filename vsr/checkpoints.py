@@ -173,6 +173,8 @@ def load_training_checkpoint(path, *, device="cuda", allowed_root=PRODUCTION_RUN
         "EMA_weights_selected":False,
         "training_only_fields_present":sorted(map(str,payload.get("training_only",{}))) if isinstance(payload.get("training_only"),dict) else [],
     }
+    trd_metadata = _trd_inference_metadata(payload)
+    if trd_metadata is not None:metadata['trd_training_metadata'] = trd_metadata
     return model, metadata
 
 
@@ -790,3 +792,312 @@ def gpu_lease(lock_path, device, admission):
     finally:
         if locked: fcntl.flock(descriptor, fcntl.LOCK_UN)
         os.close(descriptor)
+
+
+TRD_TRAINING_STATE_SCHEMA = 'vsr_trd_training_state_v1'
+_TRD_STREAMS = ('noise', 'timestep', 'mask', 'corruption')
+
+
+def _trd_arm(engine):
+    arm = getattr(engine, 'trd_arm', getattr(engine, 'teacher_kind', None))
+    _need(arm in ('baseline', 'frozen', 'ema'), 'Unknown TRD teacher arm')
+    return arm
+
+
+def _trd_head_spec(alignment):
+    if alignment is None:return None
+    projector = getattr(alignment, 'projector', None)
+    _need(isinstance(projector, torch.nn.Linear), 'TRD requires its single Linear projector')
+    return {'class':type(alignment).__module__+'.'+type(alignment).__qualname__,
+            'input_dim':projector.in_features, 'output_dim':projector.out_features,
+            'bias':projector.bias is not None,'margin':float(alignment.margin), 'eps':float(alignment.normalize_eps),
+            'relation_reduction':'all_ordered_token_pairs_mean', 'normalization':'FP32_channel_L2'}
+
+
+def _trd_validate_teacher(saved, current, student, arm, steps):
+    _need((saved is None) == (current is None), 'TRD teacher presence differs')
+    if current is None:return
+    _need(isinstance(saved,dict) and set(saved) == set(current), 'TRD teacher state fields differ')
+    _need('shadow' in saved and 'num_updates' in saved
+          and saved.get('schema') == 'vsr_fp32_trainable_teacher_v1'
+          and saved.get('mode') == arm and saved.get('decay') == .999,
+          'TRD teacher schema/mode/decay differs')
+    _need(type(saved['num_updates']) is int and saved['num_updates'] == (steps if arm == 'ema' else 0),
+          'TRD teacher update count differs')
+    for key in current.keys() - {'shadow','num_updates'}:
+        _need(_hr_equal(saved[key],current[key]), 'TRD teacher metadata differs: '+key)
+    shadow = saved['shadow']
+    _need(isinstance(shadow,dict) and set(shadow) == set(student), 'TRD teacher parameter names differ')
+    for name,parameter in student.items():
+        value = shadow[name]
+        _need(isinstance(value,torch.Tensor) and value.shape == parameter.shape and value.dtype == torch.float32
+              and not value.requires_grad and bool(torch.isfinite(value).all()), 'TRD teacher FP32 shadow differs: '+name)
+        _need(arm != 'frozen' or torch.equal(value.detach().cpu(),current['shadow'][name].detach().cpu()),
+              'Frozen TRD teacher differs from its fresh Base initialization: '+name)
+
+
+def _trd_engine_contract(engine, config):
+    _need(isinstance(_check_config(config),str) and config.get('restoration_architecture') is None
+          and config['training'].get('variants') == ['Base'], 'Canonical TRD config must retain Base inference architecture')
+    budget = config['training'].get('updates')
+    _need(type(budget) is int and budget > 0 and type(engine.steps) is int and 0 <= engine.steps <= budget,
+          'TRD completed steps exceed budget')
+    arm = _trd_arm(engine)
+    _need(type(engine.weight) in (int,float) and math.isfinite(engine.weight) and engine.weight >= 0
+          and type(engine.student_layer) is int and engine.student_layer == 9,
+          'TRD requires a finite nonnegative weight and student layer9')
+    _need(arm != 'baseline' or engine.weight == 0, 'TRD baseline weight must be zero')
+    origin = _hr_origin(engine.base_load_audit);base_config = origin['config']
+    _need(all(config.get(key) == base_config.get(key) for key in ('model','conditioning','data','seed')),
+          'TRD model/conditioning/data must match the original Base')
+    _need(config['training'].get('seed',config['seed']) == engine.training_seed
+          == base_config['training'].get('seed',base_config['seed']), 'TRD training seed differs')
+    model = engine.model
+    _need(getattr(model,'projector','not Base') is None and not hasattr(model,'reference_adapter'),
+          'TRD inference model must remain NoRef Base')
+    student = {name:p for name,p in model.named_parameters() if p.requires_grad}
+    _need(student and all(name.startswith(('lrv_stem.','lrv_residuals.')) or '.lora_' in name for name in student),
+          'TRD student may contain only LoRA/LR parameters')
+    alignment,teacher = engine.alignment,getattr(engine,'teacher',None)
+    active = arm != 'baseline'
+    _need((alignment is not None) == active and (teacher is not None) == active,
+          'TRD head/teacher presence differs from the arm')
+    expected = list(student.values()) + (list(alignment.parameters()) if alignment is not None else [])
+    _need(all(p.requires_grad and p.dtype == torch.float32 and p.grad is None
+              and bool(torch.isfinite(p).all()) for p in expected),
+          'TRD student/head must be finite FP32 with cleared gradients')
+    named = list(engine._named_optimizer_parameters)
+    _need(all(isinstance(name,str) and isinstance(p,torch.nn.Parameter) for name,p in named)
+          and len(named) == len({name for name,p in named}) == len({id(p) for name,p in named})
+          and {id(p) for name,p in named} == {id(p) for p in expected}, 'TRD optimizer names/aliases differ')
+    _need(isinstance(engine.optimizer,torch.optim.AdamW)
+          and all(group.get('foreach') is False for group in engine.optimizer.param_groups),
+          'TRD requires AdamW foreach=False')
+    actual = [p for group in engine.optimizer.param_groups for p in group['params']]
+    by_id = {id(p):name for name,p in named}
+    _need(len(actual) == len(named) == len({id(p) for p in actual})
+          and {id(p) for p in actual} == set(by_id), 'TRD optimizer must contain exactly student and head')
+    groups = [[by_id[id(p)] for p in group['params']] for group in engine.optimizer.param_groups]
+    if teacher is not None:
+        _need(not getattr(teacher,'_swapping',False), 'Cannot checkpoint an active teacher parameter swap')
+        if hasattr(teacher,'_validate'):teacher._validate(model)
+        current = teacher.state_dict();_trd_validate_teacher(current,current,student,arm,engine.steps)
+    return student,None if alignment is None else alignment.state_dict(),dict(named),groups,origin
+
+
+def _trd_global_rng_state():
+    import random
+    import numpy as np
+    value = np.random.get_state()
+    return {'python':random.getstate(),
+            'numpy':{'kind':value[0],'keys':value[1].tolist(),'position':int(value[2]),
+                     'has_gauss':int(value[3]),'cached_gaussian':float(value[4])},
+            'torch_cpu':torch.get_rng_state(),
+            'torch_cuda':torch.cuda.get_rng_state_all() if torch.cuda.is_initialized() else []}
+
+
+def _trd_validate_global_rng(state):
+    import random
+    import numpy as np
+    _need(isinstance(state,dict) and set(state) == {'python','numpy','torch_cpu','torch_cuda'},
+          'Incomplete TRD global RNG state')
+    random.Random().setstate(state['python'])
+    value = state['numpy']
+    _need(isinstance(value,dict) and set(value) == {'kind','keys','position','has_gauss','cached_gaussian'}
+          and value['kind'] == 'MT19937' and isinstance(value['keys'],list) and len(value['keys']) == 624
+          and all(type(x) is int and 0 <= x < 2**32 for x in value['keys'])
+          and type(value['position']) is int and 0 <= value['position'] <= 624
+          and type(value['has_gauss']) is int and value['has_gauss'] in (0,1)
+          and type(value['cached_gaussian']) in (int,float) and math.isfinite(value['cached_gaussian']),
+          'Invalid TRD NumPy RNG state')
+    np.random.RandomState().set_state((value['kind'],np.asarray(value['keys'],dtype=np.uint32),
+                                     value['position'],value['has_gauss'],value['cached_gaussian']))
+    cpu = state['torch_cpu']
+    _need(isinstance(cpu,torch.Tensor) and cpu.device.type == 'cpu' and cpu.dtype == torch.uint8 and cpu.ndim == 1,
+          'Invalid TRD global CPU RNG state')
+    torch.Generator(device='cpu').set_state(cpu)
+    cuda = state['torch_cuda']
+    _need(isinstance(cuda,list) and len(cuda) == (torch.cuda.device_count() if torch.cuda.is_initialized() else 0),
+          'TRD global CUDA RNG device count differs')
+    for index,value in enumerate(cuda):
+        _need(isinstance(value,torch.Tensor) and value.device.type == 'cpu' and value.dtype == torch.uint8 and value.ndim == 1,
+              'Invalid TRD global CUDA RNG state')
+        torch.Generator(device=f'cuda:{index}').set_state(value)
+
+
+def _trd_restore_global_rng(state):
+    import random
+    import numpy as np
+    random.setstate(state['python']);value = state['numpy']
+    np.random.set_state((value['kind'],np.asarray(value['keys'],dtype=np.uint32),
+                         value['position'],value['has_gauss'],value['cached_gaussian']))
+    torch.set_rng_state(state['torch_cpu'])
+    if state['torch_cuda']:torch.cuda.set_rng_state_all(state['torch_cuda'])
+
+
+def _trd_explicit_rng(engine):
+    states,devices = {},{}
+    for name in _TRD_STREAMS:
+        generator = getattr(engine.rng,name,None)
+        _need(isinstance(generator,torch.Generator), 'Missing TRD explicit RNG stream: '+name)
+        states[name],devices[name] = generator.get_state(),str(generator.device)
+    return states,devices
+
+
+def _trd_validate_explicit_rng(engine, states, devices):
+    _need(isinstance(states,dict) and set(states) == set(_TRD_STREAMS)
+          and isinstance(devices,dict) and set(devices) == set(_TRD_STREAMS), 'Incomplete TRD explicit RNG streams')
+    for name in _TRD_STREAMS:
+        generator,value = getattr(engine.rng,name,None),states[name]
+        _need(isinstance(generator,torch.Generator) and devices[name] == str(generator.device)
+              and isinstance(value,torch.Tensor) and value.dtype == torch.uint8 and value.ndim == 1
+              and value.device.type == 'cpu', 'TRD explicit RNG device/state differs: '+name)
+        torch.Generator(device=generator.device).set_state(value)
+
+
+def save_trd_checkpoint(path, engine, config, *, allowed_root, protocol_sha256,
+                        cumulative_training_seconds, initialization):
+    """Atomically publish Base inference weights and complete TRD resume state."""
+    student,head,named,groups,origin = _trd_engine_contract(engine,config)
+    _need(engine.steps > 0, 'TRD checkpoint requires a completed positive update')
+    _need(isinstance(protocol_sha256,str) and len(protocol_sha256) == 64
+          and all(c in '0123456789abcdef' for c in protocol_sha256), 'TRD protocol SHA256 required')
+    _need(type(cumulative_training_seconds) in (int,float) and math.isfinite(cumulative_training_seconds)
+          and cumulative_training_seconds >= 0, 'Invalid TRD cumulative training time')
+    _need(_hr_equal(_hr_origin(initialization),origin), 'TRD initialization differs from Base origin')
+    optimizer = _cpu_owned(engine.optimizer.state_dict())
+    _hr_validate_optimizer(optimizer,optimizer,groups,named,engine.steps)
+    rng,devices = _trd_explicit_rng(engine);_trd_validate_explicit_rng(engine,rng,devices)
+    global_rng = _trd_global_rng_state();_trd_validate_global_rng(global_rng)
+    count = config.get('data',{}).get('eligible_train_clips',1641)
+    _need(type(count) is int and count > 0, 'TRD requires a fixed positive training-clip count')
+    arm = _trd_arm(engine)
+    state = {'schema':TRD_TRAINING_STATE_SCHEMA,'protocol_sha256':protocol_sha256,
+             'arm':arm,'weight':float(engine.weight),'student_layer':engine.student_layer,
+             'completed_updates':engine.steps,'training_seed':engine.training_seed,
+             'teacher_state':None if engine.teacher is None else engine.teacher.state_dict(),
+             'alignment_state':head,'alignment_spec':_trd_head_spec(engine.alignment),
+             'optimizer':optimizer,'optimizer_parameter_names':groups,
+             'explicit_RNG':rng,'RNG_devices':devices,'global_RNG':global_rng,
+             'data_cursor':{'completed_updates':engine.steps,'training_clip_count':count,'next_training_index':engine.steps%count},
+             'matched_Base':engine.base_load_audit,'cumulative_training_seconds':float(cumulative_training_seconds),
+             'learning_rate_schedule':{'type':'constant','separate_scheduler':None,'lr_saved_in_optimizer_groups':True},
+             'restored_by_generic_inference_loader':False}
+    payload = _cpu_owned({'format':'vsr_training_v1','variant':'Base','step':engine.steps,'config':config,
+                         'trainable_state':student,'initialization':initialization,
+                         'inference_parameters':'student','training_only':state})
+    path,run = _destination(path,allowed_root,'Base',engine.steps)
+    path.parent.mkdir(parents=True,exist_ok=True);sidecar = run/'config.json'
+    _need(not sidecar.is_symlink(), 'TRD run config must not be a symlink')
+    encoded = (json.dumps(config,ensure_ascii=False,indent=2,allow_nan=False)+'\n').encode()
+    if sidecar.exists():_need(json.loads(sidecar.read_text()) == config, 'TRD run config differs')
+    else:
+        try:_atomic_publish(sidecar,lambda stream:stream.write(encoded))
+        except FileExistsError:_need(json.loads(sidecar.read_text()) == config, 'Concurrent TRD run config differs')
+    _atomic_publish(path,lambda stream:torch.save(payload,stream))
+    return {'path':str(path),'bytes':path.stat().st_size,'sha256':_sha256_file(path),'step':engine.steps,'updates':engine.steps,
+            'variant':'Base','arm':arm,'weight':float(engine.weight),'protocol_sha256':protocol_sha256,
+            'cumulative_training_seconds':float(cumulative_training_seconds),'config_sha256':config['_sha256'],
+            'inference_parameters':'student','training_only_schema':state['schema'],'existing_artifacts_overwritten':False}
+
+
+def restore_trd_training_state(engine, path, *, allowed_root, expected_protocol_sha256, expected_config=None):
+    """Validate completely, then restore; roll back every mutation on error."""
+    path = _safe_checkpoint(path,allowed_root);checksum = _sha256_file(path)
+    payload = torch.load(path,map_location='cpu',weights_only=True)
+    _need(isinstance(payload,dict) and payload.get('format') == 'vsr_training_v1'
+          and payload.get('variant') == 'Base' and payload.get('inference_parameters') == 'student',
+          'TRD resume requires a student-only Base payload')
+    config = payload.get('config');_check_config(config)
+    _need(expected_config is None or config == expected_config, 'TRD resume config differs')
+    sidecar = path.parent.parent/'config.json'
+    _need(sidecar.is_file() and not sidecar.is_symlink() and json.loads(sidecar.read_text()) == config,
+          'TRD resume sidecar is absent or differs')
+    student,head,named,groups,origin = _trd_engine_contract(engine,config)
+    _need(engine.steps == 0 and not engine.optimizer.state, 'TRD resume requires a fresh engine/optimizer')
+    step,state = payload.get('step'),payload.get('training_only')
+    _need(type(step) is int and 0 < step <= config['training']['updates']
+          and path.parent.name == 'Base' and path.name == f'checkpoint_{step:06d}.pt', 'TRD resume step/path differs')
+    _need(isinstance(state,dict) and state.get('schema') == TRD_TRAINING_STATE_SCHEMA,
+          'Not a complete same-round TRD training state')
+    _need(isinstance(expected_protocol_sha256,str) and len(expected_protocol_sha256) == 64
+          and all(c in '0123456789abcdef' for c in expected_protocol_sha256)
+          and state.get('protocol_sha256') == expected_protocol_sha256, 'TRD resume protocol differs')
+    arm = _trd_arm(engine)
+    _need(state.get('arm') == arm and type(state.get('completed_updates')) is int and state['completed_updates'] == step
+          and type(state.get('training_seed')) is int and state['training_seed'] == engine.training_seed
+          and type(state.get('weight')) in (int,float) and state['weight'] == engine.weight
+          and type(state.get('student_layer')) is int and state['student_layer'] == engine.student_layer,
+          'TRD resume arm/step/weight/layer/seed differs')
+    _need(_hr_equal(_hr_origin(state.get('matched_Base')),origin)
+          and _hr_equal(_hr_origin(payload.get('initialization')),origin), 'TRD resume Base origin differs')
+    seconds = state.get('cumulative_training_seconds')
+    _need(type(seconds) in (int,float) and math.isfinite(seconds) and seconds >= 0, 'Invalid TRD cumulative time')
+    _need(state.get('learning_rate_schedule') == {'type':'constant','separate_scheduler':None,'lr_saved_in_optimizer_groups':True},
+          'TRD learning-rate schedule differs')
+    count = config.get('data',{}).get('eligible_train_clips',1641)
+    _need(type(count) is int and count > 0 and state.get('data_cursor') ==
+          {'completed_updates':step,'training_clip_count':count,'next_training_index':step%count}, 'TRD data cursor differs')
+    saved_student = payload.get('trainable_state')
+    _need(isinstance(saved_student,dict) and set(saved_student) == set(student), 'TRD student names differ')
+    for name,parameter in student.items():
+        value = saved_student[name]
+        _need(isinstance(value,torch.Tensor) and value.shape == parameter.shape and value.dtype == parameter.dtype
+              and not value.requires_grad and bool(torch.isfinite(value).all()), 'TRD student shape/dtype/value differs: '+name)
+    saved_head = state.get('alignment_state')
+    _need((saved_head is None) == (head is None) and state.get('alignment_spec') == _trd_head_spec(engine.alignment),
+          'TRD projector presence/spec differs')
+    if head is not None:
+        _need(isinstance(saved_head,dict) and set(saved_head) == set(head), 'TRD projector names differ')
+        for name,current in head.items():
+            value = saved_head[name]
+            _need(isinstance(value,torch.Tensor) and value.shape == current.shape and value.dtype == current.dtype
+                  and not value.requires_grad and bool(torch.isfinite(value).all()), 'TRD projector tensor differs: '+name)
+    current_teacher = None if engine.teacher is None else engine.teacher.state_dict()
+    _trd_validate_teacher(state.get('teacher_state'),current_teacher,student,arm,step)
+    _need(state.get('optimizer_parameter_names') == groups, 'TRD optimizer names/order differ')
+    optimizer = state.get('optimizer');_hr_validate_optimizer(optimizer,engine.optimizer.state_dict(),groups,named,step)
+    _trd_validate_explicit_rng(engine,state.get('explicit_RNG'),state.get('RNG_devices'))
+    _trd_validate_global_rng(state.get('global_RNG'))
+    _need(_sha256_file(path) == checksum, 'TRD checkpoint changed during validation')
+    before = _cpu_owned({'student':student,'head':head,'teacher':current_teacher,
+                         'optimizer':engine.optimizer.state_dict(),'explicit_RNG':_trd_explicit_rng(engine)[0],
+                         'global_RNG':_trd_global_rng_state(),'steps':engine.steps})
+    def apply(student_state,head_state,teacher_state,optimizer_state,explicit_rng,global_rng,steps):
+        with torch.no_grad():
+            for name,parameter in student.items():parameter.copy_(student_state[name].to(parameter.device))
+        if head_state is not None:engine.alignment.load_state_dict(head_state,strict=True)
+        if teacher_state is not None:engine.teacher.load_state_dict(teacher_state)
+        engine.optimizer.load_state_dict(optimizer_state)
+        for name in _TRD_STREAMS:getattr(engine.rng,name).set_state(explicit_rng[name])
+        _trd_restore_global_rng(global_rng);engine.steps = steps
+        engine.optimizer.zero_grad(set_to_none=True)
+        if hasattr(engine.model,'clear_features'):engine.model.clear_features()
+    try:apply(saved_student,saved_head,state.get('teacher_state'),optimizer,state['explicit_RNG'],state['global_RNG'],step)
+    except BaseException as error:
+        try:apply(before['student'],before['head'],before['teacher'],before['optimizer'],
+                  before['explicit_RNG'],before['global_RNG'],before['steps'])
+        except BaseException as rollback_error:error.add_note('TRD restore rollback failed: '+repr(rollback_error))
+        raise
+    return {'path':str(path),'sha256':checksum,'steps':step,'step':step,'arm':arm,'weight':float(engine.weight),
+            'cumulative_training_seconds':float(seconds),'initialization':payload['initialization'],
+            'matched_Base':state['matched_Base'],'config_sha256':config['_sha256'],'protocol_sha256':expected_protocol_sha256,
+            'student_layer':engine.student_layer,'data_cursor':state['data_cursor'],'student_restored':True,
+            'alignment_restored':head is not None,'teacher_restored':current_teacher is not None,'optimizer_state_restored':True,
+            'explicit_RNG_restored':list(_TRD_STREAMS),'global_RNG_restored':True,
+            'frozen_official_parameters_restored':False,'generic_inference_loader_used':False}
+
+
+def _trd_inference_metadata(payload):
+    """Expose only public scalar provenance; never select or restore teacher weights."""
+    state = payload.get('training_only')
+    if not isinstance(state,dict) or state.get('schema') != TRD_TRAINING_STATE_SCHEMA:return None
+    keys = ('schema','protocol_sha256','arm','completed_updates','training_seed','weight','student_layer')
+    metadata = {key:state.get(key) for key in keys}
+    _need(all(value is None or type(value) in (str,int,float,bool) for value in metadata.values()),
+          'TRD inference provenance must contain scalars only')
+    teacher = state.get('teacher_state')
+    metadata['EMA_updates'] = 0 if teacher is None else teacher.get('num_updates')
+    _need(type(metadata['EMA_updates']) is int,
+          'TRD inference teacher-update provenance must be scalar')
+    return metadata
