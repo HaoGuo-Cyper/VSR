@@ -16,7 +16,7 @@ def export(run,run_root,repo):
     need(protocol['schema'] in ('wan_trd_calibration_protocol_v1','wan_trd_training_protocol_v1','wan_trd_evaluation_protocol_v1'),'Not a TRD run')
     psha=hashlib.sha256((run/'protocol.json').read_bytes()).hexdigest()
     state=json.loads((run/'status.json').read_text());need(state['protocol_sha256']==psha,'Protocol/status differs')
-    dest=repo/'docs/ema_teacher_targets_20261108/runs'/run.name
+    dest=repo/'docs/ema_teacher_targets_20261108/experiments'/run.name
     files=[p for p in run.iterdir() if p.name in ROOT_FILES or (p.name.startswith('attempt_') and p.suffix=='.json')
            or (p.name.startswith('failure_attempt_') and p.suffix=='.json') or (p.name.startswith('completion_attempt_') and p.suffix=='.json')]
     for arm in ('baseline','frozen','ema'):
