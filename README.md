@@ -1,6 +1,8 @@
 # VSR：带教师特征监督的 Latent Diffusion 视频超分辨率
 
-**当前第二轮（2026-11-08，已获执行授权）：Wan TRD 教师目标对照。** 保留现有Wan框架，比较原始基线、冻结Base教师、EMA教师，固定VideoREPA代码式关系损失与共同训练条件。预算3×2048步、41次独立预飞诊断、val640/test192，先检查目标与梯度可用性。方案见[教师目标计划](docs/ema_teacher_targets_20261108/plan.md)和[本轮执行记录](docs/ema_teacher_targets_20261108/execution.md)。上一轮完整结果保留如下。
+**当前实验：保留冻结 VideoMAEv2 教师的 Wan 视频超分适配（2026-11-08）。** 前一轮Wan冻结/EMA教师比较已[完整交付](docs/ema_teacher_targets_20261108/final_report.md)，对原始基线的EMA收益证据不足。用户授权本轮保留原VideoREPA的VideoMAEv2、三层MLP及关系损失，比较baseline与固定lambda0.5方法；明确Wan通道/时空对应、小crop和LoRA等适配。预算两组各2048、26诊断、val448/test128。[方案与必须修改的部分](docs/videorepa_videomaev2_20261108/plan.md) · [执行入口与CPU验收](docs/videorepa_videomaev2_20261108/execution.md)。实现已通过CPU检查，真实GPU预飞/质量结果尚待实际run。下方保留各历史轮记录。
+
+**已完成的 Wan TRD 第二轮（2026-11-08）：教师目标对照。** 保留现有Wan框架，比较原始基线、冻结Base教师、EMA教师，固定VideoREPA代码式关系损失与共同训练条件。预算3×2048步、41次独立预飞诊断、val640/test192，先检查目标与梯度可用性。方案见[教师目标计划](docs/ema_teacher_targets_20261108/plan.md)和[本轮执行记录](docs/ema_teacher_targets_20261108/execution.md)。上一轮完整结果保留如下。
 
 第一轮研究问题：在相同训练条件下，用真实 HR 视频的冻结 **VAE latent** 或 **DINOv2 patch 特征**监督学生中间层，能否改善 ×4 视频超分质量或训练效率。
 
@@ -33,8 +35,8 @@ LR视频 → 双三次上采样 → 冻结VAE编码 → LR latent条件 ─┐
 | [data.py](vsr/data.py) | 数据清单、固定划分/窗口、×4退化、流式缓存准备和校验、时序mask/条件破坏、固定val32读取 | 视频或封存资产/配置 → LR/HR、latent、mask、元数据 |
 | [vae.py](vsr/vae.py) | 冻结FP32 VAE加载、latent几何与归一化、posterior-mode编码/解码、缓存策略 | 视频或latent → latent或视频 |
 | [model.py](vsr/model.py) | Wan模型工厂、LoRA、LR残差注入、架构与精度设置、参数hash | 官方权重/配置及LR条件 → 模型、velocity和特征 |
-| [teacher.py](vsr/teacher.py) | 冻结DINOv2提取、预处理和33→9时间聚合、中间层特征捕获；保留历史EMA | 学生/EMA参数、完整LR条件 → 无梯度teacher特征 |
-| [losses.py](vsr/losses.py) | flow-matching、VAE patch/mean Smooth L1、DINO mean cosine及梯度校准；保留历史损失 | 预测/目标、学生/teacher特征/mask → 损失与诊断 |
+| [teacher.py](vsr/teacher.py) | 冻结VideoMAEv2在线提取与位置/时间映射、DINOv2提取、中间层捕获及历史EMA | 学生/EMA参数、完整LR条件 → 无梯度teacher特征 |
+| [losses.py](vsr/losses.py) | flow-matching、VideoMAEv2三层投影/fullGram、VAE Smooth L1、DINO cosine及历史损失 | 预测/目标、学生/teacher特征/mask → 损失与诊断 |
 | [train.py](vsr/train.py) | 固定教师五轨迹训练/梯度校准/真实小测/完整状态续跑；保留Base及历史smoke/resource/pilot入口，管理优化器/RNG和日志 | 缓存/配置/可选matched Base与前置结果 → checkpoint、开发/训练或资源报告 |
 | [infer.py](vsr/infer.py) | 仅LR推理、原生UniPC、空间tiling、视频CLI；使用固定文本缓存 | LR视频/学生checkpoint/采样设置 → HR视频 |
 | [evaluate.py](vsr/evaluate.py) | 固定教师完整val/test、中间checkpoint评价与验证选参receipt、协议/来源/PNG/MP4核验及同协议行恢复；保留历史评价 | checkpoint列表/固定评价资产 → 完整观测、门槛与统计 |
@@ -64,11 +66,13 @@ python -m vsr.evaluate --help
 
 | 日常任务 | 入口 |
 | --- | --- |
+| 当前VideoMAEv2预飞/训练 | `vsr.train vmae-prepare / vmae-preflight / vmae-execute` |
+| 当前VideoMAEv2评价 | `vsr.evaluate vmae-build-config / vmae-prepare / vmae-execute / vmae-verify / vmae-lock-finals` |
 | 准备/检查数据 | `vsr.data manifest / prepare-cache / check-cache` |
-| 当前校准与训练 | `vsr.train ft-calibration-prepare / ft-calibrate / ft-prepare / ft-execute` |
+| 第一轮校准与训练 | `vsr.train ft-calibration-prepare / ft-calibrate / ft-prepare / ft-execute` |
 | 历史Base/开发入口 | `vsr.train prepare / execute`，模式`base / smoke / resource / pilot` |
 | 预览权重配置/视频超分 | `vsr.infer preview / run`；run要求显式`--execute` |
-| 当前评价、复核和选参 | `vsr.evaluate ft-prepare / ft-execute / ft-verify / ft-select` |
+| 第一轮评价、复核和选参 | `vsr.evaluate ft-prepare / ft-execute / ft-verify / ft-select` |
 
 `prepare`只生成新协议和来源绑定，不加载GPU模型；`execute`要求明确的协议SHA、新run和GPU准入。本轮可恢复工程故障允许同协议完整状态续跑；历史停止run不混入新实验。CLI与参数示例见[使用说明](docs/CLI_GUIDE.md)。
 

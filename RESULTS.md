@@ -597,3 +597,8 @@ The human separately authorized a new, more faithful VideoREPA-to-Wan VSR study 
 ## Wan TRD round completed — 2026-11-08
 
 All baseline/frozen/EMA arms completed2048, total6144 scientific updates plus41 separate diagnostics; fullval640/test192 and27456PNG/native source/hash chains passed. Independent832-row/75CI audit,2112byte-exact shared-initialPNG regression,6fixedvideos/contact sheets androot actualall33ROI/two-curve review completed. Services exited0/MainPID0/sharedGPUlockreleased. Read docs/ema_teacher_targets_20261108/final_report.md. Test EMA-vs-frozenLPIPS gain .0018237905 CI[.0005433573,.0033575798]; EMA-vs-baseline .0002956831 CI[-.0004694017,.0010846133], PSNR-.02544399dB. Overall evidence insufficient; validationEMA worse than baseline, no acceleration, Stepcost+51.4513%. This completes delivery, not a scientific success claim. No extraarm/update/weight was added. The human separately authorized the prospectiveVideoMAEv2 study after this delivery; current/previous numerical sources stay preserved.
+
+
+## VideoMAEv2 / Wan implementation andCPU checks — 2026-11-08
+
+Prior WanTRD P6 fullydelivered/publishedc4b66a1e. NewindependentVideoMAEv2 sourceimplementsteacher/projection/pairedtraining/fullresume/native448+128evaluation. GroupedCPU suites andindependentreview passed; actualmetadata1641HR andofficialweights validatedwithoutCUDA. See docs/videorepa_videomaev2_20261108/execution.md andcpu receipts. No newGPUforward orscientificupdate claimed inthisentry; realpreflightandtrainingmustfollowdeclaredgates.

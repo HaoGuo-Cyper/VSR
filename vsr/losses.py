@@ -372,3 +372,114 @@ class FullGramTRD(nn.Module):
                 'relation_absolute_difference_max':float(difference.max()),
                 'gram_elements_per_example':tokens*tokens}
         return loss,diagnostic
+
+
+def videomaev2_align_student_time(projected,grid):
+    """Map all9 projected latent positions to16 teacher positions after dropping0."""
+    _require(len(grid)==3 and grid[0]==9 and all(type(n) is int and n>0 for n in grid),
+             'VideoMAEv2 alignment needs a9-position positive T,H,W grid')
+    _require(projected.ndim==3 and projected.shape[1]==math.prod(grid),
+             'Projected tokens must retain complete THW order')
+    b,_,c=projected.shape;t,h,w=grid
+    with torch.autocast(projected.device.type,enabled=False):
+        value=projected.reshape(b,t,h,w,c)[:,1:].permute(0,4,1,2,3)
+        value=F.interpolate(value,size=(16,h,w),mode='trilinear',align_corners=False)
+        return value.permute(0,2,3,4,1).reshape(b,16*h*w,c)
+
+
+def videomaev2_full_gram_loss(student,teacher,grid):
+    """Official code-style margin fullmean with the declared mixed dtype boundary.
+
+    No outer autocast may convert the teacher's Gram to bf16. Student normalize
+    and Gram stay bf16; subtraction promotes the two matrices toFP32.
+    """
+    _require(student.ndim==teacher.ndim==3 and student.shape==teacher.shape
+             and student.device==teacher.device and teacher.dtype==torch.float32,
+             'Matched tokens and a FP32 VideoMAEv2 teacher target required')
+    _require(len(grid)==3 and grid[0]==16 and all(type(n) is int and n>0 for n in grid)
+             and math.prod(grid)==student.shape[1],'VideoMAEv2 target grid must be16,H,W')
+    _require(bool(torch.isfinite(student).all()) and bool(torch.isfinite(teacher).all()),
+             'Nonfinite VideoMAEv2 relation inputs')
+    with torch.autocast(student.device.type,enabled=False):
+        projected=student.to(torch.bfloat16)
+        target=teacher.detach()
+        sn=F.normalize(projected,p=2,dim=-1,eps=1e-12)
+        tn=F.normalize(target,p=2,dim=-1,eps=1e-12)
+        sg=torch.bmm(sn,sn.transpose(1,2))
+        tg=torch.bmm(tn,tn.transpose(1,2))
+        difference=(sg-tg).abs()
+        per_pair=F.relu(difference-.1)
+        loss=per_pair.mean()
+    _require(sn.dtype==sg.dtype==torch.bfloat16 and tn.dtype==tg.dtype==torch.float32
+             and difference.dtype==loss.dtype==torch.float32,'VideoMAEv2 relation precision contract changed')
+    _require(bool(torch.isfinite(loss)),'Nonfinite VideoMAEv2 full-Gram loss')
+    with torch.no_grad():
+        b,n,_=student.shape;t,h,w=grid;spatial_count=h*w
+        time=torch.arange(n,device=student.device)//spatial_count
+        spatial=time[:,None]==time[None,:];temporal=~spatial;active=difference>.1
+        d={'margin':.1,'normalize_eps':1e-12,'all_pairs':b*n*n,'tokens_per_example':n,
+           'all_tokens_supervised':True,'diagonal_included':True,'ordered_pairs':True,
+           'student_normalized_dtype':str(sn.dtype),'teacher_normalized_dtype':str(tn.dtype),
+           'student_gram_dtype':str(sg.dtype),'teacher_gram_dtype':str(tg.dtype),
+           'difference_dtype':str(difference.dtype),'loss_dtype':str(loss.dtype),
+           'active_pairs':int(active.sum()),'active_pair_fraction':float(active.float().mean()),
+           'spatial_pairs':b*t*spatial_count**2,'temporal_pairs':b*t*(t-1)*spatial_count**2,
+           'spatial_loss_mean':float(per_pair[:,spatial].mean()),
+           'temporal_loss_mean':float(per_pair[:,temporal].mean()),
+           'spatial_difference_mean':float(difference[:,spatial].mean()),
+           'temporal_difference_mean':float(difference[:,temporal].mean()),
+           'spatial_active_pair_fraction':float(active[:,spatial].float().mean()),
+           'temporal_active_pair_fraction':float(active[:,temporal].float().mean()),
+           'projected_feature_norm_mean':float(projected.float().norm(dim=-1).mean()),
+           'teacher_feature_norm_mean':float(target.norm(dim=-1).mean()),
+           'relation_absolute_difference_max':float(difference.max())}
+    return loss,d
+
+
+class VideoMAEv2TRDAlignment(nn.Module):
+    """Official three-Linear SiLU projector, adapted only for Wan input width.
+
+    FP32 master parameters, explicit bf16 projector execution, all9 positions
+    projected before the auxiliary-only drop0 and8->16 temporal interpolation.
+    """
+    def __init__(self,student_dim=1536,*,init_seed=20261102):
+        super().__init__()
+        _require(type(student_dim) is int and student_dim>0,'Positive student width required')
+        _require(type(init_seed) is int and init_seed>=0,'Explicit projector initialization seed required')
+        self.student_dim,self.hidden_dim,self.teacher_dim=student_dim,2048,768
+        self.margin,self.normalize_eps,self.init_seed=.1,1e-12,init_seed
+        with torch.random.fork_rng(devices=[]),torch.device('cpu'):
+            torch.random.default_generator.manual_seed(init_seed)
+            self.projector=nn.Sequential(nn.Linear(student_dim,2048,dtype=torch.float32),nn.SiLU(),
+                nn.Linear(2048,2048,dtype=torch.float32),nn.SiLU(),nn.Linear(2048,768,dtype=torch.float32))
+
+    @property
+    def spec(self):
+        return {'schema':'vsr_videomaev2_alignment_v1','student_dim':self.student_dim,
+            'hidden_dim':2048,'teacher_dim':768,'linear_count':3,'activation':'SiLU',
+            'bias':True,'parameter_tensors':6,'parameter_count':sum(p.numel() for p in self.parameters()),
+            'init_seed':self.init_seed,'initialization':'torch_Linear_default_independent_CPU_rng',
+            'master_parameters':'torch.float32','projector_execution':'torch.bfloat16',
+            'student_input_grid':[9,8,14],'project_before_drop0':True,'drop_latent_positions':[0],
+            'interpolation':'trilinear8_to16_align_cornersFalse','target_grid':[16,8,14],
+            'token_order':'T,H,W','spatial_downsample_Conv':False,
+            'student_normalize_and_Gram':'torch.bfloat16','teacher_normalize_and_Gram':'torch.float32',
+            'difference_and_loss':'torch.float32','normalize_eps':1e-12,'margin':.1,
+            'reduction':'mean_all_ordered_pairs_including_diagonal'}
+
+    def forward(self,student,teacher,grid):
+        _require(tuple(grid)==(9,8,14) and student.ndim==3 and student.shape[1:]==(1008,self.student_dim)
+                 and teacher.shape==(student.shape[0],1792,768) and student.device==teacher.device,
+                 'VideoMAEv2 Wan alignment requires9x8x14 student /16x8x14 teacher tokens')
+        _require(all(p.dtype==torch.float32 for p in self.projector.parameters()),
+                 'Keep VideoMAEv2 MLP master parameters FP32')
+        _require(bool(torch.isfinite(student).all()),'Nonfinite Wan intermediate features')
+        with torch.autocast(student.device.type,dtype=torch.bfloat16,enabled=True):
+            projected=self.projector(student.float())
+        _require(projected.dtype==torch.bfloat16,'VideoMAEv2 projector must execute inbf16')
+        aligned=videomaev2_align_student_time(projected,grid)
+        loss,d=videomaev2_full_gram_loss(aligned,teacher,(16,8,14))
+        d.update(projected_dtype=str(projected.dtype),interpolated_dtype=str(aligned.dtype),
+                 student_feature_dtype=str(student.dtype),student_feature_norm_mean=float(student.detach().float().norm(dim=-1).mean()),
+                 projected_all_latent_positions=9,dropped_latent_positions=[0],target_grid=[16,8,14])
+        return loss,d

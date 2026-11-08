@@ -79,6 +79,7 @@ def load_training_checkpoint(path, *, device="cuda", allowed_root=PRODUCTION_RUN
     payload = torch.load(path, map_location="cpu", weights_only=True)
     if not isinstance(payload, dict) or payload.get("format") != "vsr_training_v1":
         raise ValueError("Unsupported VSR training checkpoint format")
+    videomaev2_metadata = _videomaev2_inference_metadata(payload)
     step = payload.get("step")
     if not isinstance(step, int) or isinstance(step, bool) or step < 1:
         raise ValueError("Training checkpoint step must be an integer >=1")
@@ -175,6 +176,7 @@ def load_training_checkpoint(path, *, device="cuda", allowed_root=PRODUCTION_RUN
     }
     trd_metadata = _trd_inference_metadata(payload)
     if trd_metadata is not None:metadata['trd_training_metadata'] = trd_metadata
+    if videomaev2_metadata is not None:metadata['videomaev2_training_metadata'] = videomaev2_metadata
     return model, metadata
 
 
@@ -1101,3 +1103,314 @@ def _trd_inference_metadata(payload):
     _need(type(metadata['EMA_updates']) is int,
           'TRD inference teacher-update provenance must be scalar')
     return metadata
+
+
+# Independently versioned, fixed external VideoMAEv2 teacher. Its tensors never
+# enter task checkpoints: only the immutable source/weight/position contract.
+VIDEOMAEV2_TRAINING_STATE_SCHEMA = 'vsr_videomaev2_training_state_v1'
+_VMAE_OUTER_FIELDS = {'format','variant','step','config','trainable_state','initialization',
+                      'inference_parameters','training_only'}
+_VMAE_STATE_FIELDS = {'schema','protocol_sha256','arm','weight','student_layer','completed_updates',
+    'training_seed','teacher_binding','teacher_forward_count','teacher_parameter_updates','alignment_state',
+    'alignment_spec','optimizer','optimizer_parameter_names','explicit_RNG','RNG_devices','global_RNG',
+    'data_cursor','matched_Base','cumulative_training_seconds','learning_rate_schedule',
+    'restored_by_generic_inference_loader'}
+
+
+def _vmae_metadata(value):
+    """Require JSON-only immutable metadata; never silently copy teacher tensors."""
+    def validate(x):
+        if type(x) is dict:
+            _need(all(type(k) is str for k in x),'VideoMAEv2 metadata requires string dictionary keys')
+            for item in x.values():validate(item)
+        elif type(x) is list:
+            for item in x:validate(item)
+        else:
+            _need(x is None or type(x) in (str,bool,int,float), 'VideoMAEv2 binding/spec must not contain tensor or object state')
+            _need(type(x) is not float or math.isfinite(x),'Nonfinite VideoMAEv2 metadata')
+    validate(value)
+    return json.loads(json.dumps(value,sort_keys=True,allow_nan=False))
+
+
+def _vmae_sha(value):
+    _need(type(value) is str and len(value)==64 and all(c in '0123456789abcdef' for c in value),
+          'VideoMAEv2 requires a canonical SHA256')
+
+
+def _vmae_teacher_binding(value):
+    from .teacher import (VIDEOMAEV2_SOURCE_REVISION,VIDEOMAEV2_SOURCE_SHA256,
+        VIDEOMAEV2_WEIGHT_REVISION,VIDEOMAEV2_WEIGHT_SHA256,VIDEOMAEV2_WEIGHT_BYTES,videomaev2_feature_spec)
+    result=_vmae_metadata(value)
+    _need(isinstance(result,dict) and set(result)=={'schema','architecture','source_revision','weight_revision',
+         'source','weights','encoder_load_contract','position_embedding','feature_spec','runtime'}
+         and result['schema']=='vsr_videomaev2_teacher_v1' and result['architecture']=='vit_base_patch16_224'
+         and result['source_revision']==VIDEOMAEV2_SOURCE_REVISION and result['weight_revision']==VIDEOMAEV2_WEIGHT_REVISION,
+         'Wrong immutable VideoMAEv2 teacher identity')
+    for key,wanted in (('source',VIDEOMAEV2_SOURCE_SHA256),('weights',VIDEOMAEV2_WEIGHT_SHA256)):
+        record=result[key]
+        _need(isinstance(record,dict) and set(record)=={'path','bytes','sha256'}
+              and type(record['path']) is str and Path(record['path']).is_absolute()
+              and type(record['bytes']) is int and record['bytes']>0 and record['sha256']==wanted,
+              'Wrong VideoMAEv2 '+key+' binding')
+    _need(result['weights']['bytes']==VIDEOMAEV2_WEIGHT_BYTES,'Wrong official VideoMAEv2 weight size')
+    _need(result['encoder_load_contract']=={'checkpoint_container':'module','optional_prefix':'module.',
+        'excluded_keys':['fc_norm.bias','fc_norm.weight','head.bias','head.weight'],'strict':True,
+        'encoder_state_keys':158,'encoder_parameters':86225664,'depth':12,'width':768,'heads':12,'FP32_parameters':True},
+        'VideoMAEv2 strict encoder contract differs')
+    _need(result['feature_spec']==videomaev2_feature_spec(),'VideoMAEv2 preprocessing/target grid differs')
+    pos=result['position_embedding']
+    _need(isinstance(pos,dict) and set(pos)=={'origin','original_shape','original_sha256','shape','dtype','sha256','spatial','temporal','learned'}
+          and pos['origin']=='official_flattened_1D_sincos1568_not_checkpoint_parameter'
+          and pos['original_shape']==[1,1568,768] and pos['shape']==[1,1792,768] and pos['dtype']=='torch.float32'
+          and pos['spatial']=='bicubic_14x14_to8x14_align_cornersFalse'
+          and pos['temporal']=='trilinear8_to16_align_cornersFalse' and pos['learned'] is False,
+          'VideoMAEv2 position binding differs')
+    _vmae_sha(pos['sha256']);_vmae_sha(pos['original_sha256'])
+    _need(set(result['runtime'])=={'torch','numpy','timm'} and all(type(v) is str and v for v in result['runtime'].values()),
+          'Incomplete VideoMAEv2 runtime binding')
+    return result
+
+
+def videomaev2_auxiliary_spec(arm,weight,teacher_binding):
+    """Canonical config metadata shared by the controller and checkpoint guard.
+
+    A zero-weight method is allowed only for diagnostic config construction;
+    complete method checkpoints require the prospectively fixed positive .5.
+    """
+    _need(arm in ('baseline','videomaev2') and type(weight) in (int,float) and math.isfinite(weight)
+          and (weight==0 if arm=='baseline' else weight in (0,.5)), 'Wrong VideoMAEv2 arm/weight')
+    active=arm=='videomaev2'
+    _need((teacher_binding is not None)==active,'VideoMAEv2 teacher binding/arm differs')
+    teacher=None if not active else _vmae_teacher_binding(teacher_binding)
+    return {'family':'videomaev2_trd','arm':arm,'weight':float(weight),'student_layer':17,
+        'teacher_binding':teacher,'teacher_frozen':active,'teacher_online':active,'teacher_parameter_updates':0,
+        'head':'Linear1536_2048_SiLU_2048_SiLU_768_bias_FP32master' if active else None,
+        'head_parameter_tensors':6 if active else 0,'head_parameter_count':8917760 if active else 0,
+        'student_input_grid':[9,8,14],'project_all9_before_drop0':True,'drop_student_latent_positions':[0],
+        'target_grid':[16,8,14],'student_time_interpolation':'trilinear8_to16_align_cornersFalse',
+        'token_order':'T,H,W','spatial_downsample_Conv':False,'margin':.1,'normalization_eps':1e-12,
+        'loss':'mean_relu_abs_full_Gram_difference_minus_margin','reduction':'all_ordered_pairs_including_diagonal',
+        'student_alignment_dtype':'torch.bfloat16','teacher_alignment_dtype':'torch.float32',
+        'difference_and_loss_dtype':'torch.float32','EMA':False,'condition_corruption':False,'inference_parameters':'student'}
+
+
+def _vmae_alignment_spec(alignment):
+    if alignment is None:return None
+    projector=getattr(alignment,'projector',None)
+    _need(isinstance(projector,torch.nn.Sequential) and len(projector)==5,'VideoMAEv2 requires its three-Linear SiLU MLP')
+    for index,shape in ((0,(1536,2048)),(2,(2048,2048)),(4,(2048,768))):
+        layer=projector[index]
+        _need(isinstance(layer,torch.nn.Linear) and (layer.in_features,layer.out_features)==shape and layer.bias is not None,
+              'VideoMAEv2 MLP dimensions/bias differ')
+    _need(all(isinstance(projector[i],torch.nn.SiLU) and projector[i].inplace is False for i in (1,3)),
+          'VideoMAEv2 requires two noninplace SiLU activations')
+    _need(set(projector.state_dict())=={f'{i}.{name}' for i in (0,2,4) for name in ('weight','bias')}
+          and len(list(alignment.parameters()))==6 and sum(p.numel() for p in alignment.parameters())==8917760,
+          'VideoMAEv2 MLP must contain exactly six tensors/8917760parameters')
+    spec=_vmae_metadata(getattr(alignment,'spec',None))
+    _need(isinstance(spec,dict) and spec.get('schema')=='vsr_videomaev2_alignment_v1'
+          and spec.get('student_dim')==1536 and spec.get('hidden_dim')==2048 and spec.get('teacher_dim')==768
+          and spec.get('linear_count')==3 and spec.get('activation')=='SiLU' and spec.get('bias') is True
+          and spec.get('parameter_tensors')==6 and spec.get('parameter_count')==8917760
+          and type(spec.get('init_seed')) is int and spec['init_seed']>=0
+          and spec.get('initialization')=='torch_Linear_default_independent_CPU_rng'
+          and spec.get('master_parameters')=='torch.float32' and spec.get('projector_execution')=='torch.bfloat16'
+          and spec.get('student_input_grid')==[9,8,14] and spec.get('project_before_drop0') is True
+          and spec.get('drop_latent_positions')==[0] and spec.get('interpolation')=='trilinear8_to16_align_cornersFalse'
+          and spec.get('target_grid')==[16,8,14] and spec.get('token_order')=='T,H,W'
+          and spec.get('spatial_downsample_Conv') is False
+          and spec.get('student_normalize_and_Gram')=='torch.bfloat16' and spec.get('teacher_normalize_and_Gram')=='torch.float32'
+          and spec.get('difference_and_loss')=='torch.float32' and spec.get('normalize_eps')==1e-12
+          and spec.get('margin')==.1 and spec.get('reduction')=='mean_all_ordered_pairs_including_diagonal',
+          'VideoMAEv2 head mapping/dtype/spec differs')
+    return spec
+
+
+def _vmae_external_teacher(engine,binding):
+    teacher=getattr(engine,'teacher',None)
+    if binding is None:
+        _need(teacher is None,'VideoMAEv2 baseline must not load a teacher')
+        return
+    _need(isinstance(teacher,torch.nn.Module) and isinstance(getattr(teacher,'model',None),torch.nn.Module)
+          and not teacher.training and not teacher.model.training,'VideoMAEv2 teacher must be a frozen eval module')
+    _need(type(getattr(teacher,'parameter_updates',None)) is int and teacher.parameter_updates==0
+          and _vmae_teacher_binding(teacher.binding)==binding,'VideoMAEv2 teacher changed its immutable contract')
+    _need(all(not p.requires_grad and p.grad is None and p.dtype==torch.float32 for p in teacher.parameters()),
+          'VideoMAEv2 teacher parameters must remain frozen FP32 with no gradients')
+    if hasattr(teacher,'_signature') and hasattr(teacher,'_versions'):
+        _need(teacher._signature()==teacher._versions,'VideoMAEv2 frozen parameters/positions changed')
+
+
+def _vmae_engine_contract(engine,config):
+    _need(isinstance(_check_config(config),str) and config.get('restoration_architecture') is None
+          and config['training'].get('variants')==['Base'],'Canonical VideoMAEv2 config must retain Base inference architecture')
+    arm=getattr(engine,'arm',None);weight=getattr(engine,'weight',None)
+    _need(arm in ('baseline','videomaev2') and type(weight) in (int,float) and weight==(0 if arm=='baseline' else .5)
+          and type(engine.student_layer) is int and engine.student_layer==17,'Formal VideoMAEv2 arm/weight/layer differs')
+    budget=config['training'].get('updates')
+    _need(type(budget) is int and budget>0 and type(engine.steps) is int and 0<=engine.steps<=budget,'VideoMAEv2 steps exceed budget')
+    origin=_hr_origin(engine.base_load_audit);base=origin['config']
+    _need(all(config.get(k)==base.get(k) for k in ('model','conditioning','data','seed'))
+          and config['training'].get('seed',config['seed'])==engine.training_seed==20261102
+          ==base['training'].get('seed',base['seed']),'VideoMAEv2 matched Base/config/seed differs')
+    binding=getattr(engine,'teacher_binding',None)
+    _need((binding is not None)==(arm=='videomaev2'),'VideoMAEv2 binding presence differs')
+    binding=None if binding is None else _vmae_teacher_binding(binding)
+    _need(config.get('auxiliary_supervision')==videomaev2_auxiliary_spec(arm,weight,binding),
+          'VideoMAEv2 canonical auxiliary config differs')
+    _vmae_external_teacher(engine,binding)
+    count=getattr(engine,'teacher_forward_count',None)
+    _need(type(count) is int and count==(engine.steps if binding is not None else 0), 'VideoMAEv2 committed teacher-forward count differs')
+    model=engine.model
+    _need(getattr(model,'projector','not Base') is None and not hasattr(model,'reference_adapter'),'VideoMAEv2 inference model must stay NoRef Base')
+    student={n:p for n,p in model.named_parameters() if p.requires_grad}
+    _need(student and all(n.startswith(('lrv_stem.','lrv_residuals.')) or '.lora_' in n for n in student),
+          'VideoMAEv2 student may contain only restoration LoRA/LR tensors')
+    alignment=engine.alignment
+    _need((alignment is not None)==(binding is not None),'VideoMAEv2 head/arm differs')
+    spec=_vmae_alignment_spec(alignment)
+    expected=list(student.values())+(list(alignment.parameters()) if alignment is not None else [])
+    _need(all(p.requires_grad and p.dtype==torch.float32 and p.grad is None and bool(torch.isfinite(p).all()) for p in expected),
+          'VideoMAEv2 student/head must be finite FP32 masters with cleared gradients')
+    named=list(engine._named_optimizer_parameters)
+    wanted={id(p):'restoration.'+n for n,p in student.items()}
+    if alignment is not None:wanted.update({id(p):'student_projector.'+n for n,p in alignment.projector.named_parameters()})
+    _need(len(named)==len(wanted) and len({n for n,p in named})==len(named)==len({id(p) for n,p in named})
+          and all(wanted.get(id(p))==n for n,p in named),'VideoMAEv2 named optimizer parameter aliases/order differ')
+    _need(isinstance(engine.optimizer,torch.optim.AdamW) and all(g.get('foreach') is False for g in engine.optimizer.param_groups),
+          'VideoMAEv2 requires AdamW foreach=False')
+    actual=[p for g in engine.optimizer.param_groups for p in g['params']]
+    _need(len(actual)==len(named)==len({id(p) for p in actual}) and {id(p) for p in actual}==set(wanted),
+          'VideoMAEv2 optimizer must contain exactly student and six head tensors, never teacher')
+    groups=[[wanted[id(p)] for p in group['params']] for group in engine.optimizer.param_groups]
+    return student,None if alignment is None else alignment.state_dict(),dict(named),groups,origin,binding,spec
+
+
+def save_videomaev2_checkpoint(path,engine,config,*,allowed_root,protocol_sha256,
+                              cumulative_training_seconds,initialization):
+    """Atomic Base student plus full six-parameter-head resume; no teacher tensors."""
+    student,head,named,groups,origin,teacher,spec=_vmae_engine_contract(engine,config)
+    _need(engine.steps>0,'VideoMAEv2 checkpoint requires a completed positive update');_vmae_sha(protocol_sha256)
+    _need(type(cumulative_training_seconds) in (int,float) and math.isfinite(cumulative_training_seconds)
+          and cumulative_training_seconds>=0,'Invalid VideoMAEv2 cumulative synchronized time')
+    _need(_hr_equal(_hr_origin(initialization),origin),'VideoMAEv2 initialization differs from Base origin')
+    optimizer=_cpu_owned(engine.optimizer.state_dict());_hr_validate_optimizer(optimizer,optimizer,groups,named,engine.steps)
+    rng,devices=_trd_explicit_rng(engine);_trd_validate_explicit_rng(engine,rng,devices)
+    global_rng=_trd_global_rng_state();_trd_validate_global_rng(global_rng)
+    count=config.get('data',{}).get('eligible_train_clips',1641)
+    _need(type(count) is int and count==getattr(engine,'training_clip_count',count)==1641,'VideoMAEv2 requires fixed training1641')
+    state={'schema':VIDEOMAEV2_TRAINING_STATE_SCHEMA,'protocol_sha256':protocol_sha256,
+        'arm':engine.arm,'weight':float(engine.weight),'student_layer':17,'completed_updates':engine.steps,
+        'training_seed':engine.training_seed,'teacher_binding':teacher,'teacher_forward_count':engine.teacher_forward_count,
+        'teacher_parameter_updates':0,'alignment_state':head,'alignment_spec':spec,'optimizer':optimizer,
+        'optimizer_parameter_names':groups,'explicit_RNG':rng,'RNG_devices':devices,'global_RNG':global_rng,
+        'data_cursor':{'completed_updates':engine.steps,'training_clip_count':count,'next_training_index':engine.steps%count},
+        'matched_Base':engine.base_load_audit,'cumulative_training_seconds':float(cumulative_training_seconds),
+        'learning_rate_schedule':{'type':'constant','separate_scheduler':None,'lr_saved_in_optimizer_groups':True},
+        'restored_by_generic_inference_loader':False}
+    payload=_cpu_owned({'format':'vsr_training_v1','variant':'Base','step':engine.steps,'config':config,
+        'trainable_state':student,'initialization':initialization,'inference_parameters':'student','training_only':state})
+    path,run=_destination(path,allowed_root,'Base',engine.steps);path.parent.mkdir(parents=True,exist_ok=True)
+    sidecar=run/'config.json';_need(not sidecar.is_symlink(),'VideoMAEv2 config must not be a symlink')
+    encoded=(json.dumps(config,ensure_ascii=False,indent=2,allow_nan=False)+'\n').encode()
+    if sidecar.exists():_need(json.loads(sidecar.read_text())==config,'VideoMAEv2 originating config differs')
+    else:
+        try:_atomic_publish(sidecar,lambda stream:stream.write(encoded))
+        except FileExistsError:_need(json.loads(sidecar.read_text())==config,'Concurrent VideoMAEv2 config differs')
+    _atomic_publish(path,lambda stream:torch.save(payload,stream))
+    return {'path':str(path),'bytes':path.stat().st_size,'sha256':_sha256_file(path),'step':engine.steps,'updates':engine.steps,
+        'variant':'Base','arm':engine.arm,'weight':engine.weight,'protocol_sha256':protocol_sha256,
+        'cumulative_training_seconds':float(cumulative_training_seconds),'config_sha256':config['_sha256'],
+        'inference_parameters':'student','training_only_schema':state['schema'],'teacher_tensor_state_saved':False,
+        'existing_artifacts_overwritten':False}
+
+
+def _videomaev2_inference_metadata(payload):
+    state=payload.get('training_only')
+    if not isinstance(state,dict) or state.get('schema')!=VIDEOMAEV2_TRAINING_STATE_SCHEMA:return None
+    _need(set(payload)==_VMAE_OUTER_FIELDS and payload.get('variant')=='Base'
+          and payload.get('inference_parameters')=='student','VideoMAEv2 outer payload must contain only Base student and separated training state')
+    arm,step=state.get('arm'),payload.get('step');_vmae_sha(state.get('protocol_sha256'))
+    _need(arm in ('baseline','videomaev2') and type(step) is int and step>0 and state.get('completed_updates')==step
+          and type(state.get('completed_updates')) is int and state.get('training_seed')==20261102
+          and type(state.get('training_seed')) is int and state.get('weight')==(0 if arm=='baseline' else .5)
+          and type(state.get('weight')) in (int,float) and state.get('student_layer')==17
+          and type(state.get('student_layer')) is int and type(state.get('teacher_parameter_updates')) is int
+          and state['teacher_parameter_updates']==0 and type(state.get('teacher_forward_count')) is int
+          and state['teacher_forward_count']==(0 if arm=='baseline' else step),'VideoMAEv2 scalar checkpoint provenance differs')
+    student=payload.get('trainable_state')
+    _need(isinstance(student,dict) and student and all(type(n) is str and (n.startswith(('lrv_stem.','lrv_residuals.')) or '.lora_' in n) for n in student),
+          'VideoMAEv2 outer trainable state must exclude head and teacher tensors')
+    return {k:state[k] for k in ('schema','protocol_sha256','arm','completed_updates','training_seed','weight','student_layer',
+                                'teacher_forward_count','teacher_parameter_updates')}|{'EMA_updates':0}
+
+
+def restore_videomaev2_training_state(engine,path,*,allowed_root,expected_protocol_sha256,expected_config=None):
+    """Validate all mutable state, apply transactionally, roll back on any failure."""
+    path=_safe_checkpoint(path,allowed_root);checksum=_sha256_file(path)
+    payload=torch.load(path,map_location='cpu',weights_only=True)
+    _need(isinstance(payload,dict),'VideoMAEv2 checkpoint must be a dictionary')
+    meta=_videomaev2_inference_metadata(payload);_need(meta is not None,'Not a VideoMAEv2 full training checkpoint')
+    _need(payload.get('format')=='vsr_training_v1','Wrong VideoMAEv2 outer format')
+    config=payload['config'];_check_config(config)
+    _need(expected_config is None or config==expected_config,'VideoMAEv2 resume config differs')
+    sidecar=path.parent.parent/'config.json'
+    _need(sidecar.is_file() and not sidecar.is_symlink() and json.loads(sidecar.read_text())==config,'VideoMAEv2 originating sidecar differs')
+    student,head,named,groups,origin,teacher,spec=_vmae_engine_contract(engine,config)
+    _need(engine.steps==0 and not engine.optimizer.state and engine.teacher_forward_count==0,'VideoMAEv2 resume requires a fresh engine/optimizer')
+    state=payload['training_only'];step=payload['step'];_vmae_sha(expected_protocol_sha256)
+    _need(set(state)==_VMAE_STATE_FIELDS and state['protocol_sha256']==expected_protocol_sha256
+          and state['arm']==engine.arm and state['weight']==engine.weight and state['training_seed']==engine.training_seed
+          and 0<step<=config['training']['updates'] and path.parent.name=='Base'
+          and path.name==f'checkpoint_{step:06d}.pt','VideoMAEv2 state/schema/protocol/arm/step differs')
+    _need(_hr_equal(_hr_origin(state.get('matched_Base')),origin) and _hr_equal(_hr_origin(payload['initialization']),origin),
+          'VideoMAEv2 original Base identity differs')
+    _need(state['teacher_binding']==teacher and state['alignment_spec']==spec and state['restored_by_generic_inference_loader'] is False,
+          'VideoMAEv2 teacher position/source/preprocessing or head spec differs')
+    _need(type(state['cumulative_training_seconds']) in (int,float) and math.isfinite(state['cumulative_training_seconds'])
+          and state['cumulative_training_seconds']>=0,'Invalid VideoMAEv2 saved cumulative time')
+    _need(state['learning_rate_schedule']=={'type':'constant','separate_scheduler':None,'lr_saved_in_optimizer_groups':True},
+          'VideoMAEv2 constant learning-rate contract differs')
+    _need(state['data_cursor']=={'completed_updates':step,'training_clip_count':1641,'next_training_index':step%1641},
+          'VideoMAEv2 data cursor differs')
+    saved=payload['trainable_state'];_need(set(saved)==set(student),'VideoMAEv2 student state names differ')
+    for name,current in student.items():
+        value=saved[name]
+        _need(isinstance(value,torch.Tensor) and value.shape==current.shape and value.dtype==current.dtype
+              and not value.requires_grad and bool(torch.isfinite(value).all()),'VideoMAEv2 student tensor differs: '+name)
+    saved_head=state['alignment_state']
+    _need((saved_head is None)==(head is None),'VideoMAEv2 head presence differs')
+    if head is not None:
+        _need(isinstance(saved_head,dict) and set(saved_head)==set(head),'VideoMAEv2 six-tensor head names differ')
+        for name,current in head.items():
+            value=saved_head[name]
+            _need(isinstance(value,torch.Tensor) and value.shape==current.shape and value.dtype==current.dtype
+                  and not value.requires_grad and bool(torch.isfinite(value).all()),'VideoMAEv2 head tensor differs: '+name)
+    _need(state['optimizer_parameter_names']==groups,'VideoMAEv2 optimizer names/order differ')
+    optimizer=state['optimizer'];_hr_validate_optimizer(optimizer,engine.optimizer.state_dict(),groups,named,step)
+    _trd_validate_explicit_rng(engine,state['explicit_RNG'],state['RNG_devices']);_trd_validate_global_rng(state['global_RNG'])
+    _need(_sha256_file(path)==checksum,'VideoMAEv2 checkpoint changed during validation')
+    before=_cpu_owned({'student':student,'head':head,'optimizer':engine.optimizer.state_dict(),
+        'explicit_RNG':_trd_explicit_rng(engine)[0],'global_RNG':_trd_global_rng_state(),
+        'steps':engine.steps,'teacher_forward_count':engine.teacher_forward_count})
+    def apply(st,hd,opt,rng,global_rng,steps,forwards):
+        with torch.no_grad():
+            for name,p in student.items():p.copy_(st[name].to(p.device))
+        if hd is not None:engine.alignment.load_state_dict(hd,strict=True)
+        engine.optimizer.load_state_dict(opt)
+        for name in _TRD_STREAMS:getattr(engine.rng,name).set_state(rng[name])
+        _trd_restore_global_rng(global_rng);engine.steps=steps;engine.teacher_forward_count=forwards
+        engine.optimizer.zero_grad(set_to_none=True)
+        if hasattr(engine.model,'clear_features'):engine.model.clear_features()
+    try:apply(saved,saved_head,optimizer,state['explicit_RNG'],state['global_RNG'],step,state['teacher_forward_count'])
+    except BaseException as error:
+        try:apply(before['student'],before['head'],before['optimizer'],before['explicit_RNG'],before['global_RNG'],before['steps'],before['teacher_forward_count'])
+        except BaseException as rollback:error.add_note('VideoMAEv2 restore rollback failed: '+repr(rollback))
+        raise
+    return {'path':str(path),'sha256':checksum,'steps':step,'step':step,'arm':engine.arm,'weight':engine.weight,
+        'cumulative_training_seconds':float(state['cumulative_training_seconds']),'initialization':payload['initialization'],
+        'matched_Base':state['matched_Base'],'protocol_sha256':expected_protocol_sha256,'config_sha256':config['_sha256'],
+        'student_layer':17,'data_cursor':state['data_cursor'],'teacher_binding':teacher,'teacher_forward_count':engine.teacher_forward_count,
+        'teacher_parameter_updates':0,'student_restored':True,'alignment_restored':head is not None,
+        'optimizer_state_restored':True,'explicit_RNG_restored':list(_TRD_STREAMS),'global_RNG_restored':True,
+        'teacher_tensor_state_restored':False,'frozen_official_parameters_restored':False,'generic_inference_loader_used':False}

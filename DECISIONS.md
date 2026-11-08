@@ -206,3 +206,8 @@ The human explicitly authorized planning and then starting a separate Wan VSR st
 ## Wan TRD round completed — 2026-11-08
 
 All baseline/frozen/EMA arms completed2048, total6144 scientific updates plus41 separate diagnostics; fullval640/test192 and27456PNG/native source/hash chains passed. Independent832-row/75CI audit,2112byte-exact shared-initialPNG regression,6fixedvideos/contact sheets androot actualall33ROI/two-curve review completed. Services exited0/MainPID0/sharedGPUlockreleased. Read docs/ema_teacher_targets_20261108/final_report.md. Test EMA-vs-frozenLPIPS gain .0018237905 CI[.0005433573,.0033575798]; EMA-vs-baseline .0002956831 CI[-.0004694017,.0010846133], PSNR-.02544399dB. Overall evidence insufficient; validationEMA worse than baseline, no acceleration, Stepcost+51.4513%. This completes delivery, not a scientific success claim. No extraarm/update/weight was added. The human separately authorized the prospectiveVideoMAEv2 study after this delivery; current/previous numerical sources stay preserved.
+
+
+## VideoMAEv2 implementation freeze preparation — 2026-11-08
+
+Human-authorized follow-on begins only after oldTRD P6, now completed atc4b66a1e. Use independentvideomaev2worktree and immutableplan SHA609d79334e4afb295336e1f022e41c3e323bc8655eb77146e20aca020d822655. FixedB0/R.5,block17,onlineofficialfrozenVideoMAEv2,original3Linear/fullGram.1/eps1e-12 withdeclaredWan映射. Budget4096science/26diagnostic/448val/128test; noEMA/noextraweights/noofflinecache. Bindactualtimmcode, protectallglobalRNG andstopupdated-parameternonfinite immediately. Engineeringchecks do notchange scientificdesign.

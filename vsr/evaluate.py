@@ -665,6 +665,7 @@ def validate_completed_base_evaluation(run_dir):
 HR_EVALUATION_SCHEMA = 'hr_vae_clean_evaluation_protocol_v1'
 FT_EVALUATION_SCHEMA = 'fixed_teacher_clean_evaluation_protocol_v1'
 TRD_EVALUATION_SCHEMA = 'wan_trd_evaluation_protocol_v1'
+VMAE_EVALUATION_SCHEMA = 'vsr_videomaev2_evaluation_protocol_v1'
 HR_SCALAR_METRICS = ('psnr_rgb_db','ssim_rgb','lpips_alex_v0_1',
                      'tLP_alex_v0_1_TecoGAN_crop','tLP100_alex_v0_1_TecoGAN_crop',
                      'tOF_Farneback_TecoGAN_crop')
@@ -686,13 +687,13 @@ def _hr_finite(value):
     return type(value) in (int,float) and math.isfinite(value)
 
 
-def _hr_training_evidence(directory, study_file, *, fixed_teacher=False, trd=False):
+def _hr_training_evidence(directory, study_file, *, fixed_teacher=False, trd=False, videomaev2=False):
     """Check the declared completed trajectories, fresh state and checkpoint chain."""
     directory=Path(directory).resolve()
     protocol,status,summary=(read(directory/name) for name in ('protocol.json','status.json','summary.json'))
     psha=sha(directory/'protocol.json')
-    need(not (fixed_teacher and trd),'One declared study family required')
-    prefix='wan_trd' if trd else 'fixed_teacher' if fixed_teacher else 'hr_vae'
+    need(sum((fixed_teacher,trd,videomaev2))<=1,'One declared study family required')
+    prefix='vsr_videomaev2' if videomaev2 else 'wan_trd' if trd else 'fixed_teacher' if fixed_teacher else 'hr_vae'
     need(protocol.get('schema')==prefix+'_training_protocol_v1'
          and summary.get('schema')==prefix+'_training_summary_v1','Expected the declared fixed-teacher training schemas')
     need(status.get('status')==summary.get('status')=='completed'
@@ -701,7 +702,7 @@ def _hr_training_evidence(directory, study_file, *, fixed_teacher=False, trd=Fal
     need(protocol['sources']==_hr_sources(),'Training/evaluation source files differ')
     need(protocol['study_file']==study_file and read(study_file['path'])==protocol['study'],'Study changed after training')
     study=protocol['study'];arms=study['arms']
-    expected_arm_count=5 if fixed_teacher else 3
+    expected_arm_count=2 if videomaev2 else 5 if fixed_teacher else 3
     if fixed_teacher:
         need(study.get('schema')=='fixed_teacher_study_v1'
              and [a['family'] for a in arms]==['baseline','hr_vae','hr_vae','hr_dino','hr_dino']
@@ -727,6 +728,27 @@ def _hr_training_evidence(directory, study_file, *, fixed_teacher=False, trd=Fal
              and cal['scientific_updates']==0 and cal['diagnostic_optimizer_updates']==41
              and cal['sources']==protocol['sources'] and cal['calibration']['weight']==arms[1]['weight'],
              'TRD common weight must come from the completed matching-source41-update preflight')
+    elif videomaev2:
+        need(study.get('schema')=='vsr_videomaev2_study_v1'
+             and [a['label'] for a in arms]==['baseline','videomaev2']
+             and [a['weight'] for a in arms]==[0.,.5],
+             'Require the fixed baseline0 and online VideoMAEv2 weight0.5 without selection')
+        calibration=protocol['calibration']
+        need(set(calibration)=={'protocol','summary','status_file'},'Bind completed VideoMAEv2 preflight')
+        for value in calibration.values():_hr_binding(value)
+        cal=read(calibration['summary']['path']);calstatus=read(calibration['status_file']['path'])
+        need(cal.get('status')=='passed_videomaev2_preflight' and calstatus.get('status')=='completed'
+             and cal['protocol_sha256']==calstatus['protocol_sha256']==calibration['protocol']['sha256']
+             and calstatus['summary_sha256']==calibration['summary']['sha256']
+             and cal['scientific_updates']==0 and cal['diagnostic_optimizer_updates']==26
+             and cal['sources']==protocol['sources'],'Require complete matching-source26-update VideoMAEv2 preflight')
+        need(isinstance(protocol.get('teacher_binding'),dict) and protocol['teacher_binding']
+             and isinstance(protocol.get('rgb_assets'),dict)
+             and protocol['rgb_assets'].get('schema')=='vsr_online_HR_asset_audit_v1'
+             and protocol['rgb_assets'].get('training_count')==1641
+             and len(protocol['rgb_assets'].get('records',[]))==1641
+             and protocol['rgb_assets'].get('teacher_features_cached') is False,
+             'Bind the official frozen online teacher and all1641 paired HR inputs')
     else:need([a['weight'] for a in arms]==[0.,.01,.1],'Original HR-only weights changed')
     need(len(arms)==expected_arm_count
          and len({a['label'] for a in arms})==expected_arm_count and study['updates']==2048
@@ -736,12 +758,17 @@ def _hr_training_evidence(directory, study_file, *, fixed_teacher=False, trd=Fal
     need(status.get('scientific_updates')==summary.get('scientific_updates')==expected_updates,
          'Require every declared scientific training update')
     need(set(summary['arms'])=={a['label'] for a in arms},'Training summary must retain all three declared arms')
-    if fixed_teacher or trd:_verify_nested_bindings(protocol)
+    if fixed_teacher or trd or videomaev2:_verify_nested_bindings(protocol)
     else:
         for key in ('base','cache','inputs','official_model_files','dependencies'):
             _verify_nested_bindings(protocol[key])
     ids=protocol['cache']['selection']['training_ids']
     need(len(ids)==1641 and len(set(ids))==1641,'Use the fixed complete training order')
+    if videomaev2:
+        need([r['record_id'] for r in protocol['rgb_assets']['records']]==ids
+             and [r['index'] for r in protocol['rgb_assets']['records']]==list(range(1641))
+             and all(r.get('split')=='train' for r in protocol['rgb_assets']['records']),
+             'Online HR inputs must preserve the exact FM training record order')
     files={name:binding(directory/name) for name in ('protocol.json','status.json','summary.json')}
     initial=None;checked={};common_random_sequence=None;teacher_initial=None;teacher_sequence=None
     for arm in arms:
@@ -759,6 +786,13 @@ def _hr_training_evidence(directory, study_file, *, fixed_teacher=False, trd=Fal
                      'Teacher per-parameter initialization hashes must match successful preflight')
                 if teacher_initial is None:teacher_initial=current_teacher
                 need(current_teacher==teacher_initial,'Frozen and EMA teachers must share the same initial Base')
+        elif videomaev2:
+            need(record.get('family')==label and record.get('setting')=='common'
+                 and record.get('EMA_updates')==0 and record.get('teacher_parameter_updates')==0
+                 and record.get('teacher_forward_count')==(2048 if label=='videomaev2' else 0)
+                 and record.get('teacher_is_frozen_cached_HR') is False
+                 and record.get('teacher_binding')==(protocol['teacher_binding'] if label=='videomaev2' else None),
+                 'VideoMAEv2 must remain the declared frozen online teacher, without EMA or feature cache')
         else:
             need(record.get('teacher_is_frozen_cached_HR',record.get('teacher_is_frozen_cached')) is True,
                  'Wrong frozen teacher source')
@@ -778,7 +812,7 @@ def _hr_training_evidence(directory, study_file, *, fixed_teacher=False, trd=Fal
         need(Path(log['path'])==directory/'arm_runs'/label/'training.jsonl','Wrong arm training log path')
         rows=[json.loads(line) for line in Path(log['path']).read_text().splitlines()]
         need(len(rows)==2048,'Incomplete HR-latent training log')
-        previous=0.
+        previous=0.;previous_hr_read=0.
         for i,row in enumerate(rows,1):
             need(row['step']==i and row['arm']==label and row['weight']==weight
                  and row['data_index']==(i-1)%1641 and row['record_id']==ids[(i-1)%1641],
@@ -799,17 +833,28 @@ def _hr_training_evidence(directory, study_file, *, fixed_teacher=False, trd=Fal
                          and _hr_finite(row.get('teacher_native_timestep'))
                          and _hr_finite(row.get('teacher_sigma')) and 0<=row['teacher_sigma']<=row['sigma'],
                          'TRD teacher noise must be a finite native lower-noise timestep')
+            if videomaev2:
+                need(row.get('teacher_forward') is (label=='videomaev2')
+                     and row.get('teacher_forward_count')==(i if label=='videomaev2' else 0)
+                     and row.get('EMA_updates')==0 and type(row.get('timestep_index')) is int
+                     and _hr_finite(row.get('native_timestep')) and 0<=row['sigma']<=1
+                     and all(_hr_finite(row.get(k)) and row[k]>=0 for k in ('hr_read_seconds','cumulative_hr_read_seconds'))
+                     and row['cumulative_hr_read_seconds']>=previous_hr_read,
+                     'VideoMAEv2 row teacher/count/native timestep/HR read cost differs')
+                previous_hr_read=row['cumulative_hr_read_seconds']
             previous=row['cumulative_training_seconds']
-        if trd:
+        if trd or videomaev2:
             common=[tuple(row[k] for k in ('data_index','record_id','sigma','timestep_index','native_timestep')) for row in rows]
             if common_random_sequence is None:common_random_sequence=common
             need(common==common_random_sequence,'TRD arms must share data and native timestep sequence')
-            if label!='baseline':
+            if trd and label!='baseline':
                 target=[tuple(row[k] for k in ('teacher_sigma','teacher_timestep_index','teacher_native_timestep')) for row in rows]
                 if teacher_sequence is None:teacher_sequence=target
                 need(target==teacher_sequence,'Frozen/EMA teacher noise schedules differ')
         need(_hr_finite(record['cumulative_training_seconds'])
              and record['cumulative_training_seconds']==previous,'Final cumulative training time differs')
+        if videomaev2:
+            need(record.get('cumulative_hr_read_seconds')==previous_hr_read,'Final HR-read cost differs from all committed rows')
         checkpoints=record['checkpoint_files']
         need(len(checkpoints)==4 and [c.get('step',c.get('update')) for c in checkpoints]==[512,1024,1536,2048],
              'Require all four intermediate/final training checkpoints')
@@ -827,14 +872,17 @@ def _hr_training_evidence(directory, study_file, *, fixed_teacher=False, trd=Fal
             path=directory/'arm_runs'/label/name
             read(path);files[f'{label}/{name}']=binding(path)
         need(read(directory/'arm_runs'/label/'initialization.json')==initialization,'Initialization sidecar differs')
-        if trd:need(read(directory/'arm_runs'/label/'completion.json')==record,'Arm completion/summary differ')
+        if trd or videomaev2:need(read(directory/'arm_runs'/label/'completion.json')==record,'Arm completion/summary differ')
         files[f'{label}/training.jsonl']=log
         checked[label]={'weight':weight,'updates':2048,'checkpoint_files':cp_records,
                         'initial_student_hashes':current,'cumulative_training_seconds':previous}
         if fixed_teacher:checked[label].update(family=arm['family'],setting=arm['setting'])
         if trd:checked[label].update(family=label,setting='common',teacher_kind=label,
                                    EMA_updates=record['EMA_updates'],teacher_initial_hashes=record.get('teacher_initial_hashes'))
-    return {'schema':'wan_trd_completed_training_evidence_v1' if trd else 'hr_vae_completed_training_evidence_v1','run':str(directory),
+        if videomaev2:checked[label].update(family=label,setting='common',EMA_updates=0,
+            teacher_forward_count=record['teacher_forward_count'],teacher_parameter_updates=0,
+            teacher_binding=record['teacher_binding'],cumulative_hr_read_seconds=previous_hr_read)
+    return {'schema':'vsr_videomaev2_completed_training_evidence_v1' if videomaev2 else 'wan_trd_completed_training_evidence_v1' if trd else 'hr_vae_completed_training_evidence_v1','run':str(directory),
             'protocol_sha256':psha,'files':files,'arms':checked,'base':protocol['base'],
             'study_file':study_file,'study':study,'scientific_updates':expected_updates,
             'all_training_rows_finite_contiguous':True,
@@ -842,11 +890,11 @@ def _hr_training_evidence(directory, study_file, *, fixed_teacher=False, trd=Fal
             'all_arms_same_initial_student':True}
 
 
-def _hr_role_specs(config, evidence, *, fixed_teacher=False, trd=False, phase='val', selection=None):
+def _hr_role_specs(config, evidence, *, fixed_teacher=False, trd=False, videomaev2=False, phase='val', selection=None):
     import re
     roots=[Path(p).resolve() for p in config['allowed_checkpoint_roots']]
     need(roots and len(set(roots))==len(roots),'Declare explicit distinct allowed checkpoint roots')
-    count=(3 if phase=='test' else 1+3*len(evidence['arms'])) if (fixed_teacher or trd) else 10
+    count=((2 if videomaev2 else 3) if phase=='test' else 1+3*len(evidence['arms'])) if (fixed_teacher or trd or videomaev2) else 10
     wanted=config['roles'];need(isinstance(wanted,list) and len(wanted)==count,'Missing declared evaluated checkpoints')
     labels=set();updates=set();roles=[]
     base_config=evidence['base']['config']
@@ -881,7 +929,7 @@ def _hr_role_specs(config, evidence, *, fixed_teacher=False, trd=False, phase='v
             updates.add((arm,update))
         role=({k:item[k] for k in ('label','arm','weight','update','step','cumulative_training_seconds')}|
               {'variant':'Base','checkpoint':checkpoint,'config':cfg,'config_binding':binding(path.parent.parent/'config.json')})
-        if fixed_teacher or trd:
+        if fixed_teacher or trd or videomaev2:
             family,setting=('baseline','shared_initial') if update==0 else (evidence['arms'][arm]['family'],evidence['arms'][arm]['setting'])
             need(('family' not in item or item['family']==family) and ('setting' not in item or item['setting']==setting),
                  'Role family/setting metadata differs from its actual trained arm')
@@ -894,17 +942,18 @@ def _hr_role_specs(config, evidence, *, fixed_teacher=False, trd=False, phase='v
         selected={r['arm']:r for r in selection['selected_roles']}
         for role in roles:
             need(role['checkpoint']==selected[role['arm']]['checkpoint'],'Test checkpoint is not the selected final student')
-    if trd and phase=='test':
+    if (trd or videomaev2) and phase=='test':
         need(selection is not None,'TRD test requires a complete validation final-checkpoint lock')
         expected={(arm,2048) for arm in evidence['arms']}
         locked={r['arm']:r for r in selection['final_roles']}
-        need(set(locked)==set(evidence['arms']),'Final lock must retain all three arms without selection')
+        need(set(locked)==set(evidence['arms']),'Final lock must retain every declared arm without selection')
         for role in roles:
             need(role['checkpoint']==locked[role['arm']]['checkpoint'],'Test checkpoint differs from locked final2048')
     need(updates==expected,'All study checkpoints must be evaluated exactly once')
-    if trd:
-        ordered=([('shared',0)]+[(a,u) for a in ('baseline','frozen','ema') for u in (512,1024,2048)]
-                 if phase=='val' else [(a,2048) for a in ('baseline','frozen','ema')])
+    if trd or videomaev2:
+        arm_order=('baseline','videomaev2') if videomaev2 else ('baseline','frozen','ema')
+        ordered=([('shared',0)]+[(a,u) for a in arm_order for u in (512,1024,2048)]
+                 if phase=='val' else [(a,2048) for a in arm_order])
         need([(r['arm'],r['update']) for r in roles]==ordered,'TRD role order must retain the prospective canonical matrix')
     return roles
 
@@ -972,7 +1021,7 @@ def hr_prepare(config_path, run_dir):
 
 def _hr_is_ft(protocol):
     # Both independent studies use source-tagged clean assets and every-row MP4s.
-    return protocol['schema'] in (FT_EVALUATION_SCHEMA,TRD_EVALUATION_SCHEMA)
+    return protocol['schema'] in (FT_EVALUATION_SCHEMA,TRD_EVALUATION_SCHEMA,VMAE_EVALUATION_SCHEMA)
 
 
 def _hr_total(protocol):return protocol.get('scope',{}).get('total_restores',640)
@@ -991,6 +1040,7 @@ def _hr_gt_ids(protocol):
 
 
 def _hr_collector(protocol):
+    if protocol['schema']==VMAE_EVALUATION_SCHEMA:return vmae_collect_protocol
     if protocol['schema']==TRD_EVALUATION_SCHEMA:return trd_collect_protocol
     return ft_collect_protocol if _hr_is_ft(protocol) else hr_collect_protocol
 
@@ -1148,6 +1198,8 @@ def _hr_execute_loaded(protocol, run, psha, completed):
                         variant='Base',model_directory=cfg['model_directory'])
                     need(audit['step']==role['step'] and audit['checkpoint_sha256']==role['checkpoint']['sha256']
                          and audit['config']==role['config'] and model.projector is None,'Wrong student-only restore payload')
+                    if protocol['schema']==VMAE_EVALUATION_SCHEMA:
+                        _vmae_inference_checkpoint_audit(protocol,role,audit)
                     if protocol['schema']==TRD_EVALUATION_SCHEMA:
                         _trd_inference_checkpoint_audit(protocol,role,audit)
                     model.eval();inference=copy.deepcopy(role['config']);inference['model']['local_dir']=cfg['model_directory']
@@ -1649,6 +1701,203 @@ def trd_build_config(*, training_run, phase, output, run_root, validation_run=No
             'roles':len(roles),'restores':len(roles)*64,'training_updates':0,'metrics_used_for_selection':False}
 
 
+
+def _vmae_inference_checkpoint_audit(protocol, role, audit):
+    """A training-only teacher/head is never selected as inference weights."""
+    need(audit.get('training_only_state_restored') is False and audit.get('EMA_weights_selected') is False,
+         'VideoMAEv2 inference must restore only the current student')
+    if role['update']==0:return
+    state=audit.get('videomaev2_training_metadata',{})
+    need(state.get('schema')=='vsr_videomaev2_training_state_v1'
+         and state.get('protocol_sha256')==protocol['training_evidence']['protocol_sha256']
+         and state.get('arm')==role['arm'] and state.get('completed_updates')==role['update']
+         and state.get('training_seed')==20261102 and state.get('weight')==role['weight']
+         and state.get('student_layer')==17
+         and state.get('EMA_updates')==0
+         and state.get('teacher_parameter_updates')==0
+         and state.get('teacher_forward_count')==(role['update'] if role['arm']=='videomaev2' else 0),
+         'VideoMAEv2 checkpoint training-only identity differs from its declared role')
+
+
+def vmae_collect_protocol(config_path, run_dir):
+    """Bind two prospective online-teacher arms; no metric-driven selection."""
+    from .data import FixedCleanReader
+    config_path=Path(config_path).resolve();cfg=read(config_path);run=Path(run_dir).resolve()
+    need(cfg.get('schema')=='vsr_videomaev2_evaluation_config_v1','Explicit VideoMAEv2 evaluation config schema required')
+    phase=cfg['phase'];need(phase in ('val','test'),'Explicit VideoMAEv2 val/test phase required')
+    run_root=Path(cfg['run_root']).resolve()
+    need(run!=run_root and run.is_relative_to(run_root),'Evaluation must be a new child of its output root')
+    need(str(cfg['device']).startswith('cuda:') and str(cfg['device'])[5:].isdigit()
+         and Path(cfg['gpu_lock']).is_absolute() and cfg['gpu_admission'].get('expected_gpu_uuid'),
+         'Explicit CUDA device, shared lock and pinned host UUID required')
+    study_file=_hr_binding(cfg['study_config'])
+    training=_hr_training_evidence(cfg['training_run'],study_file,videomaev2=True)
+    study=training['study'];evaluation=study['evaluation']
+    need(evaluation['test_prior_exposure']=='historical_models_previously_evaluated',
+         'Disclose historical model and pixel access to these reused test sources')
+    seal_binding=binding(cfg['seal']);dataset_binding=binding(cfg['dataset'])
+    lock=None;lock_binding=None
+    if phase=='val':
+        need(seal_binding==_hr_binding(evaluation['validation_seal'])
+             and dataset_binding==_hr_binding(evaluation['validation_dataset']),
+             'Validation inputs changed after prospective study freeze')
+    else:
+        lock_binding=_hr_binding(cfg['finals_receipt']);lock=read(lock_binding['path'])
+        expected=_vmae_finals_payload(cfg['validation_run'])
+        need(lock==expected and lock['study_file']==study_file,
+             'Test final lock must reproduce complete validation and the exact study')
+        need(seal_binding==_hr_binding(evaluation['test_cohort_plan'])
+             and dataset_binding==_hr_binding(evaluation['test_dataset'])
+             and lock['test_cohort_plan']==seal_binding and lock['test_dataset']==dataset_binding,
+             'Previously materialized test inputs changed after prospective freeze')
+    roles=_hr_role_specs(cfg,training,videomaev2=True,phase=phase,selection=lock)
+    mapping=cfg.get('path_map',{})
+    reader=FixedCleanReader(cfg['dataset'],expected_split=phase,cohort_seal=cfg['seal'],
+                           path_map=mapping,expected_dataset_sha256=dataset_binding['sha256'])
+    try:description=reader.describe()
+    finally:reader.close()
+    cohort,assets=description['cohort'],description['assets']
+    need(description['source_split']==phase and description['dataset_binding']==dataset_binding
+         and len(cohort)==len(assets)==32,'Complete32 source-tagged clean clips required')
+    ids=[x['record']['id'] for x in cohort]
+    need(len(set(ids))==len({x['record']['source_id'] for x in cohort})==32
+         and {x['record_id'] for x in assets}==set(ids),'Require32 distinct sources without row selection')
+    bindings=[]
+    for item in assets:bindings.extend([_hr_binding(item['HR']),_hr_binding(item['clean'])])
+    need(not run.is_relative_to(Path(cfg['dataset']).resolve().parent),'Output cannot overwrite clean inputs')
+    text=_hr_binding(cfg['text_cache'])
+    need(all(r['config']['data']['text_cache']['sha256']==text['sha256'] for r in roles),'Fixed native text cache changed')
+    weights=cfg['metric_weights'];need(set(weights)=={'alexnet','linear'},'Explicit frozen LPIPS weights required')
+    videos=[x['record']['id'] for x in sorted(cohort,key=lambda r:r['record']['source_id'])[:3]]
+    if 'fixed_video_clip_ids' in cfg:need(cfg['fixed_video_clip_ids']==videos,'Predeclared comparison clips changed')
+    protocol={'schema':VMAE_EVALUATION_SCHEMA,'phase':phase,'config':cfg,'config_binding':binding(config_path),
+        'sources':_hr_sources(),'study_file':study_file,'training_evidence':training,'roles':roles,
+        'cohort_seal':seal_binding,'cohort_seal_digest':description['seal_digest'],'cohort':cohort,
+        'dataset':dataset_binding,'clean_assets':assets,'assets':bindings,'path_map':mapping,
+        'text_cache':text,'metric_weights':{k:_hr_binding(v) for k,v in weights.items()},
+        'official_model':model_bindings(cfg['model_directory']),
+        'runtime':runtime_bindings(cfg.get('dependency_root')),'strict_environment':STRICT_ENVIRONMENT,
+        'fixed_video_clip_ids':videos,
+        'data_independence':{'reader':description['data_independence'],'source_split':phase,
+            'test_prior_exposure':evaluation['test_prior_exposure'],'historically_pristine_test':False,
+            'test_assets_previously_materialized':True,'this_study_weight_selection':False,
+            'test_scoring_requires_complete_validation_lock':True},
+        'scope':{'roles':len(roles),'clips':32,'sampling_seeds':[42,43],'conditions':['clean'],
+            'total_restores':len(roles)*64,'source_split':phase,'frames':33,
+            'HR_hw':[128,224],'LR_hw':[32,56],'steps':20,'CFG':1.,'tile_hw':[256,448],
+            'overlap':64,'primary_pool':'all33_frames','primary_metric':'lpips_alex_v0_1',
+            'video_policy':'all_clips','training_updates':0,'row_resume_same_protocol_allowed':True,
+            'weight_or_checkpoint_selection':False,'old_EMA_G2_G3_G4_applied':False,
+            'source_windows':'complete frozen33-frame clips, not full source videos'}}
+    need(protocol['scope']['total_restores']==(448 if phase=='val' else 128),'VideoMAEv2 matrix budget changed')
+    if phase=='test':protocol.update(finals_receipt=lock_binding,validation_final_lock=lock)
+    return protocol
+
+
+def vmae_prepare(config_path, run_dir):
+    run=Path(run_dir).resolve();need(not run.exists(),'Use a new VideoMAEv2 evaluation directory')
+    protocol=vmae_collect_protocol(config_path,run);run.mkdir(parents=True)
+    save(run/'protocol.json',protocol)
+    result={'status':'planned','protocol_sha256':sha(run/'protocol.json'),'run_dir':str(run),
+            'phase':protocol['phase'],'restores':0,'training_updates':0}
+    save(run/'status.json',result);return result
+
+
+def vmae_execute(run_dir, expected_protocol_sha, *, resume=False):
+    return hr_execute(run_dir,expected_protocol_sha,resume=resume,_schema=VMAE_EVALUATION_SCHEMA)
+
+
+def vmae_verify(run_dir):
+    result=hr_verify(run_dir,_schema=VMAE_EVALUATION_SCHEMA)
+    run=Path(run_dir).resolve();protocol=read(run/'protocol.json')
+    need(protocol['phase'] in ('val','test')
+         and result['restores']==(448 if protocol['phase']=='val' else 128),'VideoMAEv2 complete matrix required')
+    for role in protocol['roles']:
+        audits=list((run/'roles'/role['label']).glob('load_audit_*.json'))
+        need(audits,'Missing VideoMAEv2 student checkpoint load audit')
+        for path in audits:
+            audit=read(path)
+            need(audit['step']==role['step'] and audit['checkpoint_sha256']==role['checkpoint']['sha256']
+                 and audit['config']==role['config'],'VideoMAEv2 persisted load audit differs from its role')
+            _vmae_inference_checkpoint_audit(protocol,role,audit)
+    return result|{'training_only_checkpoint_roles_verified':True,'both_arms_retained':True,
+                   'weight_or_checkpoint_selection':False}
+
+
+def _vmae_finals_payload(validation_run):
+    """Completion lock only: keep every predefined final, without reading scores."""
+    run=Path(validation_run).resolve();verification=vmae_verify(run)
+    protocol=read(run/'protocol.json')
+    need(protocol['phase']=='val' and verification['restores']==448,
+         'Final lock requires the entire448-row validation matrix')
+    study=read(protocol['study_file']['path']);evaluation=study['evaluation']
+    finals=[r for r in protocol['roles'] if r['update']==2048]
+    need([r['arm'] for r in finals]==['baseline','videomaev2']
+         and len(finals)==2 and all(r['step']==2048 for r in finals),
+         'Retain baseline/VideoMAEv2 final2048 in prospective order, without selection')
+    return {'schema':'vsr_videomaev2_validation_final_lock_v1','study_file':protocol['study_file'],
+        'validation_run':str(run),'validation_protocol':binding(run/'protocol.json'),
+        'validation_status':binding(run/'status.json'),'validation_summary':binding(run/'summary.json'),
+        'validation_observations':binding(run/'observations.json'),'validation_verification':verification,
+        'runtime_sources':protocol['sources'],'test_cohort_plan':_hr_binding(evaluation['test_cohort_plan']),
+        'test_dataset':_hr_binding(evaluation['test_dataset']),
+        'final_roles':[{k:r[k] for k in ('label','arm','family','setting','weight','step','update',
+                       'cumulative_training_seconds','checkpoint','config_binding')} for r in finals],
+        'selection_rule':'none; both prospective final2048 checkpoints',
+        'metric_values_used_to_select':False,'test_pixels_read_by_lock':False,
+        'test_prior_exposure':evaluation['test_prior_exposure'],'pristine_test_claimed':False,
+        'training_seed_repetitions':1}
+
+
+def vmae_lock_finals(validation_run, output):
+    output=Path(output).resolve();need(not output.exists(),'Final lock receipts are immutable; use a new path')
+    payload=_vmae_finals_payload(validation_run);save(output,payload)
+    return {'status':'all_finals_locked_after_complete_validation','receipt':binding(output),
+            'final_roles':payload['final_roles'],'metric_values_used_to_select':False}
+
+
+def vmae_build_config(*, training_run, phase, output, run_root, validation_run=None, finals_receipt=None):
+    """Create a metadata config from complete training; never execute or select scores."""
+    need(phase in ('val','test'),'Explicit val/test phase required')
+    destination=Path(output).resolve();need(not destination.exists(),'Config is immutable; use a new output path')
+    training=Path(training_run).resolve();protocol=read(training/'protocol.json')
+    study_file=_hr_binding(protocol['study_file']);evidence=_hr_training_evidence(training,study_file,videomaev2=True)
+    study=evidence['study'];evaluation=study['evaluation']
+    roles=[]
+    if phase=='val':
+        roles.append({'label':'shared_initial','arm':'shared','weight':0.,'step':8192,'update':0,
+            'checkpoint':evidence['base']['checkpoint'],'cumulative_training_seconds':0.})
+        for arm in ('baseline','videomaev2'):
+            item=evidence['arms'][arm]
+            for cp in item['checkpoint_files']:
+                if cp['step'] not in (512,1024,2048):continue
+                roles.append({'label':f"{arm}_{cp['step']:06d}",'arm':arm,'weight':item['weight'],
+                    'step':cp['step'],'update':cp['step'],'checkpoint':{k:cp[k] for k in ('path','bytes','sha256')},
+                    'cumulative_training_seconds':cp['cumulative_training_seconds']})
+    else:
+        need(validation_run is not None and finals_receipt is not None,'Test requires verified complete validation lock')
+        lock_binding=_hr_binding({'path':str(Path(finals_receipt).resolve()),'sha256':sha(finals_receipt)})
+        receipt=read(lock_binding['path']);expected=_vmae_finals_payload(validation_run)
+        need(receipt==expected and receipt['study_file']==study_file,'Final receipt differs from full validation')
+        roles=[{k:r[k] for k in ('label','arm','family','setting','weight','step','update','checkpoint','cumulative_training_seconds')}
+               for r in receipt['final_roles']]
+    roots=list(dict.fromkeys([str(Path(study['allowed_base_root']).resolve()),str(training)]))
+    cfg={'schema':'vsr_videomaev2_evaluation_config_v1','phase':phase,'run_root':str(Path(run_root).resolve()),
+        'study_config':study_file,'training_run':str(training),'roles':roles,'allowed_checkpoint_roots':roots,
+        'seal':_hr_binding(evaluation['validation_seal' if phase=='val' else 'test_cohort_plan'])['path'],
+        'dataset':_hr_binding(evaluation['validation_dataset' if phase=='val' else 'test_dataset'])['path'],
+        'text_cache':_hr_binding(evidence['base']['config']['data']['text_cache']),
+        'metric_weights':{k:_hr_binding(v) for k,v in study['metric_weights'].items()},
+        'model_directory':study['model_directory'],'device':study['device'],'gpu_lock':study['gpu_lock'],
+        'gpu_admission':protocol['admission'],'dependency_root':study.get('dependency_root','/home/hugo/Projects/VSR/.deps'),
+        'path_map':{}}
+    if phase=='test':cfg.update(validation_run=str(Path(validation_run).resolve()),finals_receipt=lock_binding)
+    _hr_role_specs(cfg,evidence,videomaev2=True,phase=phase,selection=receipt if phase=='test' else None)
+    save(destination,cfg)
+    return {'status':'metadata_config_created_no_execution','config':binding(destination),'phase':phase,
+            'roles':len(roles),'restores':len(roles)*64,'training_updates':0,'metrics_used_for_selection':False}
+
+
 def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command',required=True)
@@ -1687,12 +1936,31 @@ def build_parser():
     p.add_argument('--run-dir',type=Path,required=True)
     p=sub.add_parser('trd-lock-finals',help='lock all three final2048 students after full validation, without score selection')
     p.add_argument('--validation-run',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
+    p=sub.add_parser('vmae-build-config',help='metadata-only val448/test128 config from completed online VideoMAEv2 study')
+    p.add_argument('--training-run',type=Path,required=True);p.add_argument('--phase',choices=('val','test'),required=True)
+    p.add_argument('--output',type=Path,required=True);p.add_argument('--run-root',type=Path,required=True)
+    p.add_argument('--validation-run',type=Path);p.add_argument('--finals-receipt',type=Path)
+    p=sub.add_parser('vmae-prepare',help='bind baseline/online-VideoMAEv2 val448 or all-final test128 metadata')
+    p.add_argument('--config',type=Path,required=True);p.add_argument('--run-dir',type=Path,required=True)
+    p=sub.add_parser('vmae-execute',help='execute or resume verified same-protocol VideoMAEv2 evaluation rows')
+    p.add_argument('--run-dir',type=Path,required=True);p.add_argument('--expected-protocol-sha',required=True)
+    p.add_argument('--resume',action='store_true')
+    p=sub.add_parser('vmae-verify',help='verify all VideoMAEv2-study rows, PNGs, MP4s and student-only identities')
+    p.add_argument('--run-dir',type=Path,required=True)
+    p=sub.add_parser('vmae-lock-finals',help='lock both final2048 students after full validation, without score selection')
+    p.add_argument('--validation-run',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
     return parser
 
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
-    if args.command == 'trd-build-config': result = trd_build_config(training_run=args.training_run,phase=args.phase,
+    if args.command == 'vmae-build-config': result = vmae_build_config(training_run=args.training_run,phase=args.phase,
+        output=args.output,run_root=args.run_root,validation_run=args.validation_run,finals_receipt=args.finals_receipt)
+    elif args.command == 'vmae-prepare': result = vmae_prepare(args.config,args.run_dir)
+    elif args.command == 'vmae-execute': result = vmae_execute(args.run_dir,args.expected_protocol_sha,resume=args.resume)
+    elif args.command == 'vmae-verify': result = vmae_verify(args.run_dir)
+    elif args.command == 'vmae-lock-finals': result = vmae_lock_finals(args.validation_run,args.output)
+    elif args.command == 'trd-build-config': result = trd_build_config(training_run=args.training_run,phase=args.phase,
         output=args.output,run_root=args.run_root,validation_run=args.validation_run,finals_receipt=args.finals_receipt)
     elif args.command == 'trd-prepare': result = trd_prepare(args.config,args.run_dir)
     elif args.command == 'trd-execute': result = trd_execute(args.run_dir,args.expected_protocol_sha,resume=args.resume)

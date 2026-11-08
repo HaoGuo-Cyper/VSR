@@ -416,6 +416,55 @@ class PreparedTrainingData(Sequence):
         while len(self._cache) > 2: self._cache.popitem(last=False)
         return {key:value.clone() for key,value in self._cache[index].items()}
 
+    def hr_rgb_binding(self,index):
+        """Bind only a training HR crop to the exact FM record/window/cache seal."""
+        index=operator.index(index)
+        if not 0<=index<len(self):raise IndexError(index)
+        raw=self._json(f'clip_{index}/metadata.json')
+        _need(raw==self._metadata[index] and raw['split']=='train'
+              and raw['record_id']==self.ids[index],'Online HR differs from the FM training record')
+        rgb_name=f'clip_{index}/paired_rgb.pt'
+        rgb=self._verified(rgb_name)
+        latent_name=f'clip_{index}/fresh_latents.pt'
+        _need(latent_name in self._hashes,'Online HR has no sealed matching FM latent')
+        return {'schema':'vsr_sealed_online_HR_v1','index':index,'record_id':raw['record_id'],
+                'source_id':raw['source_id'],'split':'train','source_indices':copy.deepcopy(raw['source_indices']),
+                'crop_tlhw':copy.deepcopy(raw['crop_tlhw']),'source_hw':copy.deepcopy(raw.get('source_hw')),
+                'resize_hw':copy.deepcopy(raw.get('resize_hw')),'source_sha256':raw.get('source_sha256'),
+                'temporal_stride':raw['temporal_stride'],'degradation':copy.deepcopy(raw['degradation']),
+                'FM_binding':copy.deepcopy(raw['binding']),'cache_root':str(self.root),
+                'cache_seal_sha256':self.seal_sha256,
+                'metadata_sha256':self._hashes[f'clip_{index}/metadata.json'],
+                'paired_RGB':{'path':str(rgb),'bytes':rgb.stat().st_size,'sha256':self._hashes[rgb_name]},
+                'FM_latent_sha256':self._hashes[latent_name],
+                'HR_shape':[1,3,33,128,224],'HR_dtype':'torch.float32','HR_range':[0,1],
+                'augmentation':'same_sealed_FM_region_no_new_random_augmentation','teacher_features_cached':False}
+
+    def hr_rgb(self,index):
+        """Stream a sealed CPU [0,1] HR tensor; do not decode or cache features."""
+        binding=self.hr_rgb_binding(index)
+        payload=torch.load(binding['paired_RGB']['path'],map_location='cpu',weights_only=True)
+        _need(isinstance(payload,dict) and set(payload)=={'hr','lr','lr_up'},
+              'Sealed paired RGB payload must contain the producer HR/LR/LRup triple')
+        hr=payload['hr']
+        _need(isinstance(hr,torch.Tensor) and tuple(hr.shape)==(1,3,33,128,224)
+              and hr.dtype==torch.float32 and hr.device.type=='cpu' and not hr.requires_grad
+              and bool(torch.isfinite(hr).all()) and float(hr.min())>=0 and float(hr.max())<=1,
+              'Invalid sealed online HR tensor shape/dtype/range')
+        return hr.contiguous()
+
+    def verify_hr_rgb_assets(self):
+        """Complete training-only bytes/provenance audit, without teacher tensors."""
+        records=[]
+        for index in range(len(self)):
+            binding=self.hr_rgb_binding(index)
+            self._verified(f'clip_{index}/fresh_latents.pt')
+            records.append(binding)
+        return {'schema':'vsr_online_HR_asset_audit_v1','training_count':len(records),
+                'cache_root':str(self.root),'cache_seal_sha256':self.seal_sha256,
+                'records':records,'validation_or_test_RGB_loaded':False,
+                'RGB_payload_deserialized':False,'teacher_forward_calls':0,'teacher_features_cached':False}
+
     def close(self):
         self._cache.clear()
 

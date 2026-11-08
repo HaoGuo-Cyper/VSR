@@ -455,3 +455,210 @@ def select_paired_teacher_timestep(scheduler, student_index, *, ratio=.5):
             'requested_sigma_ratio':float(ratio),'requested_teacher_sigma':target_sigma,
             'realized_sigma_ratio':teacher_sigma/student_sigma if student_sigma > 0 else None,
             'paired_grid_entries':1000,'tie_rule':'absolute_distance_then_smaller_sigma_then_smaller_index'}
+
+
+VIDEOMAEV2_SOURCE_REVISION = '8d581dc301e18546a1808436c724f59d259d09f9'
+VIDEOMAEV2_SOURCE_SHA256 = 'a2d7cb25263bc96566c6dcfd3ce163c3fc32ebd016a4e0603443abbce48673f7'
+VIDEOMAEV2_WEIGHT_REVISION = '706cc172d65ebd4dedbee3f9c0183a93df9fa125'
+VIDEOMAEV2_WEIGHT_SHA256 = '8141a6955e0700d11bf15928fe6d61e5cfe482606fed8cfdddb1b922c0fd88ec'
+VIDEOMAEV2_WEIGHT_BYTES = 173574417
+
+
+@contextmanager
+def _videomaev2_initialization_rng(seed=20261102):
+    """CPU construction is independent of all public Python/NumPy/Torch draws."""
+    import random
+    import numpy as np
+    py, numpy_state = random.getstate(), np.random.get_state()
+    try:
+        with torch.random.fork_rng(devices=[]), torch.device('cpu'):
+            torch.random.default_generator.manual_seed(seed)
+            yield
+    finally:
+        random.setstate(py)
+        np.random.set_state(numpy_state)
+
+
+def _videomaev2_tensor_sha(value):
+    import hashlib
+    _require(value.device.type == 'cpu' and value.dtype == torch.float32,
+             'Position binding requires CPU FP32 tensor bytes')
+    return hashlib.sha256(value.detach().contiguous().numpy().tobytes()).hexdigest()
+
+
+def videomaev2_feature_spec():
+    return {'input_shape':[1,3,33,128,224], 'input_range':'RGB_float32_0_1',
+            'input_frame_indices':list(range(1,33)), 'resize':False, 'crop':False,
+            'rgb_mean':[.485,.456,.406], 'rgb_std':[.229,.224,.225],
+            'normalized_shape':[1,3,32,128,224], 'tubelet_size':2, 'patch_size':16,
+            'nominal_tubelets':[list(range(i,i+2)) for i in range(1,33,2)],
+            'grid':[16,8,14], 'channels':768, 'token_order':'T,H,W',
+            'output_shape':[1,1792,768], 'feature':'last_transformer_block_before_final_norm_or_pooling',
+            'CLS_included':False, 'teacher_precision':'FP32_autocast_disabled',
+            'teacher_attention':'official_eager_qkv_softmax', 'target_cached':False,
+            'exact_VAE_receptive_field_match_claimed':False}
+
+
+def videomaev2_preprocess_hr(hr):
+    """Use sealed [0,1] RGB directly, discard frame0 only in the teacher view."""
+    _require(isinstance(hr,torch.Tensor) and tuple(hr.shape)==(1,3,33,128,224)
+             and hr.dtype==torch.float32 and not hr.requires_grad,
+             'VideoMAEv2 needs detached FP32 HR [1,3,33,128,224]')
+    _require(bool(torch.isfinite(hr).all()) and float(hr.min())>=0 and float(hr.max())<=1,
+             'VideoMAEv2 HR must be finite RGB in [0,1]')
+    mean=hr.new_tensor([.485,.456,.406]).view(1,3,1,1,1)
+    std=hr.new_tensor([.229,.224,.225]).view(1,3,1,1,1)
+    return ((hr[:,:,1:]-mean)/std).contiguous()
+
+
+def videomaev2_position_embedding(original):
+    """Official order: original flattened sincos -> bicubic HW -> trilinear T.
+
+    Original VideoREPA hardcodes24x10x15. This declared Wan adaptation changes
+    only destination sizes to16x8x14; it never creates a new1792-point sincos.
+    """
+    import torch.nn.functional as F
+    _require(isinstance(original,torch.Tensor) and tuple(original.shape)==(1,1568,768)
+             and original.dtype==torch.float32 and not original.requires_grad,
+             'Original VideoMAEv2 position tensor must be FP32 [1,8*14*14,768]')
+    _require(bool(torch.isfinite(original).all()),'Nonfinite original positions')
+    with torch.autocast(original.device.type,enabled=False):
+        p=original.reshape(1,8,14,14,768).reshape(8,14,14,768).permute(0,3,1,2)
+        p=F.interpolate(p,size=(8,14),mode='bicubic',align_corners=False)
+        p=p.permute(0,2,3,1).reshape(1,8,8,14,768).permute(0,4,1,2,3)
+        p=F.interpolate(p,size=(16,8,14),mode='trilinear',align_corners=False)
+        return p.permute(0,2,3,4,1).reshape(1,1792,768).contiguous().detach()
+
+
+def _videomaev2_official_module(source_path):
+    import hashlib, importlib.util, sys
+    from pathlib import Path
+    path=Path(source_path).resolve()
+    _require(path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest()==VIDEOMAEV2_SOURCE_SHA256,
+             'VideoMAEv2 official encoder source SHA differs')
+    name='_vsr_official_videomaev2_'+VIDEOMAEV2_SOURCE_REVISION
+    module=sys.modules.get(name)
+    if module is not None:
+        _require(Path(module.__file__).resolve()==path,'VideoMAEv2 imported source path changed')
+        return module
+    spec=importlib.util.spec_from_file_location(name,path)
+    _require(spec is not None and spec.loader is not None,'Cannot import bound VideoMAEv2 source')
+    module=importlib.util.module_from_spec(spec)
+    sys.modules[name]=module
+    try:
+        with _videomaev2_initialization_rng():spec.loader.exec_module(module)
+    except BaseException:
+        sys.modules.pop(name,None)
+        raise
+    return module
+
+
+def videomaev2_teacher_binding(source_path,checkpoint_path):
+    """Verify exact public assets; derive positions on CPU, no model/forward."""
+    import hashlib, importlib.metadata
+    from pathlib import Path
+    source,weight=Path(source_path).resolve(),Path(checkpoint_path).resolve()
+    _require(weight.is_file() and weight.stat().st_size==VIDEOMAEV2_WEIGHT_BYTES,
+             'Wrong official VideoMAEv2-B checkpoint size')
+    with weight.open('rb') as f: weight_sha=hashlib.file_digest(f,'sha256').hexdigest()
+    _require(weight_sha==VIDEOMAEV2_WEIGHT_SHA256,'Wrong official VideoMAEv2-B checkpoint SHA')
+    module=_videomaev2_official_module(source)
+    with _videomaev2_initialization_rng():
+        original=module.get_sinusoid_encoding_table(1568,768)
+        adapted=videomaev2_position_embedding(original)
+    return {'schema':'vsr_videomaev2_teacher_v1','architecture':'vit_base_patch16_224',
+            'source_revision':VIDEOMAEV2_SOURCE_REVISION,'weight_revision':VIDEOMAEV2_WEIGHT_REVISION,
+            'source':{'path':str(source),'bytes':source.stat().st_size,'sha256':VIDEOMAEV2_SOURCE_SHA256},
+            'weights':{'path':str(weight),'bytes':weight.stat().st_size,'sha256':weight_sha},
+            'encoder_load_contract':{'checkpoint_container':'module','optional_prefix':'module.',
+                'excluded_keys':['fc_norm.bias','fc_norm.weight','head.bias','head.weight'],
+                'strict':True,'encoder_state_keys':158,'encoder_parameters':86225664,
+                'depth':12,'width':768,'heads':12,'FP32_parameters':True},
+            'position_embedding':{'origin':'official_flattened_1D_sincos1568_not_checkpoint_parameter',
+                'original_shape':[1,1568,768],'original_sha256':_videomaev2_tensor_sha(original),
+                'shape':[1,1792,768],'dtype':'torch.float32','sha256':_videomaev2_tensor_sha(adapted),
+                'spatial':'bicubic_14x14_to8x14_align_cornersFalse',
+                'temporal':'trilinear8_to16_align_cornersFalse','learned':False},
+            'feature_spec':videomaev2_feature_spec(),
+            'runtime':{k:importlib.metadata.version(k) for k in ('torch','numpy','timm')}}
+
+
+class VideoMAEv2Teacher(torch.nn.Module):
+    """Online official frozen encoder, loaded only by an explicit constructor.
+
+    Never calls official from_pretrained (which hardcodes another grid and a
+    non-strict load). Last-block features use forward_features, without head.
+    """
+    def __init__(self,binding,device='cpu'):
+        super().__init__()
+        import copy
+        actual=videomaev2_teacher_binding(binding['source']['path'],binding['weights']['path'])
+        _require(actual==binding,'VideoMAEv2 teacher binding changed')
+        self._binding=copy.deepcopy(binding)
+        module=_videomaev2_official_module(binding['source']['path'])
+        with _videomaev2_initialization_rng():model=module.vit_base_patch16_224()
+        raw=torch.load(binding['weights']['path'],map_location='cpu',weights_only=True)
+        _require(isinstance(raw,dict) and isinstance(raw.get('module'),dict),'Wrong VideoMAEv2 checkpoint container')
+        state={k[7:] if k.startswith('module.') else k:v for k,v in raw['module'].items()}
+        _require(len(state)==len(raw['module'])==162,'VideoMAEv2 checkpoint duplicate or unexpected keys')
+        expected=model.state_dict();extra=sorted(set(state)-set(expected))
+        _require(len(expected)==158 and not (set(expected)-set(state))
+                 and extra==binding['encoder_load_contract']['excluded_keys'],
+                 'VideoMAEv2 must exclude only fc_norm/head and strictly load all encoder keys')
+        _require(all(isinstance(v,torch.Tensor) and v.shape==expected[k].shape
+                     and v.is_floating_point() and bool(torch.isfinite(v).all())
+                     for k,v in state.items() if k in expected),'VideoMAEv2 encoder tensor shape/value differs')
+        model.load_state_dict({k:state[k] for k in expected},strict=True)
+        _require(sum(p.numel() for p in model.parameters())==86225664,
+                 'VideoMAEv2 encoder parameter count differs')
+        _require(all(torch.equal(v,state[k].to(v.dtype)) for k,v in model.state_dict().items()),
+                 'VideoMAEv2 strict loading changed checkpoint values')
+        original=model.pos_embed
+        _require(_videomaev2_tensor_sha(original)==binding['position_embedding']['original_sha256'],
+                 'Original VideoMAEv2 positions changed')
+        position=videomaev2_position_embedding(original)
+        _require(_videomaev2_tensor_sha(position)==binding['position_embedding']['sha256'],
+                 'Derived VideoMAEv2 positions changed')
+        del raw,state,expected
+        self.model=model.requires_grad_(False).eval().to(device=device,dtype=torch.float32)
+        # Official pos_embed is not a parameter/buffer: explicitly place and bind it.
+        self.model.pos_embed=position.to(device=device,dtype=torch.float32)
+        self.forward_count=0
+        self.parameter_updates=0
+        self.train(False)
+        self._versions=self._signature()
+
+    @property
+    def binding(self):
+        import copy
+        return copy.deepcopy(self._binding)
+
+    def train(self,mode=True):return super().train(False)
+
+    def _signature(self):
+        return tuple((n,p.data_ptr(),p._version,p.dtype,p.device,tuple(p.shape),p.requires_grad)
+                     for n,p in self.model.named_parameters()) + (('position',self.model.pos_embed.data_ptr(),
+                     self.model.pos_embed._version,self.model.pos_embed.dtype,self.model.pos_embed.device,
+                     tuple(self.model.pos_embed.shape),self.model.pos_embed.requires_grad),)
+
+    @torch.no_grad()
+    def features(self,hr):
+        _require(self.model is not None and not self.training
+                 and all(not module.training for module in self.model.modules())
+                 and all(not p.requires_grad and p.grad is None and p.dtype==torch.float32 for p in self.model.parameters()),
+                 'VideoMAEv2 must remain frozen eval FP32')
+        _require(self._signature()==self._versions,'Frozen VideoMAEv2 parameters/positions mutated')
+        device=next(self.model.parameters()).device
+        with torch.autocast(device.type,enabled=False):
+            frames=videomaev2_preprocess_hr(hr.to(device=device))
+            features=self.model.forward_features(frames)
+        _require(tuple(features.shape)==(1,1792,768) and features.dtype==torch.float32
+                 and not features.requires_grad and bool(torch.isfinite(features).all()),
+                 'VideoMAEv2 last-block target shape/dtype/value differs')
+        _require(self._signature()==self._versions,'VideoMAEv2 forward mutated frozen state')
+        self.forward_count+=1
+        return features.detach()
+
+    def close(self):
+        self.model=None
+        self._versions=()

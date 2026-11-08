@@ -1,0 +1,31 @@
+{
+  "schema": "videomaev2_training_CPU_review_v1",
+  "status": "passed",
+  "tests": 10,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "seconds": 12.468419592943974,
+  "CUDA_initialized": false,
+  "official_teacher_forward": 0,
+  "production_optimizer_updates": 0,
+  "scope": "TinyWan CPU synthetic trajectories; mocked preflight resources/checkpoint persistence. Production teacher/CP separately covered.",
+  "sources": {
+    "vsr/train.py": "943f4d087cc2ac40b76499d0ff70ad306ed21686591ab8bacfd35027ba8c3d47",
+    "vsr/teacher.py": "23e46cb92b59ad814752d2f59d1e25976bb153936616015f9dedc1f7e7415cac",
+    "vsr/losses.py": "bca592300cb79ad5e0b13ae6c423566e9ad96a3ec966739e328f674f835e5983",
+    "vsr/data.py": "9e3433b17a76fab831ba0ccca00dbff7d7643061ab7b80829bea474f782795ff",
+    "vsr/checkpoints.py": "69eb3cdfcf0b030c299b4574a42417fb0850af418c92f6b92ef119a8df17e574",
+    "tests/test_videomaev2_training.py": "04ed5f446bca6e231a96aca7c716ed211562afd2cbfd151e735d2c0bbbfa966f"
+  },
+  "coverage": [
+    "Original NoRef baseline vs both zero-weight labels: 3 updates, all shared parameters/AdamW/4RNG exact",
+    "Teacher-before-student, no forced-input RNG draws; BF16 student Gram/FP32 teacher Gram and loss",
+    "Auxiliary gradient reaches student and all head tensors; frozen teacher unchanged",
+    "All Python/NumPy/Torch global RNG restored after native constructor success/failure",
+    "Loss and post-optimizer nonfinite failures retain accurate applied/returned distinction and cleanup",
+    "Full mocked preflight: 26 applied/returned updates,31 teacher calls,15cases/30VJP, resume equality",
+    "Zero-score metadata target gate; no weight calibration",
+    "Synchronized timer includes teacher inside Step"
+  ]
+}

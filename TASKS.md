@@ -251,3 +251,13 @@ Preflight protocolSHA `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361c
 - [x] P6: independent832rows/75CI,2112PNG regression,6fixedvideos/rootactual33-frameROI andcurves, finalreport/reproduction andcomplete text publication prepared; final closure commit carries this record. Evidence insufficient versus baseline, no acceleration.
 - [x] V1: independently reviewed prospectiveVideoMAEv2 plan unchanged; currentstudy closed before next numericalimplementation.
 - [~] V2: authorized nextisolatedimplementation; newGPU work onlyafter CPU/preflight checks.
+
+
+## Active VideoMAEv2 / Wan adaptation — 2026-11-08
+
+- [x] V0 Prior Wan TRD P6 complete and published c4b66a1e; independent prospective plan/official resource CPU review complete.
+- [x] V1 Independent10-module implementation and targeted CPU/independent reviews complete; actualmetadata1641HR/source chain verified, no newGPU yet.
+- [~] V2 Prepare/review unique26-update GPU preflight,15targetcases/30VJP/31teacherforwards; normal passed-gate continuation authorized.
+- [ ] V3 Two fresh matched2048-step arms,4096scientific/8CP; full audit.
+- [ ] V4 Completeval448, bothfinal2048 lock, test128 andnativeverify.
+- [ ] V5 Independentstats/costs/two curves/6fixedvideos/actualvisual/reproducible report/text sync. No extraarm/weight/EMA ormultiseed.

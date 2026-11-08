@@ -1282,12 +1282,21 @@ def build_parser():
         if name=='trd-prepare':command.add_argument('--config',type=Path,required=True)
         else:command.add_argument('--expected-protocol-sha',required=True)
         if name=='trd-execute':command.add_argument('--resume',action='store_true')
+    for name in ('vmae-prepare','vmae-preflight','vmae-execute'):
+        command=sub.add_parser(name,help='Frozen official VideoMAEv2 / Wan VSR adaptation')
+        command.add_argument('--run-dir',type=Path,required=True)
+        if name=='vmae-prepare':command.add_argument('--config',type=Path,required=True)
+        else:command.add_argument('--expected-protocol-sha',required=True)
+        if name=='vmae-execute':command.add_argument('--resume',action='store_true')
     return parser
 
 
 def main(argv=None):
     args=build_parser().parse_args(argv)
-    if args.command=='trd-prepare':result=prepare_trd(args.config,args.run_dir)
+    if args.command=='vmae-prepare':result=prepare_videomaev2(args.config,args.run_dir)
+    elif args.command=='vmae-preflight':result=execute_videomaev2_preflight(args.run_dir,args.expected_protocol_sha)
+    elif args.command=='vmae-execute':result=execute_hr(args.run_dir,args.expected_protocol_sha,resume=args.resume)
+    elif args.command=='trd-prepare':result=prepare_trd(args.config,args.run_dir)
     elif args.command=='trd-preflight':result=execute_trd_preflight(args.run_dir,args.expected_protocol_sha)
     elif args.command=='trd-execute':result=execute_hr(args.run_dir,args.expected_protocol_sha,resume=args.resume)
     elif args.command=='ft-calibration-prepare':result=prepare_ft_calibration(args.config,args.run_dir)
@@ -1381,6 +1390,7 @@ class HRLatentStep(NoRefContinuationStep):
 
 def collect_hr_protocol(config_path):
     study=read(config_path)
+    if study.get('schema')=='vsr_videomaev2_study_v1':return collect_videomaev2_protocol(config_path)
     if study.get('schema')=='wan_trd_study_v1':return collect_trd_protocol(config_path)
     if study.get('schema')=='fixed_teacher_study_v1':return collect_fixed_teacher_protocol(config_path)
     need(study.get('schema')=='hr_vae_study_v1','Wrong HR study config')
@@ -1477,6 +1487,7 @@ def _hr_step(engine,pair,text,scheduler,device,*,teacher_target=None):
 def _hr_release(engine):
     if engine is not None:
         engine.optimizer.zero_grad(set_to_none=True);engine.model.clear_features()
+        if isinstance(engine,VideoMAEv2Step):engine.close()
     gc.collect()
     if torch.cuda.is_initialized():torch.cuda.empty_cache()
 
@@ -1599,14 +1610,15 @@ def execute_hr(run_dir,expected,*,resume=False):
     need(state['status']=='planned' or (resume and state['status'] in ('running','failed_recoverable')), 'Explicit checkpoint resume required for an interrupted study')
     fixed=p.get('schema')=='fixed_teacher_training_protocol_v1'
     trd=p.get('schema')=='wan_trd_training_protocol_v1'
+    vmae=p.get('schema')=='vsr_videomaev2_training_protocol_v1'
     expected_budget=p['scientific_update_budget'];expected_arms=len(s['arms'])
     need(expected_budget==s['updates']*expected_arms,'Scientific budget differs from the declared arm/update matrix')
-    if fixed or trd:
+    if fixed or trd or vmae:
         cal=p['calibration'];cal_protocol=binding(cal['protocol']['path'],cal['protocol']['sha256'])
         cal_summary=binding(cal['summary']['path'],cal['summary']['sha256'])
         need(cal_protocol==cal['protocol'] and cal_summary==cal['summary'],'Fixed teacher preflight binding changed')
         preflight_protocol=read(cal_protocol['path']);probe=read(cal_summary['path'])
-        need(probe.get('status')==('passed_trd_preflight' if trd else 'passed_fixed_teacher_preflight')
+        need(probe.get('status')==('passed_videomaev2_preflight' if vmae else ('passed_trd_preflight' if trd else 'passed_fixed_teacher_preflight'))
              and probe.get('protocol_sha256')==cal_protocol['sha256']
              and probe.get('sources')==p['sources'] and preflight_protocol.get('sources')==p['sources']
              and probe.get('scientific_updates')==0,'Require the passed same-source fixed-teacher preflight')
@@ -1625,7 +1637,9 @@ def execute_hr(run_dir,expected,*,resume=False):
         gc.collect()
         if torch.cuda.is_initialized():torch.cuda.empty_cache()
     def record_failure(error):
-        failure={'status':'failed_recoverable','protocol_sha256':expected,'attempt':attempt,'error':str(error),
+        hard_stop=vmae and (isinstance(error,torch.OutOfMemoryError) or any(token in str(error).lower() for token in ('nonfinite','non-finite','out of memory')))
+        failure={'status':'failed_scientific_resource' if hard_stop else 'failed_recoverable',
+            'automatic_retry_allowed':False,'protocol_sha256':expected,'attempt':attempt,'error':str(error),
             'traceback':traceback.format_exc(),'completed_arms':list(completed),'effective_updates_completed_arms':effective,
             'current_arm_steps_returned':engine.steps if engine is not None else None,
             'wall_seconds_this_attempt':time.perf_counter()-started,'returned_updates_this_attempt':attempt_returns,
@@ -1647,20 +1661,20 @@ def execute_hr(run_dir,expected,*,resume=False):
             save(run/'status.json',{'status':'running','protocol_sha256':expected,'scientific_updates':0},replace=True)
             for arm in s['arms']:
                 label,weight=arm['label'],arm['weight'];directory=run/'arm_runs'/label
-                family,setting=((label,'common') if trd else ((arm['family'],arm['setting']) if fixed else (None,None)))
+                family,setting=((label,'common') if (trd or vmae) else ((arm['family'],arm['setting']) if fixed else (None,None)))
                 dino=fixed and family=='hr_dino'
                 directory.mkdir(parents=True,exist_ok=True)
-                config=_trd_config(p,label,weight) if trd else (_hr_config(p,weight,kind='dino') if dino else _hr_config(p,weight))
+                config=_vmae_config(p,label,weight) if vmae else (_trd_config(p,label,weight) if trd else (_hr_config(p,weight,kind='dino') if dino else _hr_config(p,weight)))
                 torch.cuda.reset_peak_memory_stats()
-                engine=_trd_engine(p,label,weight) if trd else (_hr_engine(p,weight,kind='dino') if dino else _hr_engine(p,weight))
+                engine=_vmae_engine(p,label,weight) if vmae else (_trd_engine(p,label,weight) if trd else (_hr_engine(p,weight,kind='dino') if dino else _hr_engine(p,weight)))
                 initial=tensor_state_hashes(engine.model)
                 teacher_initial=_trd_teacher_hashes(engine) if trd else None
-                cumulative=0.;cp_records=[];log=directory/'training.jsonl'
+                cumulative=0.;cumulative_hr=0.;cp_records=[];log=directory/'training.jsonl'
                 completion=directory/'completion.json'
                 if completion.exists():
                     record=read(completion)
                     need(record['updates']==s['updates'] and record['weight']==weight and record['initial_student_hashes']==initial,'Completed arm differs')
-                    if fixed or trd:need(record.get('family')==family and record.get('setting')==setting,'Completed arm family/setting differs')
+                    if fixed or trd or vmae:need(record.get('family')==family and record.get('setting')==setting,'Completed arm family/setting differs')
                     for cp in record['checkpoint_files']:binding(cp['path'],cp['sha256'])
                     need(binding(log)==record['full_training_log'],'Completed training log changed')
                     completed[label]=record;effective+=s['updates'];_hr_release(engine);engine=None
@@ -1669,8 +1683,8 @@ def execute_hr(run_dir,expected,*,resume=False):
                 if checkpoints:
                     need(resume,'Existing checkpoints require explicit resume')
                     last=checkpoints[-1]
-                    from .checkpoints import restore_trd_training_state
-                    restore=restore_trd_training_state if trd else restore_hr_latent_training_state
+                    from .checkpoints import restore_trd_training_state,restore_videomaev2_training_state
+                    restore=restore_videomaev2_training_state if vmae else (restore_trd_training_state if trd else restore_hr_latent_training_state)
                     audit=restore(engine,last,allowed_root=run,expected_protocol_sha256=expected,expected_config=config)
                     cumulative=audit['cumulative_training_seconds']
                     raw_log=log.read_bytes();raw_lines=raw_log.splitlines();lines=[];partial_tail=False
@@ -1686,13 +1700,18 @@ def execute_hr(run_dir,expected,*,resume=False):
                     for i,row in enumerate(prefix):
                         need(row['arm']==label and row['weight']==weight and row['data_index']==i%len(reader)
                              and row['record_id']==reader.ids[i%len(reader)],'Resume log role/data order differs')
-                        if fixed or trd:need(row.get('family')==family and row.get('setting')==setting,'Resume log family/setting differs')
+                        if fixed or trd or vmae:need(row.get('family')==family and row.get('setting')==setting,'Resume log family/setting differs')
                         need(all(type(row[k]) in (int,float) and math.isfinite(row[k])
                                  for k in ('fm','align','total','grad_norm_before_clip','sigma','seconds','cumulative_training_seconds')),
                              'Nonfinite resume log prefix')
                         need(row['seconds']>=0 and row['cumulative_training_seconds']==previous+row['seconds'],
                              'Resume cumulative time does not match committed step times')
                         previous=row['cumulative_training_seconds']
+                        if vmae:
+                            need(type(row['hr_read_seconds']) in (int,float) and math.isfinite(row['hr_read_seconds'])
+                                 and row['hr_read_seconds']>=0 and row['cumulative_hr_read_seconds']==cumulative_hr+row['hr_read_seconds'],
+                                 'Resume HR read timing prefix differs')
+                            cumulative_hr=row['cumulative_hr_read_seconds']
                     need(previous==cumulative,'Resume checkpoint time differs from committed prefix')
                     save(directory/f'resume_loader_audit_attempt_{attempt:03d}.json',engine.base_load_audit)
                     need(read(directory/'initialization.json')==audit['initialization'],'Original initialization sidecar differs')
@@ -1718,7 +1737,14 @@ def execute_hr(run_dir,expected,*,resume=False):
                 save(directory/'config.json',config) if not (directory/'config.json').exists() else need(read(directory/'config.json')==config,'Arm config changed')
                 while engine.steps<s['updates']:
                     index=engine.data_index(len(reader));pair=reader[index]
-                    if dino:
+                    if vmae:
+                        read_started=time.perf_counter();rgb=reader.hr_rgb(index) if weight else None
+                        hr_seconds=time.perf_counter()-read_started if weight else 0.
+                        row,seconds,gpu_seconds=_vmae_step(engine,pair,reader.text_for(index),scheduler,s['device'],hr_rgb=rgb)
+                        cumulative_hr+=hr_seconds
+                        row.update(hr_read_seconds=hr_seconds,cumulative_hr_read_seconds=cumulative_hr)
+                        rgb=None
+                    elif dino:
                         row,seconds,gpu_seconds=_hr_step(engine,pair,reader.text_for(index),scheduler,s['device'],
                                                          teacher_target=dino_reader[index])
                     else:
@@ -1727,7 +1753,7 @@ def execute_hr(run_dir,expected,*,resume=False):
                     cumulative+=seconds
                     row=row|{'arm':label,'weight':weight,'record_id':reader.ids[index],'data_index':index,
                              'seconds':seconds,'cumulative_training_seconds':cumulative,'gpu_event_seconds':gpu_seconds}
-                    if fixed or trd:row.update(family=family,setting=setting)
+                    if fixed or trd or vmae:row.update(family=family,setting=setting)
                     if trd:
                         row['teacher_kind']=label
                         row['noise_bin']='low' if row['sigma']<.33 else 'mid' if row['sigma']<.67 else 'high'
@@ -1741,8 +1767,8 @@ def execute_hr(run_dir,expected,*,resume=False):
                          'scientific_updates':effective+engine.steps,'protocol_sha256':expected},replace=True)
                     if engine.steps in s['checkpoint_updates']:
                         destination=directory/'Base'/f'checkpoint_{engine.steps:06d}.pt'
-                        from .checkpoints import save_trd_checkpoint
-                        publish=save_trd_checkpoint if trd else save_hr_latent_checkpoint
+                        from .checkpoints import save_trd_checkpoint,save_videomaev2_checkpoint
+                        publish=save_videomaev2_checkpoint if vmae else (save_trd_checkpoint if trd else save_hr_latent_checkpoint)
                         record=publish(destination,engine,config,allowed_root=run,protocol_sha256=expected,
                             cumulative_training_seconds=cumulative,initialization=engine.base_load_audit)
                         cp_records.append(binding(destination)|{'step':engine.steps,'update':engine.steps,'variant':'Base',
@@ -1754,6 +1780,12 @@ def execute_hr(run_dir,expected,*,resume=False):
                     'head_parameters':sum(x.numel() for x in engine.alignment.parameters()) if engine.alignment is not None else 0,
                     'memory':_memory(torch,p['memory_cap_bytes'])}
                 if fixed:record.update(family=family,setting=setting,teacher_kind='dino' if dino else 'vae')
+                if vmae:
+                    record.update(family=family,setting=setting,teacher_kind=label,teacher_binding=engine.teacher_binding,
+                        teacher_forward_count=engine.teacher_forward_count,teacher_parameter_updates=0,EMA_updates=0,
+                        teacher_is_frozen_cached_HR=False,cumulative_hr_read_seconds=cumulative_hr)
+                    need(engine.teacher_forward_count==(2048 if weight else 0),'Incorrect online VideoMAEv2 forward count')
+                    need(engine.teacher is None or engine.teacher.parameter_updates==0,'Frozen teacher updated')
                 if trd:
                     record.update(family=family,setting=setting,teacher_kind=label,teacher_initial_hashes=teacher_initial,
                         teacher_final_hashes=_trd_teacher_hashes(engine),teacher_is_frozen_cached_HR=False,
@@ -1766,7 +1798,7 @@ def execute_hr(run_dir,expected,*,resume=False):
             need(effective==expected_budget and len(completed)==expected_arms,'Incomplete paired HR study')
             need(len({json.dumps(x['initial_student_hashes'],sort_keys=True) for x in completed.values()})==1,'Unequal student initialization')
             if trd:need(completed['frozen']['teacher_initial_hashes']==completed['ema']['teacher_initial_hashes'],'Unequal initial TRD teachers')
-            summary={'schema':('wan_trd_training_summary_v1' if trd else ('fixed_teacher_training_summary_v1' if fixed else 'hr_vae_training_summary_v1')),'status':'completed','protocol_sha256':expected,
+            summary={'schema':('vsr_videomaev2_training_summary_v1' if vmae else ('wan_trd_training_summary_v1' if trd else ('fixed_teacher_training_summary_v1' if fixed else 'hr_vae_training_summary_v1'))),'status':'completed','protocol_sha256':expected,
                      'scientific_updates':effective,'arms':completed,'wall_seconds_this_attempt':time.perf_counter()-started,
                      'diagnostic_updates_in_this_training':0,'selection_or_evaluation_done':False}
             rollbacks=[read(path) for path in (run/'arm_runs').glob('*/rollback_attempt_*.json')]
@@ -1778,6 +1810,9 @@ def execute_hr(run_dir,expected,*,resume=False):
                 'successful_step_returns_this_attempt':attempt_returns,
                 'unreturned_failed_step_compute':'not in committed curve; included in attempt wall time, pure GPU duration unknown',
                 'convergence_curve_time_basis':'committed synchronized training-step seconds; wasted work reported separately'}
+            if vmae:
+                summary['compute_cost']['committed_hr_read_seconds']=sum(v['cumulative_hr_read_seconds'] for v in completed.values())
+                summary['compute_cost']['hr_read_time_scope']='Outside synchronized Step; contained in whole attempt wall, never added again to attempt wall'
             save(run/f'completion_attempt_{attempt:03d}.json',{'wall_seconds':time.perf_counter()-started,
                   'returned_updates_this_attempt':attempt_returns,'effective_updates_at_completion':effective})
             save(run/'summary.json',summary)
@@ -2449,6 +2484,485 @@ def execute_trd_preflight(run_dir,expected):
     except BaseException as error:
         if not (run/'failure.json').exists():failure(error)
         raise
+
+
+# Independent VideoMAEv2/Wan adaptation. The old TRD numerics remain intact.
+VMAE_ARMS = ('baseline', 'videomaev2')
+
+
+class VideoMAEv2Step:
+    """Clean native FM, optionally supervised by the fixed external video encoder.
+
+    Teacher extraction happens before creating the student graph. Explicit FM
+    generators are identical in both arms; construction cannot consume them.
+    """
+    def __init__(self, model, *, arm, weight, teacher_binding=None, training_seed=20261102,
+                 student_layer=17, learning_rate=1e-4, weight_decay=.01,
+                 max_grad_norm=1., teacher_factory=None, alignment_factory=None):
+        from .teacher import VideoMAEv2Teacher
+        from .losses import VideoMAEv2TRDAlignment
+        need(arm in VMAE_ARMS and type(weight) in (int,float) and weight in (0.,.5),
+             'Use the declared VideoMAEv2 arms/weights')
+        need(arm != 'baseline' or weight == 0., 'Baseline must have zero auxiliary weight')
+        need(getattr(model,'projector','not Base') is None and not hasattr(model,'reference_adapter'),
+             'Use the NoRef Base student without a restoration projector')
+        need(type(student_layer) is int and max(model.injection_layers)<=student_layer<len(model.transformer.blocks),
+             'Student tap must follow all LR injections and be a valid block')
+        need(all(not isinstance(m,nn.Dropout) or m.p==0 for m in model.modules()), 'Matched student requires zero dropout')
+        for name,param in model.named_parameters():
+            if param.requires_grad:
+                need(name.startswith(('lrv_stem.','lrv_residuals.')) or '.lora_' in name, 'Unexpected student trainable: '+name)
+        need(type(max_grad_norm) in (int,float) and math.isfinite(max_grad_norm) and max_grad_norm>0,
+             'Positive finite gradient bound required')
+        self.model,self.arm,self.training_seed=model,arm,training_seed
+        self.weight,self.student_layer=float(weight),student_layer
+        self.max_grad_norm,self.steps=float(max_grad_norm),0
+        self.training_clip_count=1641
+        self.device=next(model.parameters()).device
+        self.rng=MatchedStepRNG(training_seed,self.device)
+        self.teacher=self.alignment=None
+        self.teacher_binding=None
+        self.teacher_forward_count=0
+        self.teacher_parameter_updates=0
+        self.ema=None
+        self._last_diagnostic=None
+        if self.weight:
+            need(isinstance(teacher_binding,dict),'Positive weight requires a sealed fixed teacher binding')
+            self.teacher=(teacher_factory or VideoMAEv2Teacher)(teacher_binding,device=self.device)
+            self.teacher_binding=copy.deepcopy(self.teacher.binding)
+            dimension=model.transformer.config.num_attention_heads*model.transformer.config.attention_head_dim
+            self.alignment=(alignment_factory or VideoMAEv2TRDAlignment)(student_dim=dimension,init_seed=training_seed).to(self.device)
+        named=[('restoration.'+n,p) for n,p in model.named_parameters() if p.requires_grad]
+        if self.alignment is not None:
+            named += [('student_projector.'+n,p) for n,p in self.alignment.projector.named_parameters()]
+        self._named_optimizer_parameters=tuple(named)
+        self.parameters=[p for _,p in named]
+        need(self.parameters and len({id(p) for p in self.parameters})==len(self.parameters),'No aliases in optimizer')
+        self.optimizer=torch.optim.AdamW(self.parameters,lr=learning_rate,weight_decay=weight_decay,foreach=False)
+        need(not self.optimizer.state,'Fresh AdamW required')
+        self.base_load_audit=None
+
+    def data_index(self,count):
+        need(type(count) is int and count>0,'Positive clip count required')
+        return self.steps%count
+
+    def objectives(self,clean,low,text,scheduler,*,hr_rgb=None,index=None,noise=None):
+        need(torch.is_grad_enabled() and clean.shape==low.shape and clean.ndim==5 and clean.shape[2]==9
+             and clean.dtype==low.dtype==torch.float32 and clean.device==low.device==self.rng.device
+             and not clean.requires_grad and not low.requires_grad
+             and bool(torch.isfinite(clean).all()) and bool(torch.isfinite(low).all()),
+             'Matched finite frozen FP32 HR/LR latents with nine positions required')
+        need(len(scheduler.timesteps)==1000 and len(scheduler.sigmas)>=1000,'Original native 1000-index grid required')
+        need((index is None)==(noise is None),'Force both native index and noise, or neither')
+        forced=index is not None
+        if not forced:
+            index=int(torch.randint(0,1000,(),generator=self.rng.timestep))
+        need(type(index) is int and 0<=index<1000,'Invalid native time index')
+        sigma=scheduler.sigmas[index].to(device=clean.device,dtype=torch.float32)
+        timestep=scheduler.timesteps[index].to(clean.device).expand(clean.shape[0])
+        need(sigma.ndim==0 and bool(torch.isfinite(sigma)) and 0<=float(sigma)<=1,'Invalid native sigma')
+        if not forced:
+            noise=torch.randn(clean.shape,generator=self.rng.noise,device=clean.device,dtype=torch.float32)
+        need(isinstance(noise,torch.Tensor) and noise.shape==clean.shape and noise.dtype==torch.float32
+             and noise.device==clean.device and not noise.requires_grad and bool(torch.isfinite(noise).all()),
+             'Frozen finite matched epsilon required')
+        noisy=(1-sigma)*clean+sigma*noise
+        target=noise-clean
+        teacher=None
+        if self.weight:
+            need(hr_rgb is not None,'Online teacher requires the same sealed HR RGB crop')
+            teacher=self.teacher.features(hr_rgb.to(self.device))
+            need(not teacher.requires_grad and teacher.dtype==torch.float32,'External teacher must remain detached FP32')
+            flow,features=capture_block_output(self.model,self.student_layer,noisy,timestep,text,low)
+            fm=flow_matching_loss(flow,target)
+            aux,diagnostic=self.alignment(features,teacher,tuple(self.model.token_grid))
+        else:
+            need(hr_rgb is None,'Zero weight must bypass RGB loading and teacher/head')
+            with _autocast(clean.device):flow,projection=self.model(noisy,timestep,text,low.clone())
+            need(projection is None,'Inference student cannot own an auxiliary head')
+            fm=flow_matching_loss(flow,target)
+            aux=flow.reshape(-1)[:0].sum()
+            diagnostic={'teacher_target_used':False,'active_pairs':0}
+        need(bool(torch.isfinite(fm)) and bool(torch.isfinite(aux)),'Nonfinite VideoMAEv2 objective')
+        return fm,aux,{'timestep_index':index,'native_timestep':float(timestep[0]),'sigma':float(sigma),
+            'noise_bin':'low' if float(sigma)<.33 else 'mid' if float(sigma)<.67 else 'high',
+            'forced_inputs':forced,'student_layer':self.student_layer,'teacher_forward':bool(self.weight),
+            'teacher_parameter_updates':0,'condition_corruption':False,'EMA_updates':0,'alignment':diagnostic}
+
+    def step(self,clean,low,text,scheduler,*,hr_rgb=None):
+        modes=_modes(self.model);head_modes=_modes(self.alignment) if self.alignment is not None else []
+        frozen=_frozen(self.model)
+        self.optimizer.zero_grad(set_to_none=True);self.model.clear_features()
+        try:
+            self.model.train()
+            if self.alignment is not None:self.alignment.train()
+            fm,aux,info=self.objectives(clean,low,text,scheduler,hr_rgb=hr_rgb)
+            total=fm+self.weight*aux
+            need(bool(torch.isfinite(total)),'Nonfinite VideoMAEv2 total loss')
+            total.backward()
+            need(any(p.grad is not None for p in self.model.parameters() if p.requires_grad),'No student gradient')
+            need(all(p.grad is None for p in self.model.parameters() if not p.requires_grad),'Frozen student backbone gradient')
+            _require_finite(('Nonfinite gradient: '+n,p.grad) for n,p in self._named_optimizer_parameters if p.grad is not None)
+            student_norm=_trd_norm(tuple(p.grad for n,p in self._named_optimizer_parameters if n.startswith('restoration.')))
+            head_norm=_trd_norm(tuple(p.grad for n,p in self._named_optimizer_parameters if n.startswith('student_projector.')))
+            norm=torch.nn.utils.clip_grad_norm_(self.parameters,self.max_grad_norm,error_if_nonfinite=True)
+            self.optimizer.step()
+            _require_finite(('Nonfinite updated parameter: '+n,value) for n,value in self._named_optimizer_parameters)
+            self.steps+=1
+            if self.weight:self.teacher_forward_count+=1
+            need(frozen==_frozen(self.model),'Frozen student backbone changed')
+            need(self.teacher is None or self.teacher.parameter_updates==0,'External teacher cannot update')
+            return info|{'step':self.steps,'arm':self.arm,'family':self.arm,'setting':'common','weight':self.weight,
+                'fm':float(fm.detach()),'align':float(aux.detach()),'sd':float(aux.detach()),'total':float(total.detach()),
+                'grad_norm_before_clip':float(norm),'student_total_grad_norm_before_clip':student_norm,
+                'head_total_grad_norm_before_clip':head_norm,'teacher_forward_count':self.teacher_forward_count,
+                'optimizer_state_fresh_at_initialization':True}
+        finally:
+            self.optimizer.zero_grad(set_to_none=True);self.model.clear_features()
+            _restore_modes(modes);_restore_modes(head_modes)
+
+    def close(self):
+        self.optimizer.zero_grad(set_to_none=True);self.model.clear_features()
+        if self.teacher is not None:self.teacher.close()
+        self.teacher=None
+
+
+
+def _videomaev2_dependency_bindings():
+    from importlib import metadata,util
+    import inspect
+    import timm
+    from timm.layers import drop_path,to_2tuple,trunc_normal_
+    distribution=metadata.distribution('timm')
+    files={'package_entry':binding(timm.__file__)}
+    for item in distribution.files or []:
+        if str(item).endswith(('.dist-info/METADATA','.dist-info/WHEEL','.dist-info/RECORD')):
+            files[str(item)]=binding(distribution.locate_file(item))
+    for name,function in (('drop_path',drop_path),('to_2tuple',to_2tuple),('trunc_normal_',trunc_normal_)):
+        files[name+'_implementation']=binding(inspect.getsourcefile(function))
+    for name in ('timm.models.layers','timm.layers'):
+        files[name+'_entry']=binding(util.find_spec(name).origin)
+    return {'timm':{'version':distribution.version,'files':files}}
+
+def collect_videomaev2_protocol(config_path):
+    from .teacher import videomaev2_teacher_binding
+    from .data import PreparedTrainingData
+    s=read(config_path)
+    need(s.get('schema')=='vsr_videomaev2_study_v1' and s.get('mode') in ('preflight','training'),
+         'Explicit independent VideoMAEv2 study required')
+    need(s['training_seed']==20261102 and s['updates']==2048 and s['student_layer']==17
+         and s['checkpoint_updates']==[512,1024,1536,2048] and s['eval_updates']==[512,1024,2048],
+         'Prospective VideoMAEv2 layer/seed/budget changed')
+    need(s['arms']==[{'label':'baseline','weight':0.},{'label':'videomaev2','weight':.5}]
+         and s['margin']==.1 and s['normalization_eps']==1e-12 and s['online_teacher'] is True,
+         'Prospective fixed teacher/weights/loss changed')
+    need(s['probe_indices']==list(range(5)) and s['probe_sigmas']==[.2,.5,.8]
+         and s['minimum_positive_cases']==8 and s['minimum_noise_levels']==2,
+         'Prospective zero-update target gate changed')
+    base=_base_spec(s['base_checkpoint'],SMOKE_BASE_SHA,s['allowed_base_root'],20261102)
+    need(read(s['base_config'])==base['config'] and base['config']['reproducibility']['mode']=='strict',
+         'Use the exact strict original Base configuration')
+    cache,inputs=_cache_spec(s['cache_root'])
+    need(cache['config']==base['config_file'],'Use the original complete producer cache')
+    teacher=videomaev2_teacher_binding(s['teacher_source'],s['teacher_checkpoint'])
+    reader=PreparedTrainingData(cache['root'],expected_seal_sha256=cache['seal']['sha256'])
+    try:rgb=reader.verify_hr_rgb_assets()
+    finally:reader.close()
+    for v in s['evaluation'].values():
+        if isinstance(v,dict) and 'path' in v and 'sha256' in v:
+            need(binding(v['path'],v['sha256'])==v,'Evaluation asset changed')
+    need(s['evaluation']['validation_restores']==448 and s['evaluation']['test_restores']==128,
+         'Complete prospective evaluation budget changed')
+    plan=s['prospective_plan'];prior=s['previous_round_completion']
+    need(binding(plan['path'],plan['sha256'])==plan and plan['sha256']=='609d79334e4afb295336e1f022e41c3e323bc8655eb77146e20aca020d822655',
+         'Prospective VideoMAEv2 plan changed')
+    need(binding(prior['path'],prior['sha256'])==prior and read(prior['path'])['status']=='P6_completed',
+         'Previous Wan TRD delivery must be complete before this independent study')
+    mode=s['mode']
+    p={'schema':'vsr_videomaev2_preflight_protocol_v1' if mode=='preflight' else 'vsr_videomaev2_training_protocol_v1',
+        'study':s,'study_file':binding(config_path),'sources':_source_bindings(),'base':base,'cache':cache,'inputs':inputs,
+        'teacher_binding':teacher,'teacher_dependencies':_videomaev2_dependency_bindings(),'rgb_assets':rgb,
+        'official_model_files':_official_bindings(s['model_directory']),
+        'dependencies':_dependency_bindings(),'admission':read(s['gpu_admission']),
+        'admission_file':binding(s['gpu_admission']),'gpu_lock':s['gpu_lock'],'device':s['device'],
+        'memory_cap_bytes':16*1024**3,'strict_environment':STRICT_ENVIRONMENT,
+        'optimizer':{k:base['config']['training'][k] for k in ('learning_rate','weight_decay','max_grad_norm')},
+        'scientific_update_budget':0 if mode=='preflight' else 4096,
+        'diagnostic_optimizer_budget':26 if mode=='preflight' else 0,
+        'gradient_probe_cases':15 if mode=='preflight' else 0,'gradient_VJP_calls':30 if mode=='preflight' else 0,
+        'teacher_forward_budget':31 if mode=='preflight' else 2048,'ordinary_inference_weight_EMA':False,
+        'online_teacher_forward':True,'feature_cache_created':False,
+        'learning_rate_schedule':{'type':'constant','separate_scheduler':None,'optimizer_groups_restored':True},
+        'time_accounting':'Synchronized Step includes HR transfer/preprocess/online teacher; CPU HR file read is separately measured and contained in attempt wall.'}
+    need(p['optimizer']=={'learning_rate':1e-4,'weight_decay':.01,'max_grad_norm':1.},'Common optimizer changed')
+    if mode=='training':
+        report=Path(s['preflight_report']).resolve();directory=report.parent
+        cal=read(report);calp=read(directory/'protocol.json');state=read(directory/'status.json')
+        need(state['status']=='completed' and cal['status']=='passed_videomaev2_preflight'
+             and state['summary_sha256']==file_sha(report) and state['protocol_sha256']==file_sha(directory/'protocol.json')
+             and cal['protocol_sha256']==state['protocol_sha256'] and not (directory/'failure.json').exists(),
+             'Completed successful VideoMAEv2 preflight required')
+        need(calp==collect_videomaev2_protocol(calp['study_file']['path']) and cal['sources']==p['sources']
+             and cal['scientific_updates']==0 and cal['diagnostic_optimizer_updates']==26
+             and cal['teacher_forwards']==31,'Preflight source/count chain changed')
+        for k in ('base','cache','inputs','teacher_binding','teacher_dependencies','rgb_assets','official_model_files','dependencies','optimizer','admission','gpu_lock','device'):
+            need(p[k]==calp[k],'Training differs from preflight: '+k)
+        for k in ('student_layer','arms','margin','normalization_eps','online_teacher','evaluation','metric_weights',
+                  'probe_indices','probe_sigmas','minimum_positive_cases','minimum_noise_levels'):
+            need(s[k]==calp['study'][k],'Prospective design changed: '+k)
+        p['calibration']={'protocol':binding(directory/'protocol.json'),'summary':binding(report),
+                          'status_file':binding(directory/'status.json')}
+    return p
+
+
+def prepare_videomaev2(config_path,run_dir):
+    p=collect_videomaev2_protocol(config_path);run,_=_safe_run(Path(run_dir),Path(p['study']['run_root']))
+    need(not run.exists(),'Use a fresh VideoMAEv2 run directory')
+    run.mkdir(parents=True);save(run/'protocol.json',p)
+    result={'status':'planned','protocol_sha256':file_sha(run/'protocol.json'),'scientific_updates':0,'GPU_loaded':False}
+    save(run/'status.json',result);return result|{'run_dir':str(run)}
+
+
+
+@contextmanager
+def _vmae_construction_rng(device):
+    """Isolate native seed_all: Python, NumPy, Torch CPU and every CUDA stream."""
+    from .checkpoints import _trd_global_rng_state,_trd_restore_global_rng
+    device=torch.device(device)
+    with torch.random.fork_rng(devices=[device.index or 0] if device.type=='cuda' else []):
+        state=_trd_global_rng_state()
+        try:yield
+        finally:_trd_restore_global_rng(state)
+
+def _vmae_engine(p,arm,weight):
+    from .checkpoints import load_training_checkpoint
+    s=p['study'];b=p['base']['checkpoint'];device=torch.device(s['device'])
+    # Native model construction calls seed_all, including Python random.seed.
+    with _vmae_construction_rng(device):
+        model,audit=load_training_checkpoint(b['path'],device=device,allowed_root=s['allowed_base_root'],
+                                             variant='Base',model_directory=s['model_directory'])
+    need(audit['checkpoint_sha256']==b['sha256'] and audit['step']==8192 and audit['config']==p['base']['config'],
+         'Matched VideoMAEv2 Base initialization changed')
+    engine=VideoMAEv2Step(model,arm=arm,weight=weight,teacher_binding=p['teacher_binding'],
+                          training_seed=s['training_seed'],student_layer=17,**p['optimizer'])
+    engine.base_load_audit=audit
+    return engine
+
+
+def _vmae_config(p,arm,weight):
+    from .checkpoints import videomaev2_auxiliary_spec
+    c=copy.deepcopy(p['base']['config']);c.pop('restoration_architecture',None)
+    c['stage']='videorepa_videomaev2_wan_vsr';c['training'].update(variants=['Base'],updates=2048)
+    c['auxiliary_supervision']=videomaev2_auxiliary_spec(arm,weight,p['teacher_binding'] if weight else None)
+    return _canonical_config(c)
+
+
+def _vmae_step(engine,pair,text,scheduler,device,*,hr_rgb=None):
+    begin=torch.cuda.Event(enable_timing=True);end=torch.cuda.Event(enable_timing=True)
+    torch.cuda.synchronize();started=time.perf_counter();begin.record()
+    value=engine.step(pair['clean'].to(device),pair['low'].to(device),text.to(device),scheduler,hr_rgb=hr_rgb)
+    end.record();torch.cuda.synchronize()
+    return value,time.perf_counter()-started,begin.elapsed_time(end)/1000
+
+
+def _vmae_snapshot(engine):
+    from .checkpoints import _cpu_owned,_trd_global_rng_state
+    return _cpu_owned({'student':{n:v for n,v in engine.model.named_parameters() if v.requires_grad},
+        'head':None if engine.alignment is None else engine.alignment.state_dict(),
+        'teacher_binding':engine.teacher_binding,'teacher_forward_count':engine.teacher_forward_count,
+        'teacher_parameter_updates':0,'optimizer':engine.optimizer.state_dict(),
+        'shared_optimizer':{n:engine.optimizer.state.get(p,{}) for n,p in engine._named_optimizer_parameters if n.startswith('restoration.')},
+        'steps':engine.steps,'data_cursor':engine.data_index(engine.training_clip_count),
+        'RNG':{n:getattr(engine.rng,n).get_state() for n in ('noise','timestep','mask','corruption')},
+        'global_RNG':_trd_global_rng_state()})
+
+
+def _vmae_target_gate(rows):
+    need(len(rows)==15 and [r['data_index'] for r in rows]==[i for i in range(5) for _ in range(3)]
+         and [r['nominal_sigma'] for r in rows]==[.2,.5,.8]*5,'Complete prospective VideoMAEv2 probe matrix required')
+    need(all(all(type(r[k]) in (int,float) and math.isfinite(r[k]) and r[k]>=0
+                 for k in ('fm','unit_aux','fm_grad_norm','aux_grad_norm','head_grad_norm')) for r in rows),
+         'All VideoMAEv2 target probes must be finite')
+    positive=[r for r in rows if r['fm_grad_norm']>0 and r['aux_grad_norm']>0]
+    levels=sorted({r['nominal_sigma'] for r in positive})
+    return {'eligible':len(positive)>=8 and len(levels)>=2,'positive_gradient_cases':len(positive),
+        'noise_levels_with_positive_gradients':levels,'cases':15,'VJP_calls':30,'weight':.5,
+        'weight_calibrated':False,'minimum_positive_cases':8,'minimum_noise_levels':2,'optimizer_updates':0,'rows':rows}
+
+
+def execute_videomaev2_preflight(run_dir,expected):
+    from .data import PreparedTrainingData
+    from .vae import load_frozen_vae
+    from .model import tensor_state_hashes
+    from .checkpoints import (_hr_equal,save_videomaev2_checkpoint,restore_videomaev2_training_state,
+                              load_training_checkpoint,_trd_global_rng_state,_trd_restore_global_rng)
+    run=Path(run_dir).resolve();p=read(run/'protocol.json');s=p['study']
+    run,_=_safe_run(run,Path(s['run_root']))
+    need(p['schema']=='vsr_videomaev2_preflight_protocol_v1' and file_sha(run/'protocol.json')==expected
+         and p==collect_videomaev2_protocol(p['study_file']['path']),'VideoMAEv2 preflight source/protocol changed')
+    need(read(run/'status.json')['status']=='planned','One VideoMAEv2 preflight attempt per fresh run')
+    need(all(os.environ.get(k)==v for k,v in STRICT_ENVIRONMENT.items()),'Strict offline environment required')
+    engine=reader=vae=scheduler=loaded_model=None
+    fm=aux=info=clean=low=text=noise=hr=features=previous=gfm=gaux=params=headparams=None
+    updates=0;teacher_forwards=0;rows=[];started=time.perf_counter();serial=0;counter=UpdateCounter()
+    def cleanup():
+        nonlocal engine,reader,vae,scheduler,loaded_model,fm,aux,info,clean,low,text,noise,hr,features,previous,gfm,gaux,params,headparams
+        _hr_release(engine)
+        if reader is not None:reader.close()
+        engine=reader=vae=scheduler=loaded_model=fm=aux=info=clean=low=text=noise=hr=features=previous=gfm=gaux=params=headparams=None
+        gc.collect()
+        if torch.cuda.is_initialized():torch.cuda.empty_cache()
+    def failure(error):
+        result={'status':'failed_videomaev2_preflight','protocol_sha256':expected,'error':str(error),
+            'traceback':traceback.format_exc(),'scientific_updates':0,'diagnostic_optimizer_updates_returned':updates,
+            'gradient_probe_cases_completed':len(rows),'teacher_forwards_returned':teacher_forwards,
+            'optimizer_counter':counter.snapshot(),'no_automatic_retry_or_numerical_fallback':True}
+        if not (run/'failure.json').exists():save(run/'failure.json',result)
+        save(run/'status.json',result,replace=True)
+    def new_engine(arm,weight):
+        nonlocal serial
+        value=_vmae_engine(p,arm,weight);serial+=1
+        counter.attach(value.optimizer,f'{serial:02d}_{arm}');return value
+    def step(current,index):
+        nonlocal updates,teacher_forwards
+        read_start=time.perf_counter();rgb=reader.hr_rgb(index) if current.weight else None
+        read_seconds=time.perf_counter()-read_start if current.weight else 0.
+        value,seconds,gpu_seconds=_vmae_step(current,reader[index],reader.text_for(index),scheduler,s['device'],hr_rgb=rgb)
+        updates+=1;teacher_forwards+=int(bool(current.weight))
+        counter.by_role[counter.role]['returned_steps']+=1
+        return value|{'hr_read_seconds':read_seconds},seconds,gpu_seconds
+    try:
+        with _hr_gpu_session(p,cleanup,failure) as admission:
+            save(run/'GPU_admission.json',admission);save(run/'runtime.json',_configure_runtime(p['base']['config']))
+            save(run/'status.json',{'status':'running','phase':'teacher_repeat_and_target_gate','protocol_sha256':expected,
+                                  'scientific_updates':0},replace=True)
+            reader=PreparedTrainingData(p['cache']['root'],expected_seal_sha256=p['cache']['seal']['sha256'])
+            vae=load_frozen_vae(s['model_directory'],device=s['device']);scheduler=_training_scheduler(s['model_directory'],s['device'])
+            engine=new_engine('videomaev2',.5);engine.model.train();engine.alignment.train()
+            before=tensor_state_hashes(engine.model);repeat=[]
+            for index in (0,1):
+                hr=reader.hr_rgb(index).to(s['device']);previous=None
+                for extraction in range(2):
+                    features=engine.teacher.features(hr);teacher_forwards+=1
+                    need(previous is None or torch.equal(previous,features),'Repeated fixed HR VideoMAEv2 features differ')
+                    previous=features
+                repeat.append({'data_index':index,'record_id':reader.ids[index],'hr_binding':reader.hr_rgb_binding(index),
+                    'target_sha256':_tensor_digest(torch,features),'shape':list(features.shape),'dtype':str(features.dtype),
+                    'repeated_exact':True,'teacher_frozen':True})
+                previous=features=hr=None
+            save(run/'teacher_repeat.json',{'cases':repeat,'teacher_forwards':4,'optimizer_updates':0,
+                'mapping':p['teacher_binding'],'target_is_clean_HR':True})
+            for data_index in range(5):
+                pair=reader[data_index];clean=pair['clean'].to(s['device']);low=pair['low'].to(s['device'])
+                text=reader.text_for(data_index).to(s['device']);hr=reader.hr_rgb(data_index)
+                for sigma_index,nominal in enumerate((.2,.5,.8)):
+                    native=int((scheduler.sigmas[:1000].detach().float().cpu()-nominal).abs().argmin())
+                    noise_seed=s['training_seed']+101+data_index*3+sigma_index
+                    noise=torch.randn(clean.shape,device=clean.device,generator=torch.Generator(device=clean.device).manual_seed(noise_seed))
+                    fm,aux,info=engine.objectives(clean,low,text,scheduler,hr_rgb=hr,index=native,noise=noise)
+                    teacher_forwards+=1
+                    params=tuple(v for v in engine.model.parameters() if v.requires_grad)
+                    headparams=tuple(engine.alignment.parameters())
+                    # Exactly two VJPs per case: jointly query head + student.
+                    gfm=torch.autograd.grad(fm,params+headparams,retain_graph=True,allow_unused=True)
+                    gaux=torch.autograd.grad(aux,params+headparams,allow_unused=True)
+                    fm_norm=_trd_norm(gfm[:len(params)]);aux_norm=_trd_norm(gaux[:len(params)])
+                    head_norm=_trd_norm(gaux[len(params):])
+                    need(all(g is None for g in gfm[len(params):]),'FM unexpectedly depends on auxiliary head')
+                    dot=math.fsum(float((a.detach().double()*b.detach().double()).sum())
+                         for a,b in zip(gfm[:len(params)],gaux[:len(params)]) if a is not None and b is not None)
+                    cosine=dot/(fm_norm*aux_norm) if fm_norm>0 and aux_norm>0 else None
+                    row={'data_index':data_index,'record_id':reader.ids[data_index],'nominal_sigma':nominal,
+                         'noise_seed':noise_seed,'fm':float(fm.detach()),'unit_aux':float(aux.detach()),
+                         'fm_grad_norm':fm_norm,'aux_grad_norm':aux_norm,'head_grad_norm':head_norm,
+                         'FM_aux_gradient_cosine':cosine,'VJP_calls':2,**info}
+                    rows.append(row);_append_row(run/'gradient_probe_rows.jsonl',row)
+                    gfm=gaux=params=headparams=fm=aux=info=None;engine.model.clear_features()
+                    _memory(torch,p['memory_cap_bytes'])
+                    save(run/'progress.json',{'phase':'target_gate','cases':len(rows),'total_cases':15,
+                        'diagnostic_optimizer_updates':updates,'teacher_forwards':teacher_forwards,
+                        'scientific_updates':0,'protocol_sha256':expected},replace=True)
+            need(before==tensor_state_hashes(engine.model) and engine.steps==0 and not engine.optimizer.state,
+                 'Zero-update target probe mutated student')
+            gate=_vmae_target_gate(rows);save(run/'target_viability.json',gate)
+            need(gate['eligible'],'VideoMAEv2 target viability failed; preserve all probes, do not change lambda/margin')
+            need(engine.teacher.forward_count==19,'Teacher repeat/probe accounting differs')
+            _hr_release(engine);engine=None;clean=low=text=noise=hr=None;gc.collect();torch.cuda.empty_cache()
+            zero={};zero_rows={};common_global=_trd_global_rng_state()
+            for arm in VMAE_ARMS:
+                _trd_restore_global_rng(common_global);engine=new_engine(arm,0.);values=[]
+                for i in range(3):
+                    value,seconds,gpu_seconds=step(engine,i)
+                    values.append({k:value[k] for k in ('fm','sigma','timestep_index','native_timestep')})
+                need(engine.teacher is None and engine.alignment is None,'Zero lambda must bypass teacher and head')
+                zero[arm]=_vmae_snapshot(engine);zero_rows[arm]=values
+                _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            need(zero_rows['baseline']==zero_rows['videomaev2'] and _hr_equal(zero['baseline'],zero['videomaev2']),
+                 'Zero-lambda exact baseline behavior differs')
+            save(run/'zero_weight.json',{'steps_per_arm':3,'exact_student_optimizer_4RNG_globalRNG_cursor':True,
+                                         'teacher_forwards':0,'head_constructed':False,'rows':zero_rows})
+            zero=None;global_before_resume=_trd_global_rng_state()
+            engine=new_engine('videomaev2',.5)
+            for i in range(2):step(engine,i)
+            reference=_vmae_snapshot(engine);_hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            _trd_restore_global_rng(global_before_resume);engine=new_engine('videomaev2',.5)
+            _,prefix_seconds,_=step(engine,0)
+            config=_vmae_config(p,'videomaev2',.5);path=run/'resume_checks/videomaev2/Base/checkpoint_000001.pt'
+            save_videomaev2_checkpoint(path,engine,config,allowed_root=run,protocol_sha256=expected,
+                                       cumulative_training_seconds=prefix_seconds,initialization=engine.base_load_audit)
+            saved_student=tensor_state_hashes(engine.model)
+            _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            # Native loader checks only student parameters: no new sampled restore.
+            with _vmae_construction_rng(s['device']):
+                loaded_model,native=load_training_checkpoint(path,device=s['device'],allowed_root=run,
+                                                            variant='Base',model_directory=s['model_directory'])
+            need(tensor_state_hashes(loaded_model)==saved_student and loaded_model.projector is None,
+                 'Native student-only checkpoint loading differs')
+            loaded_model=None;gc.collect();torch.cuda.empty_cache()
+            engine=new_engine('videomaev2',.5)
+            restored=restore_videomaev2_training_state(engine,path,allowed_root=run,
+                                expected_protocol_sha256=expected,expected_config=config)
+            need(restored['cumulative_training_seconds']==prefix_seconds,'Resume lost committed timing prefix')
+            _,suffix_seconds,_=step(engine,1)
+            need(_hr_equal(reference,_vmae_snapshot(engine)),'VideoMAEv2 complete save/resume state differs')
+            resume_report={'completed_steps':2,'exact_full_engine_state':True,'checkpoint':binding(path),
+                'native_student_reload_exact':True,'native_restore_count':0,'loaded_prefix_seconds':prefix_seconds,
+                'new_step_seconds':suffix_seconds,'resumed_cumulative_seconds':prefix_seconds+suffix_seconds,
+                'independent_execution_wall_times_compared_for_equality':False}
+            save(run/'resume_report.json',resume_report)
+            reference=None;_hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            resources={};initials={}
+            for arm in VMAE_ARMS:
+                engine=new_engine(arm,0. if arm=='baseline' else .5);initials[arm]=tensor_state_hashes(engine.model)
+                torch.cuda.reset_peak_memory_stats();role_rows=[]
+                for i in range(8):
+                    value,seconds,gpu_seconds=step(engine,i)
+                    row=value|{'seconds':seconds,'gpu_event_seconds':gpu_seconds,'warmup':i<2}
+                    role_rows.append(row);_append_row(run/'benchmark.jsonl',row);_memory(torch,p['memory_cap_bytes'])
+                timed=[r['seconds'] for r in role_rows[2:]]
+                resources[arm]={'all8_rows':role_rows,'timed6_mean_seconds':statistics.mean(timed),
+                    'timed6_SD_seconds':statistics.stdev(timed),'memory':_memory(torch,p['memory_cap_bytes']),
+                    'teacher_forwards':engine.teacher_forward_count,'outliers_removed':0,'VAE_resident':True}
+                _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            need(initials['baseline']==initials['videomaev2'],'Unequal fresh Base initialization')
+            count=counter.snapshot()
+            need(updates==26 and count['diagnostic_optimizer_updates_attempted']==26
+                 and count['diagnostic_optimizer_updates_applied']==26 and count['completed_step_returns']==26
+                 and teacher_forwards==31,'VideoMAEv2 bounded diagnostic accounting differs')
+            result={'status':'passed_videomaev2_preflight','protocol_sha256':expected,'sources':p['sources'],
+                'scientific_updates':0,'diagnostic_optimizer_updates':26,'optimizer_counter':count,
+                'teacher_forwards':teacher_forwards,'gradient_probe_cases':15,'gradient_VJP_calls':30,
+                'target_viability':gate,'zero_weight_exact':True,'resume_reports':{'videomaev2':resume_report},
+                'teacher_repeat':repeat,'resources':resources,'initial_student_hashes':initials,
+                'weight':.5,'weight_calibrated':False,'wall_seconds':time.perf_counter()-started}
+        save(run/'summary.json',result)
+        save(run/'status.json',{'status':'completed','protocol_sha256':expected,'summary_sha256':file_sha(run/'summary.json'),
+                               'scientific_updates':0,'diagnostic_optimizer_updates':updates},replace=True)
+        return result
+    except BaseException as error:
+        if not (run/'failure.json').exists():failure(error)
+        raise
+    finally:_hr_cleanup_preserving(cleanup,sys.exc_info()[1])
 
 
 if __name__=='__main__':

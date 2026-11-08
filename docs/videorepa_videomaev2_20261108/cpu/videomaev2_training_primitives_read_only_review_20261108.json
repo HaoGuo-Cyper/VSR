@@ -1,0 +1,76 @@
+{
+  "schema": "videomaev2_cross_agent_read_only_review_v1",
+  "status": "passed_read_only_review_no_remaining_blocker_at_bound_snapshot",
+  "created_UTC": "2026-11-08T14:54:54.276501+00:00",
+  "reviewer": "ema_plan_budget_review",
+  "files": [
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-videomaev2/VSR-sync/vsr/teacher.py",
+      "bytes": 36045,
+      "sha256": "23e46cb92b59ad814752d2f59d1e25976bb153936616015f9dedc1f7e7415cac"
+    },
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-videomaev2/VSR-sync/vsr/losses.py",
+      "bytes": 31132,
+      "sha256": "bca592300cb79ad5e0b13ae6c423566e9ad96a3ec966739e328f674f835e5983"
+    },
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-videomaev2/VSR-sync/vsr/data.py",
+      "bytes": 82330,
+      "sha256": "9e3433b17a76fab831ba0ccca00dbff7d7643061ab7b80829bea474f782795ff"
+    },
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-videomaev2/VSR-sync/vsr/train.py",
+      "bytes": 207395,
+      "sha256": "943f4d087cc2ac40b76499d0ff70ad306ed21686591ab8bacfd35027ba8c3d47"
+    },
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-videomaev2/VSR-sync/vsr/checkpoints.py",
+      "bytes": 97274,
+      "sha256": "69eb3cdfcf0b030c299b4574a42417fb0850af418c92f6b92ef119a8df17e574"
+    },
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-videomaev2/VSR-sync/docs/videorepa_videomaev2_20261108/plan.md",
+      "bytes": 13635,
+      "sha256": "609d79334e4afb295336e1f022e41c3e323bc8655eb77146e20aca020d822655"
+    },
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-videomaev2/VSR-sync/configs/videorepa_videomaev2_design_20261108.json",
+      "bytes": 5891,
+      "sha256": "cc51f003dc5e83659f4e9f86bcf3ce17b2c32e83423d468a86cdce75d1ea6b0a"
+    }
+  ],
+  "checks": [
+    "Official source/weight revision and SHA explicit;158 encoder keys strict and only4 classification keys excluded; teacherFP32/eval/no_grad and mutation signatures checked.",
+    "Sealed HR [0,1] uses same FM record/crop/time; teacher dropsRGB0 only and normalizes ImageNet directly; raw train input access excludesval/test.",
+    "Original position1568sincos: spatialbicubic14x14→8x14 then temporal8→16; teacher target THW16x8x14.",
+    "All9latent positions projected first with3Linear/2SiLU MLP; auxiliary drop0 then trilinear8→16; same spatial8x14; no stride3Conv.",
+    "Official-style completeorderedGram includesdiagonal/sameframe/crossframe; fixed margin.1/lambda.5/eps1e-12; studentbf16/teacherFP32/differenceFP32 contract explicit.",
+    "Preflight fourrepeat+15probe+12positiveweightdiagnostic=31teacherforwards;26optimizerupdates;15cases×2VJP=30; zero-weightteacher/head bypass; no native diagnosticrestore.",
+    "Construction preservesPython/NumPy/TorchCPU/allCUDAglobalRNG after native seed_all; explicit4streams independent; fullresume snapshots includeglobal states/cursor/head/AdamW.",
+    "Every successfuloptimizer update checks allupdatedstudent/headparameters finite before step/count publication; teacherparameterupdates remain0.",
+    "Step timer includesHRdevicecopy/preprocess/onlineTeacher; CPUHRread separatelymonotonic and reconstructedfromcommittedlogprefix onresume; attemptwall overlaps subscopes.",
+    "Cleanup calls teacher.close and clearsfeaturegraph before leavingGPUlease; existingdonearms are verified,neverretrained; recoverable resume usesverifiedCP and preservesdiscardedlog/timing.",
+    "Collector binds prospectiveplanSHA/previousP6receipt/teacher sourceweightpos/dependency sourcefiles/all1641sealedRGB andsamepreflightasformaltraining.",
+    "Real prospectiveconfig metadata compatibility separatelychecked withoutprepare orpixelpayloadreads."
+  ],
+  "findings": [
+    {
+      "issue": "Missing immediate postAdamW parameter finite check",
+      "status": "owner_fixed_and_readback_verified",
+      "owner": "root"
+    },
+    {
+      "issue": "Torch-only fork did not isolate native make_model random.seed from caller PythonRNG",
+      "status": "owner_fixed_fullglobal_context_and_readback_verified",
+      "owner": "root"
+    }
+  ],
+  "scope": "Static source and smallJSON/metadata read-only review; owner-specific CPU fixtures and real GPUpreflight remain separate evidence.",
+  "GPU_work": false,
+  "model_forward": false,
+  "source_modified_by_reviewer": false,
+  "partial_quality_read": false,
+  "existing_tests_rerun": false,
+  "not_a_preflight_pass": true
+}
