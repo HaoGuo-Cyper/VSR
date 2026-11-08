@@ -1,5 +1,9 @@
 # Agent brief: temporal self-distillation for diffusion VSR
 
+## Latest completed VideoMAEv2 state — 2026-11-08 UTC
+
+VideoMAEv2/Wan V5 is complete:4096science/26diag/8CP/full448val128test/19008PNG/576MP4/25independentCI/6fixedvideos/actual12contact+all33ROIimages, finalreport/reproduction andallpublictext delivered. See docs/videorepa_videomaev2_20261108/{completion.json,final_report.md}. Publicresults c6b40104dcd3aac1c6a7eba90804dea9bdd4656e. TestLPIPS gain evidenceinsufficient,PSNR/SSIMcost,no acceleration; researchcompletion isnotmethodsuccess. Allservicesexit0/sharedlockreleased/source11andoldcheckouts preserved. No activeexperiment remains; monitorclosed. Do not restart preflight/training/evaluation or launch an extraarm/weight/steps/multiseed/H100 without a newhuman instruction. All earlier running/planning statements below are historical.
+
 Read this file first, then `DECISIONS.md`, then `TASKS.md`. `RESEARCH_PLAN.md` is the technical reference for the method, baselines, metrics and controls.
 
 **Current active implementation root,2026-11-08:** `/home/hugo/.codex/worktrees/vsr-videomaev2/VSR-sync`, created from completed Wan TRD publication `c4b66a1e7451bb4285ef6a5f4cbafe6e4dd0ce80`. Previous P6 closure is `outputs/WanTRD_20261108/completion.json`; all oldsources/results remain preserved. The human explicitly authorized implementation and launch of the VideoMAEv2 plan after that closure, now satisfied. Implement only in this newroot. Ordinary CPU implementation/tests and bounded26-update GPU preflight followed by successful-gate twoarm4096 training/448val128test are authorized. No newteacher GPUforward has yet occurred. Read `docs/videorepa_videomaev2_20261108/plan.md`; do not silently change its numerical contract,margin.1/lambda.5/teacher/budget/data orfallback on failure. Earlier source-root instructions are historical and do not authorize modifying old worktrees.

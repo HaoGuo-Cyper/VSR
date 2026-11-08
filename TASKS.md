@@ -280,3 +280,8 @@ Preflight protocolSHA `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361c
 - [x] V4: full448validation/128test/nativeverify; bothprospectivefinal2048 retained;19008predictionPNG/576MP4.
 - [~] V5: independent576row/25CI stats,6fixedvideos+actual12contact/ROIimages,twocurves,finalreport/8CP-reproduction index complete; finalpublictext commit inprogress.
 No qualitygain/acceleration claim: LPIPS evidenceinsufficient,PSNR/SSIMcost. No automatic extraarm/weight/steps/EMA/multiseed.
+
+
+### VideoMAEv2 V5 final closure — 2026-11-08 UTC
+- [x] V5: full4096/26/448/128,8CP/19008PNG/576MP4/25independentCI/2curves/6fixedvideos/actual12contact+all33ROIimages/reproduction andcompletepublictexts delivered. Publicresults c6b40104dcd3aac1c6a7eba90804dea9bdd4656e.
+Research delivery complete; testLPIPS gain evidenceinsufficient,PSNR/SSIMcost,no acceleration. No extra scientificjob. Services exit0/sharedGPUlockfree; source11/oldcheckouts preserved. Monitoring is closed because noauthorizedjob remains.

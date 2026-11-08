@@ -1,6 +1,6 @@
 # VSR：带教师特征监督的 Latent Diffusion 视频超分辨率
 
-**最新完成：VideoMAEv2 / Wan 视频超分适配（2026-11-08 UTC）。** 两组各2048步、26次诊断、完整val448/test128及独立复算和固定视频逐帧复核完成。本配置未显示明确LPIPS增益或训练加速，并有PSNR/SSIM保真度代价。见[最终报告](docs/videorepa_videomaev2_20261108/final_report.md)、[逐视频指标](docs/videorepa_videomaev2_20261108/analysis/test/per_clip_metrics.csv)、[复现与8检查点索引](docs/videorepa_videomaev2_20261108/reproduce_and_checkpoints.md)。[事前方案与必要适配](docs/videorepa_videomaev2_20261108/plan.md)保留原样；图像/视频/权重只保留本机，公开文本发布完成状态见最终closure记录。下方保留各历史轮记录。
+**最新完成：VideoMAEv2 / Wan 视频超分适配（2026-11-08 UTC）。** 两组各2048步、26次诊断、完整val448/test128及独立复算和固定视频逐帧复核完成。本配置未显示明确LPIPS增益或训练加速，并有PSNR/SSIM保真度代价。见[最终报告](docs/videorepa_videomaev2_20261108/final_report.md)、[逐视频指标](docs/videorepa_videomaev2_20261108/analysis/test/per_clip_metrics.csv)、[复现与8检查点索引](docs/videorepa_videomaev2_20261108/reproduce_and_checkpoints.md)。[事前方案与必要适配](docs/videorepa_videomaev2_20261108/plan.md)保留原样；图像/视频/权重只保留本机，全部训练/逐行评价文本已公开，完成状态见[closure记录](docs/videorepa_videomaev2_20261108/completion.json)。下方保留各历史轮记录。
 
 **已完成的 Wan TRD 第二轮（2026-11-08）：教师目标对照。** 保留现有Wan框架，比较原始基线、冻结Base教师、EMA教师，固定VideoREPA代码式关系损失与共同训练条件。预算3×2048步、41次独立预飞诊断、val640/test192，先检查目标与梯度可用性。方案见[教师目标计划](docs/ema_teacher_targets_20261108/plan.md)和[本轮执行记录](docs/ema_teacher_targets_20261108/execution.md)。上一轮完整结果保留如下。
 
@@ -125,3 +125,6 @@ H100迁移方案保留为历史计划，当前延期，不是本地主线的前�
 
 
 Previous completed study (2026-11-08): [Wan TRD final report](docs/ema_teacher_targets_20261108/final_report.md), [reproduction and checkpoints](docs/ema_teacher_targets_20261108/reproduce_and_checkpoints.md). Full evaluation completed; EMA improvement over the original baseline remains insufficient, with additional training cost. The separately authorized [VideoMAEv2/Wan prospective plan](docs/videorepa_videomaev2_20261108/plan.md) retains the original fixed video teacher and starts only after this delivery and its own correctness/resource checks.
+
+
+Latest completed study: [VideoMAEv2/Wan final report](docs/videorepa_videomaev2_20261108/final_report.md), [completion](docs/videorepa_videomaev2_20261108/completion.json). Full planned budget and delivery are complete; LPIPS gain evidence remains insufficient and no training acceleration was observed. No further experiment is running.
