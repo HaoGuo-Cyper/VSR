@@ -194,3 +194,15 @@ Latest human scope,2026-11-08: baseline + HR-VAE + HR-DINOv2 fixed-teacher study
 - [x] F4: fullval1024/33792 predictionPNGs verified; final2048 selection baseline/VAE.11/DINO.094 independently reproduced. Sharedinitial31 retainedwindows/2046PNG exact historical regression passed.
 - [x] F5: fulltest192/6336 predictionPNG source/hash/nativeverify and independent5metric/pairedCI audit passed; originalselectionunchanged.
 - [x] F6: completedpairedstats/twoqualitycurves/6fixed33framevideos/contactandall33ROIreview/reproindex/finalreport; independentreportreviewpassed. Authorizedtextpublicationinthisclosurecommit; weights/media/cacheexcluded. No automaticround2.
+
+## Next teacher-target study is planning only, 2026-11-08
+
+- [x] P0: protocol, official-code differences, paired three-arm design, budget and evaluation criteria documented in `docs/ema_teacher_targets_20261108/plan.md`; independent scientific and budget reviews completed.
+- [ ] P1: new isolated implementation within the existing10 business modules; completed experiment numerics preserved. Not implemented.
+- [ ] P2: targeted CPU regression tests and protocol review. Not run for the proposed method.
+- [ ] P3: future explicit GPU authorization,41 diagnostic updates and common-lambda calibration; currently prohibited/unstarted.
+- [ ] P4: three fresh2048 trajectories; currently prohibited/unstarted.
+- [ ] P5: complete640 validation and192 test restores; currently prohibited/unstarted.
+- [ ] P6: paired tables, curves, fixed six videos, costs and reproducible delivery; not started.
+
+No automation or second-round experiment is active. This planning request does not reopen any oldrun.

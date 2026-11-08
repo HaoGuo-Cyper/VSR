@@ -2,6 +2,8 @@
 
 Read this file first, then `DECISIONS.md`, then `TASKS.md`. `RESEARCH_PLAN.md` is the technical reference for the method, baselines, metrics and controls.
 
+**Latest human request, 2026-11-08: planning only for the next teacher-target comparison.** Read `docs/ema_teacher_targets_20261108/plan.md`. Preserve the existing Wan framework and compare baseline, frozen Base teacher and EMA Base teacher using one common VideoREPA-inspired TRD objective. This is a Wan adaptation, not a CogVideoX/VideoMAEv2 paper reproduction. Proposed budget: three trajectories of2048 updates,640 validation and192 test restores. The human explicitly said not to start training: no new GPU preflight, experiment, evaluation or automation is authorized now. This restriction supersedes earlier continuous-execution permissions for this new study. Only the plan/tracking documents are updated; all completed sources and results remain preserved.
+
 **Latest human scope,2026-11-08: baseline + HR-VAE + HR-DINOv2 fixed-teacher study. Follow docs/fixed_teacher_20261108/plan.md and method_references.md; it supersedes previous EMA/gamma and HR-VAE-only drafts, both0GPU. One trainingseed,atmost2weights/method,atmost5trajectories; sameBase/block7/commonFM/RNG,meanSmoothL1VAE/channel-L2cosineDINO. Realpreflight/calibrationbeforeweights/budgetfreeze; planned5x2048=1.25RE withinpriorStage4budget. Completeval1024 andselection-boundtest192,all33frames; independenttestsourcewithhistoricalexposuredisclosure. Onlycompleteimplementation/correctness/budgettraining/nativeinference/analysisdeliveriesfinishthisround. Recoverablefaultresumeauthorized. EMA/SelfFlowround2suggestionsonly.**
 
 **Superseded draft,2026-11-08: HR VAE-only latent study (0GPU; do not execute).** The human explicitly replaces EMA/gamma work with frozen clean HR VAE latent supervision and requests implementation, correctness tests, small paired training, full inference evaluation and analysis. Follow docs/hr_vae_latent_20261108/plan.md and configs/hr_vae_latent_20261108.json. This overrides older rules saying HR latent is not the teacher and forbidding same-study checkpoint recovery: this independent study uses the requested target and permits diagnosed recoverable-fault resume with complete state and preserved records. Budget baseline/.01/.1each2048=.75RE; complete640clean restores incl shared0/intermediateCPs, singletrainingseed; no multi-seed/formal extension. Gamma prototype archived locally, never launched. Preserve oldcanonical a91 numericalsources/HEAD and actual41407b0; develop only thisisolatedworktree.
@@ -14,7 +16,7 @@ Read this file first, then `DECISIONS.md`, then `TASKS.md`. `RESEARCH_PLAN.md` i
 
 ## Current goal
 
-Compare baseline, frozen HR-VAE and frozen HR-DINOv2 supervision under the prospectively fixed single-seed protocol. Read docs/fixed_teacher_20261108/plan.md first. No EMA/Self-Flow run belongs to this round. All11 core sources are frozen by calibration protocol8cea87c733547436bafcba29c87a5223a5dd443d6a8c9c2f54672fc9ae3c5868 through training/validation/test.
+Deliver the planning-only Wan teacher-target protocol, budget and evaluation criteria in `docs/ema_teacher_targets_20261108/plan.md`. Implementation and GPU work remain unstarted until a later instruction. The previous fixed-teacher round is complete; its11 numeric sources, protocols, checkpoints and results stay unchanged. The new plan does not reopen old failed EMA runs or authorize a second-round launch.
 
 ## Historical EMA goal
 
