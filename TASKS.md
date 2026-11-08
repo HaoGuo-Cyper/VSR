@@ -268,3 +268,9 @@ Preflight protocolSHA `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361c
 - [~] V3: unique paired training5292bbd… started, B/R fresh2048 each=4096/8CP; numericalsource frozen.
 - [~] V4 orchestration: soleCPUparent waits existingtraining, thenfullaudit→val448→bothfinals→test128→analysis; no extra training.
 - [ ] V5: complete stats/6fixedvideos/actualrootvisual/report/text sync still pending.
+
+
+### VideoMAEv2 full training completion — 2026-11-08
+- [x] V3: all4096 science/8CP completed; fullCPUaudit passed, matcheddata/noise/fourRNG/head/optimizer/source/time chain. Zero discarded updates; teacher2048 fixed/noEMA.
+- [~] V4: validation448 protocol950cce2c… now uniquelyexecuting; bothfinal2048/test128/verify pending.
+- [ ] V5: quality/efficiency conclusion and complete visualization/reproducible final delivery pending; no partialscore conclusions.

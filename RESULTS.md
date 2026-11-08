@@ -613,3 +613,12 @@ Prior WanTRD P6 fullydelivered/publishedc4b66a1e. NewindependentVideoMAEv2 sourc
 唯一CPU父 `vsr-videomaev2-continuation-20261108t151223z.service` 正等待既有训练，不启动第二次训练；后续按完整4096/8CP/RNG审计→448验证→双方final2048锁定→128测试→两阶段分析顺序继续。父与训练均Restart=no，失败保留记录不自动重试。父完成不等于研究交付完成，仍需root独立统计、六份固定视频实际复核、最终报告与文本同步。
 
 元数据及完整日志使用白名单无损UTF8分块公开；protocol约26.8MB的完整1641RGB绑定保持原字节，通过parts_manifest依序拼回原SHA。该持续导出器不含每行metrics/complete，完整评价后另显式导出这些文本。禁止公开权重/CP/PNG/MP4/tensor。
+
+
+## VideoMAEv2 paired training completed — 2026-11-08
+
+Both arms completed2048 updates each (4096 science/0 newdiagnostics),8 complete checkpoints,0 discarded updates. Training service exited0/MainPID0. Full independent CPU audit passed4096finite contiguous rows, matched2048sample/sigma/timestep sequence,8CP/source/initialization, four explicitRNG byte-pair checks, student/head/AdamW updates and immutable teacher metadata; no GPU/model reconstruction. Actual auditSHA25d8437000b4712ebf9a016bbc9dfc5a59c0b3f6df7b127237ebadbd3bb9ca3f.
+
+Synchronized committed Step cost: baseline757.491272s, method822.207155s, total1579.698428s. Method HR CPU reads62.567083s are outside Step but already inside total attempt1707.996856s; do not add them again to attemptwall. Method made2048online fixedteacher forwards,0teacher parameter updates/0EMA. Auxiliary loss or participation is not quality evidence.
+
+The sole CPU parent passed fullaudit and prepared/reviewed validation448, now executing protocol950cce2ced2b8d0adf914b9c2d7b6beaafe7b5050c599ccc4b70cdd48f72e60c in pipeline/validation. No quality interpretation before the complete matrix. Both final2048 remain prospectively fixed;test128 and complete independent analysis/video delivery are pending. No retraining/resume/extra configuration.
