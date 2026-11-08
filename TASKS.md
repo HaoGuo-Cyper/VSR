@@ -227,3 +227,10 @@ Prior planning checklist records the earlier stop,not thelatest authorization.
 - [~] P3: metadata prepared with41diagnostic/0science budget; next exclusivehostpreflight firstchecks15train-onlygradientcases.
 
 Preflight protocolSHA `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361ceb6c650`; numericalsource now frozen for this attempt. P4/P5/P6 remainunstarted.
+
+
+### Wan TRD actual GPU preflight passed and paired training started
+
+- [x] P3:15/15gradientcases,commonlambda.3,41attempted/applied/returned,exactGPUsemantics/resume/16GiB checks andindependentaudit passed.
+- [~] P4:baseline2048complete withstudenthashes matchingpriorbaseline;frozen/EMAcontinue within6144budget.
+- [~] P5/P6 orchestration:CPUhelpers andserialcontinuation passedfixtures/independentreview,waitingexistingtraining;noevaluationstarted.

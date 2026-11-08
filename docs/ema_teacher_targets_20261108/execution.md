@@ -19,3 +19,16 @@
 - 再用`trd-build-config --phase test --validation-run <val_run> --finals-receipt <receipt> ...`生成全192测试矩阵；三组全部保留。
 
 本轮测试来源已经历史使用，公开记录这一限制。任何目标门槛/非有限/OOM失败均封存，停止依赖GPU，不自动改参数使其通过。
+
+
+## 真实预飞通过并进入训练
+
+预飞run `preflight_20261108T123515Z`、protocol `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361ceb6c650` 已退出0/MainPID0，41 attempted/applied/returned。15/15例主干辅助梯度为正，覆盖三个σ档；共同λ=0.3。相同输入features逐字相等、零TRD、零权重基线轨迹和两教师完整恢复通过；实际预飞独立复算0flag。
+
+6个计时样本含慢值：baseline0.349884±0.057714秒，frozen0.494330±0.063966，EMA0.529744±0.057220；峰值allocated约3.58/3.64/3.64GiB。比值1.413/1.514只是短测成本，不继承旧G3的1.5倍门槛，不是质量结果。
+
+唯一训练run `paired_training_20261108T124055Z`、protocol `6d5221ce42f2264e10a78c51c04b4d833a3137e146aa7aa54d2c176151b4f072` 已启动三组各2048。baseline已完整完成，初始和最终学生参数哈希均匹配上一轮同条件baseline；当前继续frozen与EMA。不能从训练损失判断最终超分收益。
+
+串行父进程只等待现有训练退出0，再完整训练审计、val640、verify、锁定三组最终2048、test192、verify和分析；任何一步失败即停止，不重启训练或调参。运行声明见原工作区 `work/active_wan_trd.json` 与其continuation/pipeline_status。全11数值源码及父流程绑定的统计helper从现在保持不变。
+
+公开训练日志按512完整行无损分块，`training_parts_manifest.json`给出每块及canonical总SHA；按顺序拼接可以恢复原JSONL完整字节，不丢步、不删行。权重、图像视频和tensor缓存保持本机。
