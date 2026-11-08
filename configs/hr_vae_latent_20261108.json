@@ -1,0 +1,94 @@
+{
+  "schema": "hr_vae_study_v1",
+  "title": "Clean HR VAE latent supervision, first paired single-seed study",
+  "run_root": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/hr_vae_runs",
+  "base_config": "/home/hugo/Projects/VSR_/runs/stage2_protocol33_base_seed20261102_20261106T025845.129456Z/config.json",
+  "base_checkpoint": "/home/hugo/Projects/VSR_/runs/stage2_protocol33_base_seed20261102_20261106T025845.129456Z/Base/checkpoint_008192.pt",
+  "allowed_base_root": "/home/hugo/Projects/VSR_/runs",
+  "cache_root": "/home/hugo/Projects/VSR_/runs/stage2_protocol33_base_seed20261102_20261106T025845.129456Z",
+  "model_directory": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers",
+  "device": "cuda:0",
+  "gpu_uuid": "GPU-4414baf2-fd94-f31a-18e6-ebe95dcd1813",
+  "gpu_admission": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/hr_vae_admission_20261108.json",
+  "gpu_lock": "/home/hugo/Projects/VSR_/runs/stage2_gpu.lock",
+  "training_seed": 20261102,
+  "updates": 2048,
+  "checkpoint_updates": [
+    512,
+    1024,
+    1536,
+    2048
+  ],
+  "eval_updates": [
+    512,
+    1024,
+    2048
+  ],
+  "arms": [
+    {
+      "label": "baseline",
+      "weight": 0.0
+    },
+    {
+      "label": "hr001",
+      "weight": 0.01
+    },
+    {
+      "label": "hr01",
+      "weight": 0.1
+    }
+  ],
+  "student_layer": 7,
+  "smooth_l1_beta": 1.0,
+  "loss_reduction": "element_mean",
+  "target_patch_order": "pt,ph,pw,C",
+  "target_token_order": "T,H,W",
+  "teacher": "frozen matched VAE posterior.mode, original channel normalization",
+  "head": "single FP32 Linear1536to64; train-only",
+  "all_timesteps_and_tokens": true,
+  "EMA": false,
+  "condition_corruption": false,
+  "primary_quality_metric": "clean x4 all33 RGB LPIPS Alex0.1, sampler mean within clip then equal32 clips",
+  "quality_interpretation": "pairedclip95CI of baseline-minus-method LPIPS: lower>0 improvement; upper<=0 no benefit; otherwise insufficient; PSNR/SSIM/temporal tradeoffs always reported",
+  "selection": "minimum final2048 validation mean LPIPS among two weights; exact ties choose .01; publish all attempts",
+  "uncertainty": {
+    "training_seeds": 1,
+    "sampling_seeds": [
+      42,
+      43
+    ],
+    "paired_clip_bootstrap_draws": 10000,
+    "seed": 20261102,
+    "generator": "PCG64",
+    "interval": "95% linear-percentile descriptive conditional single training seed"
+  },
+  "efficiency": "compare measured checkpoints against baseline final2048 LPIPS and synchronized cumulative training-step wall seconds; also report CUDA events, throughput, memory, full service wall time and checkpoint I/O separately",
+  "evaluation_scope": {
+    "cohort": "original sealed val32 with32 unique original source videos",
+    "frames_per_clip": 33,
+    "full_selected_clip": true,
+    "full_raw_source_video": false,
+    "roles": 10,
+    "restores": 640,
+    "frames_predicted": 21120,
+    "steps": 20,
+    "CFG": 1.0,
+    "tile_hw": [
+      256,
+      448
+    ],
+    "overlap": 64,
+    "conditions": [
+      "clean_bicubic_x4"
+    ]
+  },
+  "test_policy": "No new test access; historical test211 was evaluated by old models and is not a pristine project-wide test",
+  "resume_policy": "same scientific protocol; verified full training checkpoint incl optimizer/head/RNG; preserve aborted attempts; do not count discarded updates as convergence progress",
+  "budget": {
+    "scientific_updates": 6144,
+    "RE": 0.75,
+    "diagnostic_updates_planned": 27,
+    "preflight_weights_reused": false
+  },
+  "scope_end": "this small-scale paired study and analysis; no multi-seed formal experiments or VAE intermediate-feature variants"
+}

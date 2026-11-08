@@ -2,11 +2,19 @@
 
 Read this file first, then `DECISIONS.md`, then `TASKS.md`. `RESEARCH_PLAN.md` is the technical reference for the method, baselines, metrics and controls.
 
+**Latest human scope,2026-11-08: baseline + HR-VAE + HR-DINOv2 fixed-teacher study. Follow docs/fixed_teacher_20261108/plan.md and method_references.md; it supersedes previous EMA/gamma and HR-VAE-only drafts, both0GPU. One trainingseed,atmost2weights/method,atmost5trajectories; sameBase/block7/commonFM/RNG,meanSmoothL1VAE/channel-L2cosineDINO. Realpreflight/calibrationbeforeweights/budgetfreeze; planned5x2048=1.25RE withinpriorStage4budget. Completeval1024 andselection-boundtest192,all33frames; independenttestsourcewithhistoricalexposuredisclosure. Onlycompleteimplementation/correctness/budgettraining/nativeinference/analysisdeliveriesfinishthisround. Recoverablefaultresumeauthorized. EMA/SelfFlowround2suggestionsonly.**
+
+**Superseded draft,2026-11-08: HR VAE-only latent study (0GPU; do not execute).** The human explicitly replaces EMA/gamma work with frozen clean HR VAE latent supervision and requests implementation, correctness tests, small paired training, full inference evaluation and analysis. Follow docs/hr_vae_latent_20261108/plan.md and configs/hr_vae_latent_20261108.json. This overrides older rules saying HR latent is not the teacher and forbidding same-study checkpoint recovery: this independent study uses the requested target and permits diagnosed recoverable-fault resume with complete state and preserved records. Budget baseline/.01/.1each2048=.75RE; complete640clean restores incl shared0/intermediateCPs, singletrainingseed; no multi-seed/formal extension. Gamma prototype archived locally, never launched. Preserve oldcanonical a91 numericalsources/HEAD and actual41407b0; develop only thisisolatedworktree.
+
 **Latest human authorization,2026-11-07:** the human instructed “继续在本地完成这个任务…继续，不用问我，你可以自行决定继续”. RTX5080 is the active experiment platform;H100 migration is deferred. Read the current plan and active run declarations before acting;normal gated continuation and routine engineering decisions are authorized without repeated permission. Preserve all old stopped/failed runs,never resume or reuse their rows. Scientific failure/nonfinite/OOM stops dependent GPU work for reporting,no silent protocol change or automatic retry. Actual41407b0 remains untouched.
 
 **Latest gate state,2026-11-07: G4 FAILED; dependentGPU work STOPPED.** The full1152pilot matrix completed and38016PNG/source/hash chains passed nativeverify;independentpoint/547CI audits reproduce the result. Recovery C1-minus-A2 maskedLPIPS=.009195653052302077 exceeds BaseSD=.004334114461900804, but clean A2-minus-C1 PSNR=-.13303764684337582dB andSSIM=-.00555444686588915 fail the two zero-tolerance guards. Allthreeconditionswerepredeclared;no rules/toleranceschanged. No4096/sweep/Stage5 launched. AllservicesMainPID0,GPUreleased. Automationvsr wasdeleted after the failedgate because there is no active job left to monitor. Read docs/local_continuation_20261107/G4_report.md andnext_protocol_options_not_executed.md;the latter is a proposal only. Preserve numericalsource/dependencies/results for reproducibility;do not restart or alter this completedrun. Overallresearchobjective is not marked achieved.
 
-## Goal
+## Current goal
+
+Compare baseline, frozen HR-VAE and frozen HR-DINOv2 supervision under the prospectively fixed single-seed protocol. Read docs/fixed_teacher_20261108/plan.md first. No EMA/Self-Flow run belongs to this round. All11 core sources are frozen by calibration protocol8cea87c733547436bafcba29c87a5223a5dd443d6a8c9c2f54672fc9ae3c5868 through training/validation/test.
+
+## Historical EMA goal
 
 Test whether temporally structured self-distillation improves a Wan2.1-T2V-1.3B video super-resolution (VSR) model. An EMA copy of the model (the teacher) sees frames the student only sees in corrupted form, and the student learns to rebuild those frames from neighbouring frames. The target gains are better restoration of badly degraded frames and better temporal consistency, at zero inference cost.
 

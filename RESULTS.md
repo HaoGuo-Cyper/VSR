@@ -480,3 +480,29 @@ The full1152 methodobservations and38016PNG/source/hash/runtime/model/CP/rolecha
 RecoveryDelta=C1minusA2maskedLPIPS=.009195653052302077,95%descriptiveCI[.0067312690347171205,.011731506862415699],exceedsBase3seedabsolutemaskedLPIPSSD=.004334114461900804:recoveryconditionPASS. Clean unrounded A2-minus-C1 PSNR=-.13303764684337582dB,CI[-.15587107255846228,-.11056204234608204];SSIM=-.00555444686588915,CI[-.006631241527837535,-.004450000141690853]:bothcleanguardsFAIL. ThereforeoriginalANDG4=failed_G4_stop. Noepsilon,metric/typefilter,posthocthreshold,extraCIgateorpvalue. Allfivecorrupttypes/clean/temporal/flow/matchedBasecontroltablesarepublishedin docs/local_continuation_20261107/G4_report.md andpilot_metrics_table.md/json. Mask-touchtLP100A2minusC1macro=-.47643484046346196,descriptiveCI[-.5759699401192019,-.3871641627459194];thisisreported,notanextraG4gate.
 
 Interpretationlimitedtocurrentconfigurationandone methodtrainingseed:recoverysignalcomeswithcleanfidelitycost. StopdependentGPUstages;noautomatic4096,sweep,Stage5orH100migration. Originalweights/checkpoints/media/tensorskeptprivateandallrecordsretained. Automationvsrdeletedafterthefailedgatebecausenoactivejobremains;notamarkofresearchgoalachievement. next_protocol_options_not_executed.md isplanningonly.
+
+
+## 2026-11-08 — HR VAE latent first study, prospective preparation
+
+Humanrequested foundationalHRVAE supervision instead ofEMA. Gamma prototype preservedinlocal5dcad5d/archiveref,0gammaGPUupdates. Host5080idle(noMLprocess); dataauditconfirms sourceisolatedtrain1641/val32/allthreeoriginalsplits; cachedHR/LRvalassets consistent. Pairedbaseline/.01/.1freshBase01each2048budget6144=.75RE,shared0+3CPs×3arms×val32×2samplers=640restores. Originalnativeinference/metricdefinitionsandall33frameskept; notfullrawsourcevideo. Newmethodindex7/singleLinear1536to64/frozenHRnormalizedlatent/SmoothL1elementmeanbeta1. Prospectiveplan/configsavedbeforeanyqualityscore. CPUimplementation/testsongoing,0newformalupdatesatthetimeofthisentry.
+
+
+## Fixed-teacher three-group scope — 2026-11-08
+
+Latest human scope,2026-11-08: baseline + HR-VAE + HR-DINOv2 fixed-teacher study. Follow docs/fixed_teacher_20261108/plan.md and method_references.md; it supersedes previous EMA/gamma and HR-VAE-only drafts, both0GPU. One trainingseed,atmost2weights/method,atmost5trajectories; sameBase/block7/commonFM/RNG,meanSmoothL1VAE/channel-L2cosineDINO. Realpreflight/calibrationbeforeweights/budgetfreeze; planned5x2048=1.25RE withinpriorStage4budget. Completeval1024 andselection-boundtest192,all33frames; independenttestsourcewithhistoricalexposuredisclosure. Onlycompleteimplementation/correctness/budgettraining/nativeinference/analysisdeliveriesfinishthisround. Recoverablefaultresumeauthorized. EMA/SelfFlowround2suggestionsonly.
+
+
+## Fixed-teacher preparation,2026-11-08
+
+Current design is configs/fixed_teacher_design_20261108.json; it supersedes unexecuted HRVAE-only/gamma drafts. A data-only visual integrity audit found confirmed cross-split near copies beyond sourceID/byte checks:1val and3test sources. The independent cohort repair retains train1641/Base and historical records,31val/29test old windows, replaces only flagged evaluation sources by fixed SHA order, and passes complete1705-clip rescreen under the declared rule. This is not an exhaustive independence proof. Formal test RGB/model scores remain selection-gated; automated integrity thumbnails are explicitly disclosed.
+
+DINO cache completed1673records/55209HRframes with0studentupdates; encode_hr wall96.912832s, otherbinding/IO77.543896s, total174.456727s. Peakallocated421894656B/reserved446693376B. Feature tensor bytes5180571648; all1673 feature hashes/metadata,203teacher source hashes and officialweights independently audited. Fullcachemanifest/seal bindings and receipts are in docs/fixed_teacher_20261108/DINO_cache/. PureGPUencode time was not separately measured.
+
+Final relatedCPU suite107/107 passed,0fail/0error/0skip,49.210s; CUDA never initialized. Six realtinyWan calibration forwards/18gradient queries passed, with no model/head/optimizer/RNG updates. Earlier failed fixtures and CPU-visibility incident remain preserved. Prepared calibration source11 exactly equals finalCPU source bindings; independent109explicit-file plus1673-cache review passed.
+
+Only calibration GPU job vsr-fixed-teacher-calibration-20261108t033537z.service launched. Run work/fixed_teacher_runs/calibration_20261108T033512Z, protocol8cea87c733547436bafcba29c87a5223a5dd443d6a8c9c2f54672fc9ae3c5868:27diagnostic optimizer updates planned/0scientific; complete training-cache online equality, HR-VAE reconstruction, baseline reproduction, two-head fullstate save/reload and realresource/gradientcalibration required beforefinalweights. No current-round quality result is available.
+
+
+### Fixed-teacher real preflight completed before method scores
+
+Calibration8cea87...c5868 exited0/MainPID0;27diagnostic/0science. Three originalbaseline steps exact, bothheads/student-only reload/fullAdamW+RNG restore exact, train0/1VAE/DINOonline/cache exact. CalibratedVAEweights.11/1.1,DINO.094/.94 bytrainonlygradients. Baseline/VAE/DINO timed6mean .355745/.355342/.360189s, peakallocated3.582/3.586/3.605GiB; sixsamples include slowrows, no precise speed claim. Finalstudy13206686...1216 andplannedtraining7b620162...1509 fixed5×2048=10240/1.25RE beforeval/testquality. See preflight_and_budget.md andcompletecalibration summary.

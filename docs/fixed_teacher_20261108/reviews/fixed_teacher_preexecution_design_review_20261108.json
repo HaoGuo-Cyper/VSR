@@ -1,0 +1,56 @@
+{
+  "status": "read_only_pre_execution_design_review_with_two_reporting_followups",
+  "observed_UTC": "2026-11-08T03:15:25.617041+00:00",
+  "reviewed": [
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-gamma-ablation/VSR-sync/docs/fixed_teacher_20261108/plan.md",
+      "sha256": "e34191c445b073dc93b039d2e6ca8d48a08e5e936c075d4b83c195a75ed9ea47"
+    },
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-gamma-ablation/VSR-sync/vsr/train.py",
+      "sha256": "58d366abb81299ba907813e0f75f0a4dc8abe4a44e466ad4744ea6015f821442"
+    },
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-gamma-ablation/VSR-sync/vsr/checkpoints.py",
+      "sha256": "fee88eb3f27075e99c8219af6b7786aff29f434a4b0bf21fc370d8bf17875171"
+    },
+    {
+      "path": "/home/hugo/.codex/worktrees/vsr-gamma-ablation/VSR-sync/vsr/losses.py",
+      "sha256": "ea0a0ca248caa39a377e1f3044008c9b99c3b2fbb02f8f8aaa627d265bc2329a"
+    }
+  ],
+  "scope": "Static design/provenance/RNG/resume/resource-lifetime audit only; no calibration or formal GPU started by reviewer.",
+  "covered": [
+    "User newround overrides EMA/gamma and unusedHR-only prototype; five trajectories,one training seed.",
+    "Fixedteacher training5x2048=10240=1.25RE; previousStage4 .75RE totals2RE<=3RE, diagnostics27 tracked separately.",
+    "Calibration complete status+raw protocol/summary SHA+no failure; source/input design reconstruction beforeformal.",
+    "Only trainclip0 and three predeclared nominal sigmas determine shared-student gradient ratio weights; nearest native sigma/index/timestep and exact noise seed are reported.",
+    "Allformal trajectories share same matchedBase/freshAdamW/noise/data order; headCPU initialization uses independent fork and independent seed.",
+    "Single Linear head depth for bothteacherfamilies, distinct documented outputdims64/768; weightcalibration excludes head from sharedstudent norm.",
+    "Checkpoint restores student/head/AdamW/state step/cumulativecommittedseconds/four explicitRNG streams under sameprotocol; constantLR correctly hasno separateLRscheduler.",
+    "GPU cleanup nonlocal primary references are released inside sharedlease; snapshots copied toCPU; no ordinary inference EMA.",
+    "Valfinal per-family choice then test192; independent test source plan frozen before materialization, historicaltest exposure disclosed.",
+    "LPIPS/all33 main, q255 commonpixels, PSNRSSIM/time metrics allreported; quality vs updates and trainingseconds distinct; no loss-to-quality inference."
+  ],
+  "followups_before_claiming_full_diagnostic_and_cost_reporting": [
+    {
+      "item": "Head-gradient norm diagnostics",
+      "observation": "Current cal_rows record student FM/unitaux gradient norms,not explicit head-only gradient norm. Probe totalgrad combines head+student.",
+      "recommendation": "Record head-only unitaux FP64L2 via the same autograd pass,leaving student-only ratio rule unchanged; or narrow plan wording."
+    },
+    {
+      "item": "Recovered/discarded work cost",
+      "observation": "Current cumulative_training_seconds represents retained successfulstep logs; checkpointrollback truncates later rows into interruptedlogs. Discarded/replayed costs are not automatically added to that axis.",
+      "recommendation": "Report retainedstep time,known discardedstep time/updates,attempt walltime,unknown partialeffects and offline teacher/cache/calibration separately. Do not claim the currentcurve is total spentGPUtime."
+    },
+    {
+      "item": "Calibration final completion boundary",
+      "observation": "Body writescompleted before context cleanup; cleanupfailure is later recordedfailed.",
+      "recommendation": "Root must wait service exit/lease released and re-read completechain beforeformal; do not use transientcompleted state while calibration process stillrunning."
+    }
+  ],
+  "blocker_in_current_metadata_or_RNG_flow_found": false,
+  "source_modified_by_review": false,
+  "GPU_work_performed": false,
+  "tests_repeated": false
+}

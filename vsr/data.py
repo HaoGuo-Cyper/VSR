@@ -813,6 +813,372 @@ def prepare_training_cache(config, output, *, project_root=None, vae=None, devic
     with gpu_lease(gpu_lock,target,gpu_admission):
         return _prepare_training_cache(config,output,**options)
 
+def _dinov2_source_header(cache_root):
+    """Bind an existing paired-RGB cache, never a historical DINO feature cache."""
+    root=Path(cache_root).resolve();seal=read_json(root/'cache_asset_seal.json')
+    hashes=seal.get('artifact_sha256',{})
+    def verified(name):
+        path=_inside(root/name,root)
+        _need(name in hashes and path.is_file() and file_hash(path)==hashes[name],'DINO source cache binding changed: '+name)
+        return path
+    config=read_json(verified('config.json'));selection=read_json(verified('selection.json'))
+    geometry=read_json(verified('correspondence.json'))
+    _need([config['data'].get(k) for k in ('num_frames','temporal_stride','height','width','scale')]==[33,1,128,224,4]
+          and geometry['latent_grid']==[9,16,28] and geometry['token_grid']==[9,8,14], 'DINO requires the matched33stride1 crop cache')
+    training,validation=selection['training_ids'],selection['validation_ids']
+    _need(training and selection.get('test_accessed') is False
+          and len(set(training+validation))==len(training+validation),'DINO source train/val selection differs or accesses test')
+    return {'root':str(root),'seal_sha256':file_hash(root/'cache_asset_seal.json'),
+            'config_sha256':hashes['config.json'],'selection_sha256':hashes['selection.json'],
+            'geometry_sha256':hashes['correspondence.json'],
+            'training_ids':training,'validation_ids':validation}
+
+
+def _dinov2_source_record(source,index):
+    root=Path(source['root']);seal=read_json(root/'cache_asset_seal.json')['artifact_sha256']
+    ids=source['training_ids']+source['validation_ids'];name=f'clip_{index}/metadata.json'
+    path=_inside(root/name,root)
+    _need(name in seal and file_hash(path)==seal[name],'DINO source metadata changed')
+    meta=read_json(path);payload={k:v for k,v in meta.items() if k!='binding'}
+    _need(meta['record_id']==ids[index] and meta['split']==('train' if index<len(source['training_ids']) else 'val')
+          and meta['binding']['data_cache_key']==_digest(payload),'DINO metadata ID/split/cache key mismatch')
+    _need(meta['temporal_stride']==1 and len(meta['source_indices'])==33
+          and meta['source_indices']==list(range(meta['source_indices'][0],meta['source_indices'][0]+33))
+          and meta['crop_tlhw'][-2:]==[128,224],'DINO source window/crop mismatch; oldstride4 targets are forbidden')
+    rgb_name=f'clip_{index}/paired_rgb.pt'
+    _need(rgb_name in seal,'Original paired HR RGB is not sealed')
+    return meta,{'metadata_sha256':seal[name],'paired_RGB_sha256':seal[rgb_name]}
+
+
+def _dinov2_teacher_contract(binding):
+    from .teacher import DINOV2_REVISION,DINOV2_WEIGHT_SHA256,dinov2_feature_spec
+    _need(isinstance(binding,dict) and binding.get('architecture')=='dinov2_vitb14'
+          and binding.get('source_revision')==DINOV2_REVISION
+          and binding.get('weights',{}).get('sha256')==DINOV2_WEIGHT_SHA256
+          and binding.get('feature_spec')==dinov2_feature_spec()
+          and binding.get('precision')=='FP32_no_autocast','DINO feature cache teacher/preprocessing differs')
+
+
+def _prepare_dinov2_cache(training_cache_root,output,teacher,device,execution_receipt=None):
+    from . import teacher as teacher_ops
+    import time
+    started=time.perf_counter();feature_seconds=0.;feature_bytes=0;serialized_bytes=0
+    source=_dinov2_source_header(training_cache_root);teacher_binding=teacher.binding
+    _dinov2_teacher_contract(teacher_binding)
+    header={'schema':'vsr_dinov2_cache_v1','source':source,'teacher':teacher_binding,
+            'feature_spec':teacher_ops.dinov2_feature_spec(),
+            'producer_code':{'data.py':file_hash(Path(__file__)),'teacher.py':file_hash(Path(teacher_ops.__file__))},
+            'extraction_device':str(device),'target_normalized_before_loss':False}
+    output=Path(output).resolve();_need(not output.exists(),'DINO cache output must be a new directory')
+    _need(not output.is_relative_to(Path(source['root'])),'DINO output cannot overwrite paired source cache')
+    output.mkdir(parents=True);records=[]
+    if execution_receipt is not None:
+        write_json_new(output/'extraction_receipt.json',execution_receipt)
+        header['extraction_receipt_sha256']=file_hash(output/'extraction_receipt.json')
+    try:
+        teacher.prepare(device)
+        for index in range(len(source['training_ids'])+len(source['validation_ids'])):
+            meta,inputs=_dinov2_source_record(source,index)
+            rgb_path=Path(source['root'])/f'clip_{index}/paired_rgb.pt'
+            _need(file_hash(rgb_path)==inputs['paired_RGB_sha256'],'Original HR RGB cache changed')
+            rgb=torch.load(rgb_path,map_location='cpu',weights_only=True)['hr']
+            _need(tuple(rgb.shape)==(1,3,33,128,224) and rgb.dtype==torch.float32 and not rgb.requires_grad
+                  and bool(torch.isfinite(rgb).all()) and float(rgb.min())>=0 and float(rgb.max())<=1,'Invalid original HR RGB')
+            hr_sha=hashlib.sha256(rgb.contiguous().numpy().tobytes()).hexdigest()
+            feature_started=time.perf_counter()
+            features=teacher.encode_hr(rgb)
+            feature_seconds+=time.perf_counter()-feature_started
+            _need(isinstance(features,torch.Tensor) and tuple(features.shape)==(1,1008,768)
+                  and features.dtype==torch.float32 and features.device.type=='cpu' and not features.requires_grad
+                  and bool(torch.isfinite(features).all()),'DINO target shape/dtype/device differs')
+            provenance={key:meta[key] for key in ('record_id','source_id','source_sha256','split','source_indices',
+                         'crop_tlhw','source_hw','resize_hw','temporal_stride','original_fps','output_fps')}
+            provenance.update(inputs,HR_f32_sha256=hr_sha,header_digest=_digest(header))
+            directory=output/f'clip_{index}';directory.mkdir()
+            metadata={'binding':provenance,'feature_shape':[1,1008,768],'dtype':'torch.float32'}
+            write_json_new(directory/'metadata.json',metadata)
+            with (directory/'features.pt').open('xb') as stream:
+                torch.save({'features':features.detach().clone().contiguous(),'binding':provenance},stream)
+            feature_bytes+=features.numel()*features.element_size()
+            serialized_bytes+=(directory/'features.pt').stat().st_size
+            records.append({'index':index,'record_id':meta['record_id'],
+                'metadata':{'path':f'clip_{index}/metadata.json','sha256':file_hash(directory/'metadata.json')},
+                'features':{'path':f'clip_{index}/features.pt','sha256':file_hash(directory/'features.pt')}})
+            del rgb,features
+        _need(teacher.binding==teacher_binding,'DINO teacher binding changed during extraction')
+        manifest=header|{'status':'completed','records':records,'test_pixels_accessed':False}
+        write_json_new(output/'manifest.json',manifest)
+        write_json_new(output/'seal.json',{'schema':'vsr_dinov2_cache_seal_v1',
+            'manifest_sha256':file_hash(output/'manifest.json'),'records':records})
+        total_seconds=time.perf_counter()-started
+        timings={'teacher_feature_extraction_seconds':feature_seconds,'total_cache_build_seconds':total_seconds,
+                 'other_io_binding_seconds':total_seconds-feature_seconds,
+                 'feature_scope':'encode_hr wall: CPU resize/normalize + H2D + FP32 DINO forward + blocking CPU copy + time grouping; not pure GPU compute',
+                 'other_scope':'source/teacher binding, model construction/loading, input/output IO, hashing and publication through cache seal',
+                 'total_scope':'cache builder entry through completed seal; excludes caller metadata construction, GPU admission and final cleanup',
+                 'pure_GPU_encoder_seconds':None}
+        memory=None
+        if torch.device(device).type=='cuda':
+            memory={'peak_allocated_bytes':torch.cuda.max_memory_allocated(device),
+                    'peak_reserved_bytes':torch.cuda.max_memory_reserved(device),
+                    'physical_device_bytes':torch.cuda.get_device_properties(device).total_memory}
+        result={'status':'completed','cache_root':str(output),'seal_sha256':file_hash(output/'seal.json'),
+                'training_count':len(source['training_ids']),'validation_count':len(source['validation_ids']),
+                'teacher_frames':len(records)*33,'optimizer_updates':0,'test_pixels_accessed':False}
+        receipt={'schema':'vsr_dinov2_cache_completion_v1',**result,'timings':timings,
+                 'feature_tensor_bytes':feature_bytes,'serialized_feature_bytes':serialized_bytes,
+                 'teacher_weight_bytes':teacher_binding['weights']['bytes'],'teacher_precision':'FP32',
+                 'GPU_memory':memory,'new_VAE_feature_extraction_seconds_this_round':0.,
+                 'VAE_cache_cost':'existing shared sunk preparation, not recharged per trajectory'}
+        write_json_new(output/'completion_receipt.json',receipt)
+        return result|{'completion_receipt':{'path':str(output/'completion_receipt.json'),
+                       'sha256':file_hash(output/'completion_receipt.json')},'timings':timings,'GPU_memory':memory}
+    except BaseException as error:
+        if not (output/'failure.json').exists():
+            write_json_new(output/'failure.json',{'status':'incomplete','completed_records':len(records),
+                'error':str(error),'automatic_retry':False,'optimizer_updates':0})
+        raise
+    finally:
+        import sys
+        import gc
+        primary=sys.exc_info()[1];first=primary
+        operations=[teacher.close,gc.collect]
+        if torch.device(device).type=='cuda' and torch.cuda.is_initialized():operations.append(torch.cuda.empty_cache)
+        for operation in operations:
+            try:operation()
+            except BaseException as secondary:
+                if first is None:first=secondary
+                elif first is not secondary:first.add_note('DINO cleanup error: '+str(secondary))
+        if primary is None and first is not None:raise first
+
+
+def prepare_dinov2_cache(training_cache_root,output,*,teacher,device='cpu',gpu_lock=None,gpu_admission=None):
+    """Explicit offline teacher extraction; CUDA load/cleanup share one lease."""
+    device=torch.device(device)
+    _need(device.type in ('cpu','cuda'),'DINO extraction requires an explicit CPU/CUDA device')
+    if device.type=='cpu':return _prepare_dinov2_cache(training_cache_root,output,teacher,device)
+    _need(gpu_lock is not None and isinstance(gpu_admission,dict),'DINO CUDA extraction requires shared GPU admission/lock')
+    _need(not torch.cuda.is_initialized(),'Configure strict DINO extraction in a fresh process')
+    _need(os.environ.get('CUBLAS_WORKSPACE_CONFIG')==':4096:8','DINO extraction requires strict CUBLAS environment before CUDA')
+    from .checkpoints import gpu_lease
+    from .model import configure_reproducibility
+    with gpu_lease(gpu_lock,str(device),gpu_admission) as admission:
+        runtime=configure_reproducibility(read_json(Path(training_cache_root)/'config.json'))
+        flags=runtime['flags'];enabled=('deterministic_algorithms','cudnn_deterministic','sdp_math')
+        disabled=('deterministic_warn_only','cudnn_benchmark','cudnn_allow_tf32','matmul_allow_tf32',
+                  'matmul_allow_fp16_reduced_precision_reduction','matmul_allow_bf16_reduced_precision_reduction',
+                  'sdp_flash','sdp_memory_efficient','sdp_cudnn','sdp_math_allow_fp16_bf16_reduction')
+        _need(runtime['mode']=='strict' and flags.get('cuda_initialized') is False
+              and all(flags.get(k) is True for k in enabled) and all(flags.get(k) is False for k in disabled),
+              'DINO extraction strict precision/math flags differ')
+        torch.cuda.init()  # Strict flags above must precede the first CUDA context.
+        torch.cuda.reset_peak_memory_stats(device)
+        return _prepare_dinov2_cache(training_cache_root,output,teacher,device,
+            {'runtime_before_teacher_load':runtime,'GPU_admission':admission,'strict_flags_verified_before_CUDA':True})
+
+
+class PreparedDINOData:
+    """Paired training-index reader for the new complete DINO cache only."""
+    def __init__(self,cache_root,training_cache_root,*,expected_teacher_binding=None,expected_seal_sha256=None):
+        from . import teacher as teacher_ops
+        self.root=Path(cache_root).resolve();seal_path=self.root/'seal.json'
+        self.seal_sha256=file_hash(seal_path)
+        _need(expected_seal_sha256 is None or self.seal_sha256==expected_seal_sha256,'DINO cache seal changed')
+        seal=read_json(seal_path);self.manifest=read_json(self.root/'manifest.json')
+        _need(seal.get('schema')=='vsr_dinov2_cache_seal_v1' and seal['manifest_sha256']==file_hash(self.root/'manifest.json')
+              and self.manifest.get('schema')=='vsr_dinov2_cache_v1' and self.manifest.get('status')=='completed'
+              and self.manifest.get('test_pixels_accessed') is False,'DINO cache incomplete, old or changed')
+        self.completion_receipt=read_json(self.root/'completion_receipt.json')
+        _need(self.completion_receipt.get('schema')=='vsr_dinov2_cache_completion_v1'
+              and self.completion_receipt.get('status')=='completed'
+              and self.completion_receipt.get('seal_sha256')==self.seal_sha256
+              and self.completion_receipt.get('optimizer_updates')==0
+              and self.completion_receipt.get('test_pixels_accessed') is False,
+              'DINO cache completion receipt is absent or changed')
+        _dinov2_teacher_contract(self.manifest['teacher'])
+        _need(expected_teacher_binding is None or self.manifest['teacher']==expected_teacher_binding,'Different DINO teacher requested')
+        self.source=_dinov2_source_header(training_cache_root)
+        _need(self.manifest['source']==self.source,'DINO cache does not match this paired data cache')
+        _need(self.manifest['producer_code']=={'data.py':file_hash(Path(__file__)),
+              'teacher.py':file_hash(Path(teacher_ops.__file__))},'DINO cache producer source changed')
+        if 'extraction_receipt_sha256' in self.manifest:
+            _need(file_hash(self.root/'extraction_receipt.json')==self.manifest['extraction_receipt_sha256'],
+                  'DINO extraction environment receipt changed')
+        self.ids=self.source['training_ids'];self.validation_ids=self.source['validation_ids']
+        self.records=self.manifest['records'];self.header={k:v for k,v in self.manifest.items()
+            if k not in ('status','records','test_pixels_accessed')}
+        _need(self.manifest['feature_spec']==teacher_ops.dinov2_feature_spec()
+              and self.manifest.get('target_normalized_before_loss') is False,'DINO time/spatial normalization differs')
+        _need(seal['records']==self.records and len(self.records)==len(self.ids)+len(self.validation_ids),
+              'DINO cache must retain every original train/val record')
+        source_sets={'train':set(),'val':set()}
+        for index,record_id in enumerate(self.ids+self.validation_ids):
+            record=self.records[index]
+            _need(record['index']==index and record['record_id']==record_id,'DINO cache order/ID differs')
+            metadata=self._metadata(index)
+            source_sets[metadata['binding']['split']].add(metadata['binding']['source_id'])
+        _need(not source_sets['train'].intersection(source_sets['val']),'DINO source leaks across training/validation')
+        _need(self.completion_receipt.get('teacher_frames')==len(self.records)*33
+              and self.completion_receipt.get('training_count')==len(self.ids)
+              and self.completion_receipt.get('validation_count')==len(self.validation_ids),
+              'DINO cache receipt counts differ')
+        self.metadata={'cache_root':str(self.root),'seal_sha256':self.seal_sha256,
+                       'completion_receipt_sha256':file_hash(self.root/'completion_receipt.json'),
+                       'training_count':len(self.ids),'validation_count':len(self.validation_ids),
+                       'target_shape':[1,1008,768],'CPU_only':True}
+
+    def _metadata(self,index):
+        record=self.records[index];path=_inside(self.root/record['metadata']['path'],self.root)
+        _need(file_hash(path)==record['metadata']['sha256'],'DINO metadata changed')
+        metadata=read_json(path);original,inputs=_dinov2_source_record(self.source,index)
+        expected={key:original[key] for key in ('record_id','source_id','source_sha256','split','source_indices',
+                     'crop_tlhw','source_hw','resize_hw','temporal_stride','original_fps','output_fps')}
+        binding=metadata['binding'];hr_sha=binding.get('HR_f32_sha256')
+        _need(isinstance(hr_sha,str) and len(hr_sha)==64 and all(c in '0123456789abcdef' for c in hr_sha),'DINO cache lacks HR float32 digest')
+        expected.update(inputs,HR_f32_sha256=hr_sha,header_digest=_digest(self.header))
+        _need(binding==expected and metadata['feature_shape']==[1,1008,768]
+              and metadata['dtype']=='torch.float32','DINO clip source/window/crop/teacher binding differs')
+        return metadata
+
+    def __len__(self):return len(self.ids)
+
+    def record(self,index):
+        _need(type(index) is int and 0<=index<len(self.records),'DINO record index outside cache')
+        return copy.deepcopy(self._metadata(index))
+
+    def __getitem__(self,index):
+        index=operator.index(index)
+        if index<0:index+=len(self)
+        if not 0<=index<len(self):raise IndexError(index)
+        return self.load(index)
+
+    def load(self,index):
+        """Explicit source index, including validation for offline calibration."""
+        index=operator.index(index)
+        if not 0<=index<len(self.records):raise IndexError(index)
+        metadata=self._metadata(index);record=self.records[index]
+        path=_inside(self.root/record['features']['path'],self.root)
+        _need(file_hash(path)==record['features']['sha256'],'DINO feature artifact changed')
+        payload=torch.load(path,map_location='cpu',weights_only=True);features=payload.get('features')
+        _need(payload.get('binding')==metadata['binding'] and isinstance(features,torch.Tensor)
+              and tuple(features.shape)==(1,1008,768) and features.dtype==torch.float32
+              and features.device.type=='cpu' and not features.requires_grad and bool(torch.isfinite(features).all()),
+              'DINO feature tensor/binding changed')
+        return features.clone()
+
+    def close(self):pass
+
+
+class FixedCleanReader:
+    """Read only completed clean33 assets; never decode raw test video here."""
+    def __init__(self,dataset_manifest,*,expected_split,cohort_seal=None,path_map=None,expected_dataset_sha256=None):
+        _need(expected_split in ('val','test'),'Fixed clean reader requires the actual val/test split')
+        self.split=expected_split;self.mapping=path_map or {};self.path=Path(dataset_manifest).resolve()
+        self.dataset_binding={'path':str(self.path),'bytes':self.path.stat().st_size,'sha256':file_hash(self.path)}
+        _need(expected_dataset_sha256 is None or self.dataset_binding['sha256']==expected_dataset_sha256,'Clean dataset changed')
+        self.dataset=read_json(self.path);self.seal_binding=None
+        supplied=cohort_seal
+        if supplied is None and self.dataset.get('schema')=='vsr_fixed_clean_dataset_v1':supplied=self.dataset['cohort_seal']['path']
+        if isinstance(supplied,(str,Path)):
+            seal_path=Path(supplied).resolve();self.seal=read_json(seal_path)
+            self.seal_binding={'path':str(seal_path),'bytes':seal_path.stat().st_size,'sha256':file_hash(seal_path)}
+        else:
+            _need(isinstance(supplied,dict),'Explicit fixed clean cohort seal required')
+            self.seal=copy.deepcopy(supplied)
+        generic=self.dataset.get('schema')=='vsr_fixed_clean_dataset_v1'
+        if expected_split=='val' and not generic:
+            _need(self.dataset.get('status')=='completed_CPU_assets_no_predictions'
+                  and self.dataset['config']==self.seal['config'],'Wrong existing val dataset status/config')
+            validate_seal(self.seal,path_map=self.mapping)
+            self.project_root=Path(self.seal['project_root'])
+        else:
+            _need(generic and self.dataset.get('status')=='completed_CPU_clean_assets'
+                  and self.dataset.get('split')==expected_split,'Generic clean assets absent or wrong split')
+            _need(self.seal.get('schema')=='vsr_fixed_clean_cohort_v1' and self.seal.get('split')==expected_split
+                  and self.seal.get('seal_digest')==_digest({k:v for k,v in self.seal.items() if k!='seal_digest'}),
+                  'Clean cohort metadata seal differs')
+            if expected_split=='test':
+                receipt=self.dataset.get('selection_receipt',{})
+                _need(set(('path','bytes','sha256')).issubset(receipt)
+                      and file_hash(receipt['path'])==receipt['sha256'] and Path(receipt['path']).stat().st_size==receipt['bytes']
+                      and self.dataset.get('materialization',{}).get('selection_frozen_before_decode') is True,
+                      'Test pixels need a fixed selection receipt before materialization')
+            else:
+                _need(self.dataset.get('materialization',{}).get('validation_assets_before_training') is True,
+                      'Validation assets require an explicitly declared prospective CPU producer')
+            declared=self.dataset['cohort_seal']
+            _need(self.seal_binding is not None and declared==self.seal_binding,'Clean dataset/cohort file binding differs')
+            self.project_root=self.path.parent
+        _need(self.dataset.get('cohort_seal_digest')==self.seal['seal_digest'],'Clean dataset/cohort digest differs')
+        self.cohort={x['record']['id']:x for x in self.seal['cohort']}
+        self.assets={x['record_id']:x for x in self.dataset['assets']}
+        _need(len(self.cohort)==len(self.seal['cohort'])==len(self.assets)==len(self.dataset['assets'])==32
+              and set(self.assets)==set(self.cohort),'Clean reader requires all32 unique fixed clips')
+        _need(all(len({str(self._asset_path(row[key])) for row in self.assets.values()})==32
+                  for key in ('HR','clean')),'Clean records must have distinct per-record asset paths')
+        for record_id,item in self.cohort.items():
+            row=self.assets[record_id]
+            _need(item['record']['split']==expected_split and row['source_id']==item['record']['source_id'],
+                  'Clean source/split differs; never relabel test as val')
+            indices=item['source_indices']
+            _need(len(indices)==33 and indices==list(range(indices[0],indices[0]+33)),'Clean window differs')
+            metadata=row.get('metadata',row.get('source_metadata',{}))
+            _need(row.get('split',expected_split)==expected_split and metadata.get('split',expected_split)==expected_split
+                  and metadata.get('source_id',row['source_id'])==row['source_id']
+                  and metadata.get('record_id',record_id)==record_id
+                  and metadata.get('source_indices',indices)==indices
+                  and metadata.get('source_sha256',item['record'].get('sha256'))==item['record'].get('sha256'),
+                  'Clean metadata source/window/split mismatch')
+            for key in ('HR','clean'):
+                spec=row[key];path=self._asset_path(spec)
+                _need(path.is_file() and file_hash(path)==spec['sha256'],'Clean RGB asset changed')
+
+    def _asset_path(self,spec):
+        path=Path(spec['path'])
+        if not path.is_absolute():path=self.project_root/path
+        return _mapped_path(path,self.mapping)
+
+    def describe(self):
+        cohort=[];assets=[]
+        for record_id,item in self.cohort.items():
+            row=self.assets[record_id];metadata=row.get('metadata',row.get('source_metadata',{}))
+            fps=metadata.get('output_fps',item.get('cached_header',{}).get('fps'))
+            cohort.append({'record':{k:item['record'][k] for k in ('id','source_id','split')},
+                           'source_indices':item['source_indices'],'cached_header':{'fps':fps}})
+            assets.append({'record_id':record_id,'source_id':row['source_id'],
+                **{key:{'path':str(self._asset_path(row[key])),'sha256':row[key]['sha256']} for key in ('HR','clean')}})
+        return {'split':self.split,'source_split':self.split,'cohort':cohort,'assets':assets,
+                'dataset_binding':copy.deepcopy(self.dataset_binding),'seal_binding':copy.deepcopy(self.seal_binding),
+                'seal_digest':self.seal['seal_digest'],
+                'data_independence':copy.deepcopy(self.seal.get('data_independence',
+                    {'source_split':'manifest_source_ID_isolated','near_duplicate_status':'not_verified_by_this_reader'}))}
+
+    def load(self,record_id,condition='clean',num_frames=33,start=0):
+        import numpy as np
+        _need(condition=='clean' and num_frames==33 and start==0,'Fixed clean reader forbids condition/window changes')
+        _need(record_id in self.assets,'Clip outside frozen clean cohort')
+        row,item=self.assets[record_id],self.cohort[record_id];result={}
+        for key,name,shape in (('HR','hr',(1,3,33,128,224)),('clean','lr',(1,3,33,32,56))):
+            spec=row[key];path=self._asset_path(spec)
+            _need(file_hash(path)==spec['sha256'],'Clean RGB asset changed after reader construction')
+            value=np.load(path,allow_pickle=False,mmap_mode='r')
+            _need(value.dtype==np.float32 and value.shape==shape and np.isfinite(value).all()
+                  and value.min()>=0 and value.max()<=1,'Invalid clean RGB asset')
+            if 'rgb_f32_sha256' in spec:
+                _need(hashlib.sha256(np.ascontiguousarray(value).tobytes()).hexdigest()==spec['rgb_f32_sha256'],
+                      'Clean float32 RGB digest differs')
+            result[name]=torch.from_numpy(np.array(value,copy=True))
+        metadata=copy.deepcopy(row.get('metadata',row.get('source_metadata',{})))
+        fps=metadata.get('output_fps',item.get('cached_header',{}).get('fps'))
+        _need(type(fps) in (int,float) and math.isfinite(fps) and fps>0,'Invalid clean source FPS')
+        metadata.update(split=self.split,source_id=row['source_id'],record_id=record_id,sequence_id=record_id,
+                        source_frame_indices=item['source_indices'],output_fps=fps)
+        return result|{'fps':fps,'metadata':metadata}
+
+    read=load
+    def close(self):pass
+
+
 def main(argv=None):
     """CPU-only metadata command; preparing model latents is an explicit API."""
     import argparse
@@ -821,12 +1187,25 @@ def main(argv=None):
     catalog = sub.add_parser("manifest"); catalog.add_argument("--raw-root", type=Path, required=True); catalog.add_argument("--output", type=Path, required=True); catalog.add_argument("--seed", type=int, default=20261102)
     prep = sub.add_parser("prepare-cache"); prep.add_argument("--config", type=Path, required=True); prep.add_argument("--output", type=Path, required=True); prep.add_argument("--project-root", type=Path); prep.add_argument("--device", default="cpu"); prep.add_argument("--gpu-lock", type=Path); prep.add_argument("--gpu-admission", type=Path)
     cache = sub.add_parser("check-cache"); cache.add_argument("--cache-root", type=Path, required=True); cache.add_argument("--seal-sha256"); cache.add_argument("--verify-all", action="store_true")
+    dino = sub.add_parser('prepare-dino-cache',help='Explicit fixed DINO teacher extraction; no training updates')
+    dino.add_argument('--training-cache-root',type=Path,required=True);dino.add_argument('--output',type=Path,required=True)
+    dino.add_argument('--teacher-source',type=Path,required=True);dino.add_argument('--teacher-weights',type=Path,required=True)
+    dino.add_argument('--frame-batch-size',type=int,default=8);dino.add_argument('--device',default='cpu')
+    dino.add_argument('--gpu-lock',type=Path);dino.add_argument('--gpu-admission',type=Path)
+    dino.add_argument('--execute',action='store_true',help='Required to construct teacher and extract features')
     args = parser.parse_args(argv)
     if args.mode == "manifest":
         result = build_manifest(args.raw_root, seed=args.seed); write_json_new(args.output, result)
         print(json.dumps({"status":"manifest_written","output":str(args.output),"GPU_used":False}))
     elif args.mode == "prepare-cache":
         result = prepare_training_cache(read_json(args.config), args.output, project_root=args.project_root, device=args.device, gpu_lock=args.gpu_lock, gpu_admission=read_json(args.gpu_admission) if args.gpu_admission else None); print(json.dumps(result))
+    elif args.mode == 'prepare-dino-cache':
+        _need(args.execute,'DINO extraction requires explicit --execute')
+        from .teacher import FrozenDINOv2
+        teacher=FrozenDINOv2(args.teacher_source,args.teacher_weights,frame_batch_size=args.frame_batch_size)
+        result=prepare_dinov2_cache(args.training_cache_root,args.output,teacher=teacher,device=args.device,
+            gpu_lock=args.gpu_lock,gpu_admission=read_json(args.gpu_admission) if args.gpu_admission else None)
+        print(json.dumps(result,ensure_ascii=False,indent=2))
     else:
         dataset = PreparedTrainingData(args.cache_root, expected_seal_sha256=args.seal_sha256, verify_all=args.verify_all)
         print(json.dumps(dataset.metadata)); dataset.close()

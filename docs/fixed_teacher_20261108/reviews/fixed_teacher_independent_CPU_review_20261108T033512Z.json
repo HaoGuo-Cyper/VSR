@@ -1,0 +1,64 @@
+{
+  "schema": "fixed_teacher_independent_CPU_preflight_review_v1",
+  "status": "passed_CPU_only_review",
+  "calibration_protocol": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_runs/calibration_20261108T033512Z/protocol.json",
+    "bytes": 428619,
+    "sha256": "8cea87c733547436bafcba29c87a5223a5dd443d6a8c9c2f54672fc9ae3c5868"
+  },
+  "frozen_core_sources_count": 11,
+  "suite": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/outputs/fixed_teacher_CPU_integration_20261108T033153Z.json",
+    "bytes": 13385,
+    "sha256": "c71cae5c414c3b00aac3bc4f2c803932e60153512162bc0a117d530b2d65d537"
+  },
+  "supplemental_VJP_order_check": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/outputs/fixed_teacher_CPU_calibration_VJPs_20261108T033234Z.json",
+    "bytes": 9635,
+    "sha256": "ea2898bd4b7bc00a60bf3466e08378aa7714c71de723d5804a30f4924f1a2a1d"
+  },
+  "all_reported_source_bindings_exactly_match_prepared_calibration": true,
+  "checks": {
+    "calibration_scientific_updates": 0,
+    "calibration_diagnostic_optimizer_budget": 27,
+    "diagnostic_decomposition": "three fresh baseline/VAE/DINO arms x8 + original NoRef baseline x3",
+    "gradient_weight_clip_index": 0,
+    "online_cache_identity_check_training_indices": [
+      0,
+      1
+    ],
+    "gradient_sigma_policy": "nearest bound native UniPC grid to nominal .2/.5/.8, actual indices/sigmas recorded",
+    "matched_noise_seeds": "training_seed+101+i reused identically for each teacher kind",
+    "weight_rule": "median(global shared-restoration FM/unit-aux L2 ratios) times .1/1.0, round2sig, no val/test score",
+    "head_only_then_shared_three_VJP_order_CPU_verified": true,
+    "head_student_optimizer_and_four_explicit_RNG_unmodified_by_calibration_CPU_verified": true,
+    "default_CPU_RNG_preserved_by_calibration_CPU_verified": true,
+    "formal_fresh_matched_Base_and_AdamW_for_each_of_five_arms": true,
+    "formal_effective_training_budget": 10240,
+    "formal_updates_per_arm": 2048,
+    "full_student_head_AdamW_four_RNG_resume_CPU_verified": true,
+    "generic_inference_restores_student_only": true,
+    "no_EMA_or_condition_corruption_in_this_round": true,
+    "GPU_lease_holds_through_failure_record_and_cleanup": true,
+    "step_timing": "synchronized wall and CUDA events include H2D/head/finite checks/clipping/AdamW; 2warmup+6timed separately",
+    "resume_record_policy": "preserve interrupted log and rollback costs, validate committed prefix/time/original init, explicit same-protocol resume",
+    "failed_preflight_summary_cannot_override_failed_completion_status": true
+  },
+  "CPU_suite_counts": {
+    "tests": 107,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "source_or_test_files_changed_by_this_audit": false,
+  "GPU_started_by_this_audit": false,
+  "limitations": [
+    "CPU correctness and source provenance only; real GPU resource/calibration/full cache audit remain independent gates.",
+    "The VAE/DINO methods use different target dimensions/objectives and 98368/1180416 head parameters; compare full configurations."
+  ],
+  "retained_failure_record": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/outputs/fixed_teacher_CPU_fixture_incident_20261108T032944Z.json",
+    "bytes": 753,
+    "sha256": "a282c7d173f38e62a09cf077e99b2c19cd752104b53a08f506c4d0dc3396e529"
+  }
+}

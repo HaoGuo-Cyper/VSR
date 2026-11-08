@@ -160,3 +160,20 @@ Three2048-stepfreshBase01armscompleted6144scienceupdateswithsource/init/log/CPau
 ## G4 measured stop — unchanged rules,2026-11-07
 
 Full1152matrix+38016PNG/sourceauditandindependentpoint/CIreviewconfirmfailed_G4_stop. PrimaryrecoveryDelta=.009195653052302077>S=.004334114461900804passed,butcleanPSNR A2-C1=-.13303764684337582andSSIM=-.00555444686588915failedtheoriginal>=0guards. AllthreeANDconditionswerefixedbeforemethodtrainingandremainunchanged. Reportalltypes/control/temporal/clipuncertaintywithoutformaltrainingseed-significanceclaim. StopdependentGPUwork;4096/sweep/Stage5notstarted. Theautomationwasdeletedafterrecordingtheclosedexperimenttoavoididlechecks. Futurechoicesrequireanewconcreteprotocol;theexistingcompletedrunandfrozennumericssourcesarepreserved. No newscientificdirectionhasbeenexecuted.
+
+
+## HR VAE clean-latent first study — explicit human scope,2026-11-08
+
+The human explicitly requested a foundational HR VAE latent supervision experiment instead of EMA. EarlierS2 (HR latent not the EMA teacher) described the prior study and does not block this new independently recorded method. Freeze paired Base01 continuations:baseline and weights.01/.1 each2048,30blockindex7/singleLinear1536to64/elementmeanSmoothL1beta1/alltokens/alltimesteps,originalcleanbicubicdata,seed/RNG/precision/optimizer matched. configs/hr_vae_latent_20261108.json and docs/hr_vae_latent_20261108/plan.md prospectively fix quality/efficiency/selection/scope. LPIPS primary; report allPSNR/SSIM/temporal andvisual tradeoffs. Full640 selected33frameclip restores,notfullrawvideos; no newtestaccess. Userauthorizes recoverable engineering diagnosis/checkpointresume withinthisstudy withcomplete optimizer/head/RNG/provenance,whilepreservingpriorattempts. Stopatthissingle-seedstudy/report,no automaticmulti-seed/methodexpansion.
+
+
+## Fixed-teacher three-group scope — 2026-11-08
+
+Latest human scope,2026-11-08: baseline + HR-VAE + HR-DINOv2 fixed-teacher study. Follow docs/fixed_teacher_20261108/plan.md and method_references.md; it supersedes previous EMA/gamma and HR-VAE-only drafts, both0GPU. One trainingseed,atmost2weights/method,atmost5trajectories; sameBase/block7/commonFM/RNG,meanSmoothL1VAE/channel-L2cosineDINO. Realpreflight/calibrationbeforeweights/budgetfreeze; planned5x2048=1.25RE withinpriorStage4budget. Completeval1024 andselection-boundtest192,all33frames; independenttestsourcewithhistoricalexposuredisclosure. Onlycompleteimplementation/correctness/budgettraining/nativeinference/analysisdeliveriesfinishthisround. Recoverablefaultresumeauthorized. EMA/SelfFlowround2suggestionsonly.
+
+
+### Fixed-teacher cohort repair and pre-score freeze,2026-11-08
+
+Latest human design authorizes independent data-integrity engineering. Keep original training1641 andBase because removing train copies cannot undo Base exposure. Replace only crosssplit flaggedval1/test3 by deterministic within-split source ranking and retain oldwindowbytes for31val/29test. No method score informed exclusions; no historicalsplit/result reassignments. Complete1705-clip thumbnail/window screen passes afterreplacement; limitations and testhistoricalexposure disclosed. Newval/test bindings in fixed_teacher_design_20261108.json supersede oldval/test draft for thisround.
+
+Calibrate weights with trainingclip0 only, σ=.2/.5/.8 nearestnativegrid; sharedstudent FM/unitaux globalL2median ratio times.1/1 round2sig, same two candidates perteacher. MeanSmoothL1β1 VAE andmean1-cos DINOalltokens/allnoise; headnorm separatelyreported. Nomethod quality threshold or tolerance is retrofitted from oldEMA gates. All11 core numeric sources and bounddependencies are now frozen bycalibration8cea87...c5868. Normal27diagnosticclosure/5×2048/val1024/test192 continuation remains authorized.

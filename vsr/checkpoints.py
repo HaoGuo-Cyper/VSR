@@ -392,6 +392,254 @@ def save_base_checkpoint(path, model, config, *, step, allowed_root, initializat
             'config_sha256': config.get('_sha256')}
 
 
+def _hr_equal(left, right):
+    """Exact checkpoint metadata comparison, including owned CPU tensors."""
+    if isinstance(left, torch.Tensor) or isinstance(right, torch.Tensor):
+        return (isinstance(left, torch.Tensor) and isinstance(right, torch.Tensor)
+                and left.dtype == right.dtype and left.shape == right.shape
+                and torch.equal(left.detach().cpu(), right.detach().cpu()))
+    if type(left) is not type(right):
+        return False
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(_hr_equal(left[k], right[k]) for k in left)
+    if isinstance(left, (list, tuple)):
+        return len(left) == len(right) and all(_hr_equal(a, b) for a, b in zip(left, right))
+    return left == right
+
+
+def _hr_origin(base):
+    """Stable Base identity; fresh-process runtime-before observations may vary."""
+    _need(isinstance(base, dict) and base.get('variant') == 'Base' and base.get('step') == 8192,
+          'HR training must originate from the matched final Base8192')
+    sha = base.get('checkpoint_sha256')
+    _need(isinstance(sha, str) and len(sha) == 64 and all(c in '0123456789abcdef' for c in sha),
+          'HR training requires the original Base checksum')
+    source_path = base.get('checkpoint_path')
+    _need(isinstance(source_path,str) and Path(source_path).is_absolute()
+          and Path(source_path).name == 'checkpoint_008192.pt' and Path(source_path).parent.name == 'Base',
+          'HR training requires the explicit original Base8192 path')
+    _need(all(base.get(k) is False for k in ('optimizer_state_restored', 'scheduler_state_restored', 'rng_state_restored')),
+          'Base optimizer/scheduler/RNG state must not initialize HR training')
+    cfg = base.get('config'); _check_config(cfg)
+    _need(cfg['training'].get('variants') == ['Base'] and cfg['training'].get('updates') == 8192,
+          'Invalid HR matched Base source config')
+    return {key:base.get(key) for key in ('checkpoint_path', 'checkpoint_sha256', 'step', 'variant', 'config')}
+
+
+def _hr_engine_contract(engine, config):
+    _need(isinstance(_check_config(config), str) and config.get('restoration_architecture') is None
+          and config['training'].get('variants') == ['Base'], 'Canonical HR checkpoint config must retain Base architecture')
+    budget = config['training'].get('updates')
+    _need(type(budget) is int and budget > 0 and type(engine.steps) is int and 0 <= engine.steps <= budget,
+          'HR completed steps exceed this round budget')
+    _need(type(engine.weight) in (int, float) and math.isfinite(engine.weight) and engine.weight >= 0
+          and type(engine.student_layer) is int and engine.student_layer == 7,
+          'HR checkpoint requires its finite weight and fixed student layer7')
+    origin = _hr_origin(engine.base_load_audit); base_config = origin['config']
+    _need(all(config.get(k) == base_config.get(k) for k in ('model', 'conditioning', 'data', 'seed')),
+          'HR model/conditioning/data must match its original Base')
+    _need(config['training'].get('seed', config['seed']) == engine.training_seed
+          == base_config['training'].get('seed', base_config['seed']), 'HR training seed differs')
+    _need(getattr(engine.model, 'projector', 'not Base') is None and not hasattr(engine.model, 'reference_adapter'),
+          'HR restoration model must remain NoRef Base without an inference head')
+    student = {n:p for n,p in engine.model.named_parameters() if p.requires_grad}
+    _need(student and all(n.startswith(('lrv_stem.', 'lrv_residuals.')) or '.lora_' in n for n in student),
+          'HR student state may contain only restoration LoRA/LR parameters')
+    alignment = engine.alignment
+    _need((alignment is None) == (engine.weight == 0), 'HR baseline/head weight contract differs')
+    head_params = list(alignment.parameters()) if alignment is not None else []
+    expected = list(student.values()) + head_params
+    _need(all(p.requires_grad and p.is_floating_point() and p.dtype == torch.float32
+              and p.grad is None and bool(torch.isfinite(p).all()) for p in expected),
+          'HR student/head must be finite FP32 with cleared gradients')
+    named = list(engine._named_optimizer_parameters)
+    _need(all(isinstance(n, str) and isinstance(p, torch.nn.Parameter) for n,p in named)
+          and len({n for n,p in named}) == len(named) == len({id(p) for n,p in named})
+          and {id(p) for n,p in named} == {id(p) for p in expected}, 'HR optimizer parameter names/aliases differ')
+    _need(isinstance(engine.optimizer, torch.optim.AdamW)
+          and all(group.get('foreach') is False for group in engine.optimizer.param_groups),
+          'HR training requires AdamW foreach=False')
+    by_id = {id(p):n for n,p in named}
+    actual = [p for group in engine.optimizer.param_groups for p in group['params']]
+    _need(len(actual) == len(named) and len({id(p) for p in actual}) == len(actual)
+          and {id(p) for p in actual} == set(by_id), 'HR optimizer must contain exactly student and head')
+    groups = [[by_id[id(p)] for p in group['params']] for group in engine.optimizer.param_groups]
+    head = None if alignment is None else alignment.state_dict()
+    return student, head, dict(named), groups, origin
+
+
+def _hr_alignment_spec(alignment):
+    if alignment is None:
+        return None
+    patch=getattr(alignment,'patch_size',None)
+    return {'class':type(alignment).__module__+'.'+type(alignment).__qualname__,
+            'student_dim':alignment.student_dim, 'latent_channels':getattr(alignment,'latent_channels',None),
+            'patch_size':None if patch is None else list(patch), 'target_dim':alignment.target_dim}
+
+
+def _hr_validate_optimizer(saved, current, names, parameters, steps):
+    _need(isinstance(saved, dict) and set(saved) == {'state', 'param_groups'}
+          and len(saved['param_groups']) == len(current['param_groups']), 'Incomplete HR optimizer state')
+    parameters_by_id = {}
+    amsgrad = {}
+    for old,new,group_names in zip(saved['param_groups'], current['param_groups'], names):
+        _need(isinstance(old, dict) and set(old) == set(new)
+              and _hr_equal({k:v for k,v in old.items() if k != 'params'},
+                            {k:v for k,v in new.items() if k != 'params'})
+              and old['params'] == new['params'] and all(type(i) is int for i in old['params'])
+              and len(old['params']) == len(group_names),
+              'HR optimizer parameter groups or hyperparameters differ')
+        for identifier,name in zip(old['params'],group_names):
+            parameters_by_id[identifier] = parameters[name]
+            amsgrad[identifier] = old.get('amsgrad', False)
+    _need(isinstance(saved['state'], dict) and set(saved['state']) == set(parameters_by_id),
+          'HR checkpoint requires complete AdamW state for every parameter')
+    for identifier,param in parameters_by_id.items():
+        state = saved['state'][identifier]
+        keys = {'step', 'exp_avg', 'exp_avg_sq'} | ({'max_exp_avg_sq'} if amsgrad[identifier] else set())
+        _need(isinstance(state, dict) and set(state) == keys, 'Incomplete HR AdamW moments')
+        count = state['step']
+        _need(isinstance(count, torch.Tensor) and count.ndim == 0 and not count.requires_grad
+              and not count.is_complex() and count.dtype != torch.bool
+              and bool(torch.isfinite(count)) and float(count) == steps, 'HR AdamW step counter differs')
+        for key in keys - {'step'}:
+            value = state[key]
+            _need(isinstance(value, torch.Tensor) and value.shape == param.shape and value.dtype == param.dtype
+                  and not value.requires_grad and bool(torch.isfinite(value).all()), 'HR AdamW moment shape/dtype differs')
+            if key != 'exp_avg':
+                _need(bool((value >= 0).all()), 'HR AdamW variance moment is negative')
+
+
+def save_hr_latent_checkpoint(path, engine, config, *, allowed_root, protocol_sha256,
+                              cumulative_training_seconds, initialization):
+    """Publish student-only inference weights plus exact same-round resume state."""
+    student,head,named,groups,origin = _hr_engine_contract(engine, config)
+    _need(engine.steps > 0, 'HR checkpoint requires a completed positive update')
+    _need(isinstance(protocol_sha256, str) and len(protocol_sha256) == 64
+          and all(c in '0123456789abcdef' for c in protocol_sha256), 'HR source protocol SHA256 required')
+    _need(type(cumulative_training_seconds) in (int,float) and math.isfinite(cumulative_training_seconds)
+          and cumulative_training_seconds >= 0, 'HR cumulative training seconds must be finite and nonnegative')
+    _need(_hr_equal(_hr_origin(initialization), origin), 'HR initialization differs from its Base origin')
+    optimizer = _cpu_owned(engine.optimizer.state_dict())
+    _hr_validate_optimizer(optimizer, optimizer, groups, named, engine.steps)
+    rng,devices = {},{}
+    for name in ('noise','timestep','mask','corruption'):
+        generator = getattr(engine.rng,name,None)
+        _need(isinstance(generator,torch.Generator), 'Missing HR explicit RNG stream: '+name)
+        rng[name] = generator.get_state(); devices[name] = str(generator.device)
+    state = {'schema':'vsr_hr_latent_training_state_v1', 'protocol_sha256':protocol_sha256,
+             'weight':float(engine.weight), 'student_layer':engine.student_layer,
+             'completed_updates':engine.steps, 'training_seed':engine.training_seed,
+             'teacher_kind':getattr(engine,'teacher_kind','vae'),
+             'learning_rate_schedule':{'type':'constant','separate_scheduler':None,'lr_saved_in_optimizer_groups':True},
+             'alignment_state':head, 'alignment_spec':_hr_alignment_spec(engine.alignment),
+             'optimizer':optimizer, 'optimizer_parameter_names':groups,
+             'explicit_RNG':rng, 'RNG_devices':devices, 'matched_Base':engine.base_load_audit,
+             'cumulative_training_seconds':float(cumulative_training_seconds),
+             'restored_by_generic_inference_loader':False}
+    payload = _cpu_owned({'format':'vsr_training_v1', 'variant':'Base', 'step':engine.steps,
+                         'config':config, 'trainable_state':student, 'initialization':initialization,
+                         'inference_parameters':'student', 'training_only':state})
+    path,run = _destination(path,allowed_root,'Base',engine.steps)
+    path.parent.mkdir(parents=True,exist_ok=True)
+    sidecar = run/'config.json'
+    _need(not sidecar.is_symlink(), 'HR run config must not be a symlink')
+    encoded = (json.dumps(config,ensure_ascii=False,indent=2,allow_nan=False)+'\n').encode()
+    if sidecar.exists():
+        _need(json.loads(sidecar.read_text()) == config, 'HR run config differs')
+    else:
+        try:_atomic_publish(sidecar,lambda stream:stream.write(encoded))
+        except FileExistsError:_need(json.loads(sidecar.read_text()) == config, 'Concurrent HR run config differs')
+    _atomic_publish(path,lambda stream:torch.save(payload,stream))
+    return {'path':str(path), 'bytes':path.stat().st_size, 'sha256':_sha256_file(path),
+            'step':engine.steps, 'updates':engine.steps, 'variant':'Base',
+            'protocol_sha256':protocol_sha256, 'cumulative_training_seconds':float(cumulative_training_seconds),
+            'config_sha256':config['_sha256'], 'inference_parameters':'student',
+            'training_only_schema':state['schema'], 'existing_artifacts_overwritten':False}
+
+
+def restore_hr_latent_training_state(engine, path, *, allowed_root, expected_protocol_sha256,
+                                     expected_config=None):
+    """Restore a fully committed same-round HR checkpoint into a fresh engine.
+
+    Validate all source, parameter, head, optimizer and explicit-RNG contracts
+    before mutation. Original Base optimizer states and generic task checkpoints
+    are never accepted as HR resume state. Frozen official weights stay fresh.
+    """
+    path = _safe_checkpoint(path, allowed_root); checksum = _sha256_file(path)
+    payload = torch.load(path,map_location='cpu',weights_only=True)
+    _need(isinstance(payload,dict) and payload.get('format') == 'vsr_training_v1'
+          and payload.get('variant') == 'Base', 'HR resume requires a Base student payload')
+    config = payload.get('config'); _check_config(config)
+    _need(expected_config is None or config == expected_config, 'HR resume config differs from expected config')
+    sidecar = path.parent.parent/'config.json'
+    _need(sidecar.is_file() and not sidecar.is_symlink() and json.loads(sidecar.read_text()) == config,
+          'HR resume originating sidecar config differs or is absent')
+    student,head,named,groups,origin = _hr_engine_contract(engine,config)
+    _need(engine.steps == 0 and not engine.optimizer.state, 'HR resume requires a fresh engine and optimizer')
+    step = payload.get('step'); state = payload.get('training_only')
+    _need(type(step) is int and 0 < step <= config['training']['updates']
+          and path.parent.name == 'Base' and path.name == f'checkpoint_{step:06d}.pt', 'HR resume step/path differs')
+    _need(isinstance(state,dict) and state.get('schema') == 'vsr_hr_latent_training_state_v1',
+          'Not this round HR resume state; original Base checkpoints cannot resume it')
+    _need(isinstance(expected_protocol_sha256,str) and len(expected_protocol_sha256) == 64
+          and all(c in '0123456789abcdef' for c in expected_protocol_sha256)
+          and state.get('protocol_sha256') == expected_protocol_sha256, 'HR resume source protocol differs')
+    _need(type(state.get('completed_updates')) is int and state['completed_updates'] == step
+          and type(state.get('training_seed')) is int and state['training_seed'] == engine.training_seed
+          and type(state.get('weight')) in (int,float) and state['weight'] == engine.weight
+          and type(state.get('student_layer')) is int and state['student_layer'] == engine.student_layer,
+          'HR resume step/weight/layer/training seed differs')
+    _need(state.get('teacher_kind','vae')==getattr(engine,'teacher_kind','vae'),'Teacher representation differs on resume')
+    _need(_hr_equal(_hr_origin(state.get('matched_Base')),origin)
+          and _hr_equal(_hr_origin(payload.get('initialization')),origin), 'HR resume original Base identity differs')
+    seconds = state.get('cumulative_training_seconds')
+    _need(type(seconds) in (int,float) and math.isfinite(seconds) and seconds >= 0, 'Invalid HR cumulative training seconds')
+    saved_student = payload.get('trainable_state')
+    _need(isinstance(saved_student,dict) and set(saved_student) == set(student), 'HR student parameter names differ')
+    for name,param in student.items():
+        value = saved_student[name]
+        _need(isinstance(value,torch.Tensor) and value.shape == param.shape and value.dtype == param.dtype
+              and not value.requires_grad and bool(torch.isfinite(value).all()), 'HR student shape/dtype/values differ: '+name)
+    saved_head = state.get('alignment_state')
+    _need((saved_head is None) == (head is None), 'HR baseline/head presence differs')
+    _need(state.get('alignment_spec') == _hr_alignment_spec(engine.alignment), 'HR head architecture/patch target differs')
+    if head is not None:
+        _need(isinstance(saved_head,dict) and set(saved_head) == set(head), 'HR head state names differ')
+        for name,current in head.items():
+            value = saved_head[name]
+            _need(isinstance(value,torch.Tensor) and value.shape == current.shape and value.dtype == current.dtype
+                  and not value.requires_grad and bool(torch.isfinite(value).all()), 'HR head shape/dtype/values differ: '+name)
+    _need(state.get('optimizer_parameter_names') == groups, 'HR optimizer parameter names/order differ')
+    optimizer = state.get('optimizer')
+    _hr_validate_optimizer(optimizer,engine.optimizer.state_dict(),groups,named,step)
+    streams = ('noise','timestep','mask','corruption')
+    _need(isinstance(state.get('explicit_RNG'),dict) and set(state['explicit_RNG']) == set(streams)
+          and isinstance(state.get('RNG_devices'),dict) and set(state['RNG_devices']) == set(streams), 'Incomplete HR explicit RNG streams')
+    for name in streams:
+        generator = getattr(engine.rng,name,None); value = state['explicit_RNG'][name]
+        _need(isinstance(generator,torch.Generator) and state['RNG_devices'][name] == str(generator.device)
+              and isinstance(value,torch.Tensor) and value.dtype == torch.uint8 and value.ndim == 1
+              and value.device.type == 'cpu', 'HR RNG device/state differs: '+name)
+        torch.Generator(device=generator.device).set_state(value)
+    _need(_sha256_file(path) == checksum, 'HR checkpoint changed during validation')
+    with torch.no_grad():
+        for name,param in student.items():param.copy_(saved_student[name].to(param.device))
+    if head is not None:engine.alignment.load_state_dict(saved_head,strict=True)
+    engine.optimizer.load_state_dict(optimizer)
+    for name in streams:getattr(engine.rng,name).set_state(state['explicit_RNG'][name])
+    engine.steps = step
+    engine.optimizer.zero_grad(set_to_none=True)
+    if hasattr(engine.model,'clear_features'):engine.model.clear_features()
+    return {'path':str(path), 'sha256':checksum, 'steps':step, 'step':step,
+            'cumulative_training_seconds':float(seconds), 'initialization':payload['initialization'],
+            'matched_Base':state['matched_Base'], 'config_sha256':config['_sha256'],
+            'protocol_sha256':expected_protocol_sha256, 'weight':engine.weight, 'student_layer':engine.student_layer,
+            'student_restored':True, 'alignment_restored':head is not None, 'optimizer_state_restored':True,
+            'explicit_RNG_restored':list(streams), 'frozen_official_parameters_restored':False,
+            'generic_inference_loader_used':False}
+
+
 # A single admission/lease implementation is shared by GPU entry points.
 from contextlib import contextmanager
 from datetime import datetime, timezone

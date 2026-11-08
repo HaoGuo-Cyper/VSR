@@ -5,6 +5,16 @@ Add a date and a one-line note whenever a status changes.
 
 Training budget is in RE (run-equivalents): 1 RE = one 8,192-update run.
 
+## Current first round — fixed teachers,2026-11-08
+
+- [x] **F0 Assets/papers/data integrity.** Three original methods and adaptations recorded; repaired val32/test32 screened1705 clips,1val/3test excluded by data-only rule; source splits/train/Base/history unchanged. Test history and automated integrity-only thumbnails disclosed.
+- [x] **F1 Implement and CPU validate.**107 tests passed,0fail/0skip,0CUDA;6 realtinyWan/18VJP queries and source11-independent audit passed. Still10 business modules.
+- [~] **F2 Cache and real preflight.** DINO1673/55209 cache and all feature/source hashes passed; calibration protocol8cea87...c5868 prepared/reviewed; unique27-diagnostic GPU closure launched,0scientific updates.
+- [ ] **F3 Five paired trajectories.** After real preflight locks2weights perteacher:5×2048=10240/1.25RE, sameBase/freshAdamW andcommondata/noise.
+- [ ] **F4 Validation and selection.** All16roles/1024 restores, intermediate512/1024/2048, finalLPIPS select perteacher; all candidates retained.
+- [ ] **F5 Final heldout-source test.** Only afterselectionreceipt, formaltestRGB+3finalroles/192 restores.
+- [ ] **F6 Analysis/reproducible delivery.** Fullmetrics/costs/two curves/fixedvideos, exploratorysingle-seed conclusion andround2suggestions; alltextGitHubsync, no privatebinary publication.
+
 ## Latest execution order — local continuation,2026-11-07
 
 The human resumed the existing plan on localRTX5080 and delegated routine decisions. This supersedes the earlier H100-only/planning-only stop. Read `docs/local_continuation_20261107/plan.md` and the active run's actual status. H100 migration is deferred, not performed. Existing3Bases and D1–D4/G2/G3/G4 definitions remain unchanged.
@@ -160,3 +170,20 @@ Latest continuation disposition: T0.2's reproduction now passed; T0.5 is complet
 - [ ] Final tables, figures and a method description, built from `RESULTS.md`.
 
 2026-11-05 accepted review: wherever the earlier T4.1 description chooses pixel-level A2 first, use latent-level LR-branch corruption excluding position0 instead. Pixel-level evaluation stress tests remain required in T2.2 and are not the pilot training intervention. Keep three seeds as explicitly authorized; five seeds and a full33-frame external tile probe remain possible future decisions, not silently added runs.
+
+
+## Current independent task: HR VAE latent supervision,2026-11-08
+
+- [x] H0 Audit assets/splits/cache/idleGPU; preserve cancelled unexecuted gamma prototype.
+- [~] H1 Implement meanSmoothL1 HRlatentpatch head and pairedtraining/resume; verifyzeroalign/frozen/grad/patch/checkpoint.
+- [ ] H2 RealGPU correctness/resource preflight; report throughput/VRAM/overhead.
+- [ ] H3 Freshmatchedbaseline/.01/.1each2048; audit6144updates andintermediateCPs.
+- [ ] H4 Full640clean selectedclip restores,all33PNG/source/CP/hashchains,intermediateeval.
+- [ ] H5 LPIPSprimary quality andtrainingefficiency analysis,updates/GPUtimecurves,fixed3videocomparisons,README/config/commands/logs/GitHubtext.
+
+See docs/hr_vae_latent_20261108/plan.md. Thisnewexplicit scope supersedes oldEMA continuation; priorG4failure remains historical,notthisstudy gate.
+
+
+## Fixed-teacher three-group scope — 2026-11-08
+
+Latest human scope,2026-11-08: baseline + HR-VAE + HR-DINOv2 fixed-teacher study. Follow docs/fixed_teacher_20261108/plan.md and method_references.md; it supersedes previous EMA/gamma and HR-VAE-only drafts, both0GPU. One trainingseed,atmost2weights/method,atmost5trajectories; sameBase/block7/commonFM/RNG,meanSmoothL1VAE/channel-L2cosineDINO. Realpreflight/calibrationbeforeweights/budgetfreeze; planned5x2048=1.25RE withinpriorStage4budget. Completeval1024 andselection-boundtest192,all33frames; independenttestsourcewithhistoricalexposuredisclosure. Onlycompleteimplementation/correctness/budgettraining/nativeinference/analysisdeliveriesfinishthisround. Recoverablefaultresumeauthorized. EMA/SelfFlowround2suggestionsonly.

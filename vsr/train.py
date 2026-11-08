@@ -1264,15 +1264,730 @@ def build_parser():
         command.add_argument('--run-dir',type=Path,required=True)
         command.add_argument('--run-root',type=Path,required=True)
     sub.choices['execute'].add_argument('--expected-protocol-sha',required=True)
+    for name in ('hr-prepare','hr-probe','hr-execute'):
+        command=sub.add_parser(name,help='Independent paired HR VAE latent supervision study')
+        command.add_argument('--run-dir',type=Path,required=True)
+        if name=='hr-prepare':command.add_argument('--config',type=Path,required=True)
+        else:command.add_argument('--expected-protocol-sha',required=True)
+        if name=='hr-execute':command.add_argument('--resume',action='store_true')
+    for name in ('ft-calibration-prepare','ft-calibrate','ft-prepare','ft-execute'):
+        command=sub.add_parser(name,help='First-round fixed HR-VAE and HR-DINO supervision')
+        command.add_argument('--run-dir',type=Path,required=True)
+        if name in ('ft-prepare','ft-calibration-prepare'):command.add_argument('--config',type=Path,required=True)
+        else:command.add_argument('--expected-protocol-sha',required=True)
+        if name=='ft-execute':command.add_argument('--resume',action='store_true')
     return parser
 
 
 def main(argv=None):
     args=build_parser().parse_args(argv)
-    result=prepare(args) if args.command=='prepare' else execute(args)
+    if args.command=='ft-calibration-prepare':result=prepare_ft_calibration(args.config,args.run_dir)
+    elif args.command=='ft-calibrate':result=execute_ft_calibration(args.run_dir,args.expected_protocol_sha)
+    elif args.command=='ft-prepare':result=prepare_hr(args.config,args.run_dir)
+    elif args.command=='ft-execute':result=execute_hr(args.run_dir,args.expected_protocol_sha,resume=args.resume)
+    elif args.command=='hr-prepare':result=prepare_hr(args.config,args.run_dir)
+    elif args.command=='hr-probe':result=probe_hr(args.run_dir,args.expected_protocol_sha)
+    elif args.command=='hr-execute':result=execute_hr(args.run_dir,args.expected_protocol_sha,resume=args.resume)
+    else:result=prepare(args) if args.command=='prepare' else execute(args)
     print(json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False))
     return result
 
+
+
+# HR VAE study: an independent paired continuation, with no EMA or corruption.
+class HRLatentStep(NoRefContinuationStep):
+    def __init__(self, model, *, weight, training_seed=20261102, student_layer=7, teacher_kind='vae', **options):
+        need(teacher_kind in ('vae','dino'),'HR teacher kind must be vae or dino')
+        need(type(weight) in (int,float) and math.isfinite(weight) and weight>=0,'Nonnegative finite HR alignment weight required')
+        super().__init__(model,arm='flow_only',training_seed=training_seed,**options)
+        need(type(student_layer) is int and 0<=student_layer<len(model.transformer.blocks),'Invalid HR student block')
+        self.weight,self.student_layer,self.teacher_kind=float(weight),student_layer,teacher_kind
+        if self.weight>0:
+            from .losses import HRLatentRegression,HRDINOCosineRegression
+            dim=model.transformer.config.num_attention_heads*model.transformer.config.attention_head_dim
+            with torch.random.fork_rng(devices=[]):
+                torch.set_rng_state(torch.Generator(device='cpu').manual_seed(training_seed+5).get_state())
+                alignment=(HRLatentRegression(dim,latent_channels=model.transformer.config.in_channels,
+                    patch_size=tuple(model.transformer.config.patch_size)) if teacher_kind=='vae'
+                    else HRDINOCosineRegression(dim,teacher_dim=768))
+                self.alignment=alignment.to(next(model.parameters()).device)
+            named=[('restoration.'+name,p) for name,p in model.named_parameters() if p.requires_grad]
+            named.extend(('student_projector.'+name,p) for name,p in self.alignment.projector.named_parameters())
+            self._named_optimizer_parameters=tuple(named);self.parameters=[p for _,p in named]
+            self.optimizer=torch.optim.AdamW(self.parameters,lr=options.get('learning_rate',1e-4),
+                weight_decay=options.get('weight_decay',.01),foreach=False)
+        need(not self.optimizer.state and self.ema is None,'HR study starts fresh and has no EMA')
+
+    def step(self,clean,low,text,scheduler,*,teacher_target=None):
+        if self.weight==0:
+            value=super().step(clean,low,text,scheduler)
+            sigma=value['sigma']
+            return value|{'weight':0.,'align':0.,'student_layer':self.student_layer,'HR_target_detached':True,
+                'teacher_kind':self.teacher_kind,'noise_bin':'low' if sigma<.33 else 'mid' if sigma<.67 else 'high'}
+        from .teacher import capture_block_output
+        need(torch.is_grad_enabled() and clean.shape==low.shape and clean.ndim==5 and clean.shape[2]==9
+             and clean.dtype==low.dtype==torch.float32 and clean.device==low.device
+             and not clean.requires_grad and not low.requires_grad
+             and bool(torch.isfinite(clean).all()) and bool(torch.isfinite(low).all()),'Frozen finite matched nine-position latents required')
+        if self.teacher_kind=='dino':
+            patch=tuple(self.model.transformer.config.patch_size)
+            need(all(size%stride==0 for size,stride in zip(clean.shape[2:],patch)), 'DINO target token grid requires divisible latent geometry')
+            grid=tuple(size//stride for size,stride in zip(clean.shape[2:],patch))
+            need(isinstance(teacher_target,torch.Tensor) and tuple(teacher_target.shape)==(clean.shape[0],math.prod(grid),768)
+                 and teacher_target.dtype==torch.float32 and teacher_target.device==clean.device
+                 and not teacher_target.requires_grad and bool(torch.isfinite(teacher_target).all()),
+                 'Frozen finite FP32 DINO target must match B,T*H*W,768')
+            alignment_target=teacher_target
+        else:
+            need(teacher_target is None,'VAE alignment uses the sealed clean HR latent directly')
+            alignment_target=clean
+        modes=_modes(self.model);head_modes=_modes(self.alignment);frozen=_frozen(self.model)
+        self.optimizer.zero_grad(set_to_none=True);self.model.clear_features()
+        try:
+            self.model.train();self.alignment.train()
+            noisy,target,timestep,sigma,index=self.rng.flow_inputs(clean,scheduler)
+            flow,features=capture_block_output(self.model,self.student_layer,noisy,timestep,text,low)
+            fm=flow_matching_loss(flow,target)
+            align,diagnostic=self.alignment(features,alignment_target,tuple(self.model.token_grid))
+            total=fm+self.weight*align
+            need(bool(torch.isfinite(total)),'Nonfinite HR objective')
+            total.backward()
+            need(any(p.grad is not None for p in self.model.parameters() if p.requires_grad),'No student gradient')
+            need(all(p.grad is None for p in self.model.parameters() if not p.requires_grad),'Frozen backbone gradient')
+            _require_finite(('Nonfinite HR gradient: '+name,p.grad) for name,p in self._named_optimizer_parameters if p.grad is not None)
+            norm=torch.nn.utils.clip_grad_norm_(self.parameters,self.max_grad_norm,error_if_nonfinite=True)
+            self.optimizer.step();self.steps+=1
+            need(frozen==_frozen(self.model),'Frozen backbone changed')
+            return {'step':self.steps,'arm':'HR_DINO' if self.teacher_kind=='dino' else 'HR_VAE',
+                'teacher_kind':self.teacher_kind,'weight':self.weight,'fm':float(fm.detach()),
+                'align':float(align.detach()),'total':float(total.detach()),'grad_norm_before_clip':float(norm),
+                'sigma':float(sigma),'timestep_index':index,'native_timestep':float(timestep[0]),
+                'noise_bin':'low' if bool(sigma<.33) else 'mid' if bool(sigma<.67) else 'high',
+                'student_layer':self.student_layer,'teacher_forward':False,'EMA_updates':0,
+                'HR_target_detached':True,'alignment':diagnostic}
+        finally:
+            self.optimizer.zero_grad(set_to_none=True);self.model.clear_features()
+            _restore_modes(modes);_restore_modes(head_modes)
+
+
+def collect_hr_protocol(config_path):
+    study=read(config_path)
+    if study.get('schema')=='fixed_teacher_study_v1':return collect_fixed_teacher_protocol(config_path)
+    need(study.get('schema')=='hr_vae_study_v1','Wrong HR study config')
+    need(study['updates']==2048 and study['eval_updates']==[512,1024,2048]
+         and study['checkpoint_updates']==[512,1024,1536,2048],'Keep the prospective small training budget')
+    need(study['arms']==[{'label':'baseline','weight':0.0},{'label':'hr001','weight':.01},{'label':'hr01','weight':.1}],
+         'Keep baseline and the two prospectively fixed weights')
+    need(study['student_layer']==7 and study['smooth_l1_beta']==1. and study['training_seed']==20261102,
+         'Keep block7, elementmean SmoothL1 beta1 and the single matched seed')
+    config=read(study['base_config'])
+    base=_base_spec(study['base_checkpoint'],SMOKE_BASE_SHA,study['allowed_base_root'],20261102)
+    need(config==base['config'],'Use the unmodified Base source config')
+    need(config.get('reproducibility',{}).get('mode')=='strict','Original strict math required')
+    cache,inputs=_cache_spec(study['cache_root'])
+    need(cache['config']==base['config_file'],'Use the complete original producer cache')
+    model_dir=study['model_directory'];native=read(Path(model_dir)/'transformer/config.json')
+    need(native['num_layers']==30 and native['in_channels']==16 and native['patch_size']==[1,2,2],
+         'Expected original Wan thirty blocks and native latent patches')
+    return {'schema':'hr_vae_training_protocol_v1','study':study,'study_file':binding(config_path),
+        'sources':_source_bindings(),'base':base,'cache':cache,'inputs':inputs,
+        'official_model_files':_official_bindings(model_dir),'dependencies':_dependency_bindings(),
+        'admission':read(study['gpu_admission']),'admission_file':binding(study['gpu_admission']),
+        'gpu_lock':study['gpu_lock'],'device':study['device'],'memory_cap_bytes':int(16*1024**3),
+        'optimizer':{k:config['training'][k] for k in ('learning_rate','weight_decay','max_grad_norm')},
+        'strict_environment':STRICT_ENVIRONMENT,'scientific_update_budget':6144,
+        'online_teacher_forward':False,'target':'original frozen normalized posterior-mode clean HR latent',
+        'inference_uses':'student only; no head or HR/teacher inputs','resume_policy':'same-protocol checkpoint, preserve attempt records'}
+
+
+def prepare_hr(config_path,run_dir):
+    protocol=collect_hr_protocol(config_path)
+    run,root=_safe_run(Path(run_dir),Path(protocol['study']['run_root']))
+    need(not run.exists(),'New HR study output directory required')
+    run.mkdir(parents=True);save(run/'protocol.json',protocol)
+    result={'status':'planned','protocol_sha256':file_sha(run/'protocol.json'),'scientific_updates':0,'GPU_loaded':False}
+    save(run/'status.json',result)
+    return result|{'run_dir':str(run)}
+
+
+def _hr_protocol(run_dir,expected):
+    run=Path(run_dir).resolve();protocol=read(run/'protocol.json')
+    run,_=_safe_run(run,Path(protocol['study']['run_root']))
+    need(file_sha(run/'protocol.json')==expected,'Exact HR protocol SHA required')
+    need(protocol==collect_hr_protocol(protocol['study_file']['path']),'HR source/config/assets changed')
+    need(all(os.environ.get(k)==v for k,v in STRICT_ENVIRONMENT.items()),'Strict/offline environment required')
+    return run,protocol
+
+
+def _hr_engine(protocol,weight,kind='vae'):
+    from .checkpoints import load_training_checkpoint
+    need(kind in ('vae','dino'),'HR teacher kind must be vae or dino')
+    s=protocol['study'];b=protocol['base']['checkpoint']
+    model,audit=load_training_checkpoint(b['path'],device=s['device'],allowed_root=s['allowed_base_root'],
+                                        variant='Base',model_directory=s['model_directory'])
+    need(audit['checkpoint_sha256']==b['sha256'] and audit['step']==8192
+         and audit['config']==protocol['base']['config'],'Matched Base differs')
+    kind_options={} if kind=='vae' else {'teacher_kind':kind}
+    engine=HRLatentStep(model,weight=weight,training_seed=s['training_seed'],
+                        student_layer=s['student_layer'],**kind_options,**protocol['optimizer'])
+    engine.base_load_audit=audit
+    return engine
+
+
+def _hr_config(protocol,weight,kind='vae'):
+    need(kind in ('vae','dino'),'HR teacher kind must be vae or dino')
+    config=copy.deepcopy(protocol['base']['config'])
+    config.pop('restoration_architecture',None)
+    config['stage']='hr_vae_latent_single_seed' if kind=='vae' else 'hr_dino_single_seed'
+    config['training'].update(variants=['Base'],updates=protocol['study']['updates'])
+    if kind=='vae':
+        config['auxiliary_supervision']={'target':'clean normalized HR VAE latent','weight':float(weight),
+            'student_layer':7,'head':'Linear1536to64_FP32','loss':'SmoothL1','beta':1.,'reduction':'elementmean',
+            'teacher_frozen':True,'EMA':False,'condition_corruption':False}
+    else:
+        config['auxiliary_supervision']={'target':'clean HR DINOv2-B/14 temporally pooled patch tokens',
+            'family':'dino','teacher_kind':'dino','weight':float(weight),'student_layer':7,
+            'head':'Linear1536to768_FP32','loss':'one_minus_cosine','normalization':'channel_L2',
+            'eps':1e-12,'reduction':'tokenmean','teacher_frozen':True,'EMA':False,'condition_corruption':False}
+    return _canonical_config(config)
+
+
+def _hr_step(engine,pair,text,scheduler,device,*,teacher_target=None):
+    start_event=torch.cuda.Event(enable_timing=True);end_event=torch.cuda.Event(enable_timing=True)
+    torch.cuda.synchronize();started=time.perf_counter();start_event.record()
+    if teacher_target is None:
+        value=engine.step(pair['clean'].to(device),pair['low'].to(device),text.to(device),scheduler)
+    else:
+        value=engine.step(pair['clean'].to(device),pair['low'].to(device),text.to(device),scheduler,
+                          teacher_target=teacher_target.to(device))
+    end_event.record();torch.cuda.synchronize()
+    return value,time.perf_counter()-started,start_event.elapsed_time(end_event)/1000
+
+
+def _hr_release(engine):
+    if engine is not None:
+        engine.optimizer.zero_grad(set_to_none=True);engine.model.clear_features()
+    gc.collect()
+    if torch.cuda.is_initialized():torch.cuda.empty_cache()
+
+
+@contextmanager
+def _hr_gpu_session(protocol,cleanup,on_error):
+    from .checkpoints import gpu_lease
+    with gpu_lease(protocol['gpu_lock'],protocol['device'],protocol['admission']) as admission:
+        primary=None
+        try:
+            yield admission
+        except BaseException as error:
+            primary=error
+            try:on_error(error)
+            except BaseException as secondary:error.add_note('Failure record error: '+repr(secondary))
+            raise
+        finally:
+            _hr_cleanup_preserving(cleanup,primary)
+
+
+def _hr_cleanup_preserving(cleanup,primary):
+    try:cleanup()
+    except BaseException as secondary:
+        if primary is None:raise
+        primary.add_note('Cleanup error: '+repr(secondary))
+
+
+def probe_hr(run_dir,expected):
+    from .checkpoints import gpu_lease,save_hr_latent_checkpoint,restore_hr_latent_training_state,load_training_checkpoint
+    from .data import PreparedTrainingData
+    from .vae import load_frozen_vae,encode_video
+    from .model import tensor_state_hashes
+    run,p=_hr_protocol(run_dir,expected);s=p['study'];out=run/'probe'
+    need(not out.exists(),'Probe is single attempt; preserve prior diagnostic artifacts')
+    out.mkdir();engine=vae=reader=direct=reloaded=scheduler=None;rows=[];initials=[];updates=0
+    def cleanup():
+        nonlocal engine,vae,reader,direct,reloaded,scheduler
+        _hr_release(engine);_hr_release(direct)
+        if reader is not None:reader.close()
+        engine=vae=reader=direct=reloaded=scheduler=None
+        gc.collect()
+        if torch.cuda.is_initialized():torch.cuda.empty_cache()
+    def record_failure(error):
+        if not (out/'failure.json').exists():
+            save(out/'failure.json',{'error':str(error),'traceback':traceback.format_exc(),'diagnostic_updates_returned':updates})
+    try:
+        with _hr_gpu_session(p,cleanup,record_failure) as admission:
+            save(out/'GPU_admission.json',admission);runtime=_configure_runtime(p['base']['config']);save(out/'runtime.json',runtime)
+            reader=PreparedTrainingData(p['cache']['root'],expected_seal_sha256=p['cache']['seal']['sha256'])
+            vae=load_frozen_vae(s['model_directory'],device=s['device'])
+            frozen_vae=_frozen(vae);encodings=[]
+            for index in (0,1641):
+                rgb_path=Path(p['cache']['root'])/f'clip_{index}'/'paired_rgb.pt'
+                seal=read(Path(p['cache']['root'])/'cache_asset_seal.json')['artifact_sha256']
+                binding(rgb_path,seal[f'clip_{index}/paired_rgb.pt'])
+                rgb=torch.load(rgb_path,map_location='cpu',weights_only=True)
+                latent_path=Path(p['cache']['root'])/f'clip_{index}'/'fresh_latents.pt'
+                binding(latent_path,seal[f'clip_{index}/fresh_latents.pt'])
+                latent=torch.load(latent_path,map_location='cpu',weights_only=True)
+                encoded=encode_video(vae,rgb['hr'])
+                need(torch.equal(encoded,latent['clean']),'Fresh HR VAE encoding differs from cached normalized target')
+                encodings.append({'cache_index':index,'exact_equal':True,'shape':list(encoded.shape)})
+            need(_frozen(vae)==frozen_vae and all(not x.requires_grad and x.grad is None for x in vae.parameters()),'Teacher VAE must remain frozen')
+            scheduler=_training_scheduler(s['model_directory'],s['device']);pairs=[reader[i] for i in range(8)];text=reader.text_for(0)
+            baseline_trajectory=[];resource={}
+            for arm in s['arms']:
+                engine=_hr_engine(p,arm['weight']);initials.append(tensor_state_hashes(engine.model))
+                torch.cuda.reset_peak_memory_stats();role_rows=[]
+                for i in range(8):
+                    value,seconds,gpu_seconds=_hr_step(engine,pairs[i],text,scheduler,s['device']);updates+=1
+                    row=value|{'role':arm['label'],'seconds':seconds,'gpu_event_seconds':gpu_seconds,'warmup':i<2}
+                    rows.append(row);role_rows.append(row)
+                    if arm['weight']==0 and i<3:baseline_trajectory.append(tensor_state_hashes(engine.model))
+                resource[arm['label']]={'weight':arm['weight'],'all8_seconds':[x['seconds'] for x in role_rows],
+                     'timed6_mean_seconds':statistics.mean(x['seconds'] for x in role_rows[2:]),
+                     'timed6_sample_SD_seconds':statistics.stdev(x['seconds'] for x in role_rows[2:]),
+                     'memory':_memory(torch,p['memory_cap_bytes'])}
+                if arm['label']=='hr001':
+                    destination=out/'save_reload'/'Base'/'checkpoint_000008.pt'
+                    config=_hr_config(p,arm['weight'])
+                    save_hr_latent_checkpoint(destination,engine,config,allowed_root=run,
+                        protocol_sha256=expected,cumulative_training_seconds=sum(x['seconds'] for x in role_rows),
+                        initialization=engine.base_load_audit)
+                    expected_student=tensor_state_hashes(engine.model)
+                    _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+                    reloaded,audit=load_training_checkpoint(destination,device=s['device'],allowed_root=run,variant='Base',model_directory=s['model_directory'])
+                    need(tensor_state_hashes(reloaded)==expected_student and reloaded.projector is None,'Inference reload changed student or loaded auxiliary head')
+                    reloaded=None;gc.collect();torch.cuda.empty_cache()
+                    engine=_hr_engine(p,arm['weight'])
+                    restore_hr_latent_training_state(engine,destination,allowed_root=run,expected_protocol_sha256=expected,expected_config=config)
+                    need(engine.steps==8 and tensor_state_hashes(engine.model)==expected_student,'Training resume failed exact student restore')
+                _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            need(all(x==initials[0] for x in initials),'Probe arms did not start from the same student')
+            direct=_hr_engine(p,0.)
+            for i in range(3):
+                # Call the original unmodified baseline Step directly.
+                NoRefContinuationStep.step(direct,pairs[i]['clean'].to(s['device']),pairs[i]['low'].to(s['device']),text.to(s['device']),scheduler)
+                updates+=1;need(tensor_state_hashes(direct.model)==baseline_trajectory[i],'Alignment off does not reproduce the original GPU baseline trajectory')
+            _hr_release(direct);direct=None;gc.collect();torch.cuda.empty_cache()
+            result={'status':'passed_hr_preflight','protocol_sha256':expected,'diagnostic_optimizer_updates':updates,
+                'scientific_updates':0,'fresh_HR_encodings':encodings,'teacher_frozen':True,
+                'alignment_off_exact_original_GPU_trajectory_updates':3,'save_inference_reload_training_resume_passed':True,
+                'resources':resource,'relative_to_baseline':{k:v['timed6_mean_seconds']/resource['baseline']['timed6_mean_seconds'] for k,v in resource.items()},
+                'all_rows':rows,'diagnostic_weights_reused_for_science':False}
+            save(out/'summary.json',result)
+            return result
+    except BaseException as error:
+        record_failure(error)
+        raise
+    finally:
+        _hr_cleanup_preserving(cleanup,sys.exc_info()[1])
+
+
+def execute_hr(run_dir,expected,*,resume=False):
+    from .checkpoints import gpu_lease,save_hr_latent_checkpoint,restore_hr_latent_training_state
+    from .data import PreparedTrainingData
+    from .model import tensor_state_hashes
+    from .vae import load_frozen_vae
+    run,p=_hr_protocol(run_dir,expected);s=p['study'];state=read(run/'status.json')
+    need(state['status']=='planned' or (resume and state['status'] in ('running','failed_recoverable')), 'Explicit checkpoint resume required for an interrupted study')
+    fixed=p.get('schema')=='fixed_teacher_training_protocol_v1'
+    expected_budget=p['scientific_update_budget'];expected_arms=len(s['arms'])
+    need(expected_budget==s['updates']*expected_arms,'Scientific budget differs from the declared arm/update matrix')
+    if fixed:
+        cal=p['calibration'];cal_protocol=binding(cal['protocol']['path'],cal['protocol']['sha256'])
+        cal_summary=binding(cal['summary']['path'],cal['summary']['sha256'])
+        need(cal_protocol==cal['protocol'] and cal_summary==cal['summary'],'Fixed teacher preflight binding changed')
+        preflight_protocol=read(cal_protocol['path']);probe=read(cal_summary['path'])
+        need(probe.get('status')=='passed_fixed_teacher_preflight'
+             and probe.get('protocol_sha256')==cal_protocol['sha256']
+             and probe.get('sources')==p['sources'] and preflight_protocol.get('sources')==p['sources']
+             and probe.get('scientific_updates')==0,'Require the passed same-source fixed-teacher preflight')
+    else:
+        probe=read(run/'probe/summary.json')
+        need(probe['status']=='passed_hr_preflight' and probe['protocol_sha256']==expected,'A passed real preflight is required')
+    engine=reader=dino_reader=vae=scheduler=None;completed={};effective=0;attempt_returns=0;started=time.perf_counter()
+    attempt=len(list(run.glob('attempt_*.json')))
+    save(run/f'attempt_{attempt:03d}.json',{'protocol_sha256':expected,'resume_requested':resume,'pid':os.getpid()})
+    def cleanup():
+        nonlocal engine,reader,dino_reader,vae,scheduler
+        _hr_release(engine)
+        if reader is not None:reader.close()
+        if dino_reader is not None:dino_reader.close()
+        engine=reader=dino_reader=vae=scheduler=None
+        gc.collect()
+        if torch.cuda.is_initialized():torch.cuda.empty_cache()
+    def record_failure(error):
+        failure={'status':'failed_recoverable','protocol_sha256':expected,'attempt':attempt,'error':str(error),
+            'traceback':traceback.format_exc(),'completed_arms':list(completed),'effective_updates_completed_arms':effective,
+            'current_arm_steps_returned':engine.steps if engine is not None else None,
+            'wall_seconds_this_attempt':time.perf_counter()-started,'returned_updates_this_attempt':attempt_returns,
+            'partial_optimizer_effects_if_unreturned':'unknown; restart only from verified completed checkpoint'}
+        if not (run/f'failure_attempt_{attempt:03d}.json').exists():save(run/f'failure_attempt_{attempt:03d}.json',failure)
+        save(run/'status.json',failure,replace=True)
+    try:
+        with _hr_gpu_session(p,cleanup,record_failure) as admission:
+            save(run/f'GPU_admission_attempt_{attempt:03d}.json',admission);_configure_runtime(p['base']['config'])
+            reader=PreparedTrainingData(p['cache']['root'],expected_seal_sha256=p['cache']['seal']['sha256'])
+            if fixed:
+                from .data import PreparedDINOData
+                dino_reader=PreparedDINOData(p['dino_cache']['root'],p['cache']['root'],
+                                           expected_seal_sha256=p['dino_cache']['seal']['sha256'])
+                need(list(dino_reader.ids)==list(reader.ids) and len(dino_reader)==len(reader),
+                     'DINO and HR training target order differs')
+            vae=load_frozen_vae(s['model_directory'],device=s['device'])
+            scheduler=_training_scheduler(s['model_directory'],s['device'])
+            save(run/'status.json',{'status':'running','protocol_sha256':expected,'scientific_updates':0},replace=True)
+            for arm in s['arms']:
+                label,weight=arm['label'],arm['weight'];directory=run/'arm_runs'/label
+                family,setting=(arm['family'],arm['setting']) if fixed else (None,None)
+                dino=fixed and family=='hr_dino'
+                directory.mkdir(parents=True,exist_ok=True)
+                config=_hr_config(p,weight,kind='dino') if dino else _hr_config(p,weight)
+                torch.cuda.reset_peak_memory_stats()
+                engine=_hr_engine(p,weight,kind='dino') if dino else _hr_engine(p,weight)
+                initial=tensor_state_hashes(engine.model)
+                cumulative=0.;cp_records=[];log=directory/'training.jsonl'
+                completion=directory/'completion.json'
+                if completion.exists():
+                    record=read(completion)
+                    need(record['updates']==s['updates'] and record['weight']==weight and record['initial_student_hashes']==initial,'Completed arm differs')
+                    if fixed:need(record.get('family')==family and record.get('setting')==setting,'Completed arm family/setting differs')
+                    for cp in record['checkpoint_files']:binding(cp['path'],cp['sha256'])
+                    need(binding(log)==record['full_training_log'],'Completed training log changed')
+                    completed[label]=record;effective+=s['updates'];_hr_release(engine);engine=None
+                    gc.collect();torch.cuda.empty_cache();continue
+                checkpoints=sorted((directory/'Base').glob('checkpoint_*.pt')) if (directory/'Base').exists() else []
+                if checkpoints:
+                    need(resume,'Existing checkpoints require explicit resume')
+                    last=checkpoints[-1]
+                    audit=restore_hr_latent_training_state(engine,last,allowed_root=run,expected_protocol_sha256=expected,expected_config=config)
+                    cumulative=audit['cumulative_training_seconds']
+                    raw_log=log.read_bytes();raw_lines=raw_log.splitlines();lines=[];partial_tail=False
+                    for ordinal,line in enumerate(raw_lines):
+                        if not line.strip():continue
+                        try:lines.append(json.loads(line))
+                        except (ValueError,UnicodeDecodeError):
+                            need(ordinal>=engine.steps,'Incomplete log inside the checkpoint prefix')
+                            partial_tail=True;break
+                    prefix=lines[:engine.steps]
+                    need([x['step'] for x in prefix]==list(range(1,engine.steps+1)),'Resume log prefix missing')
+                    previous=0.
+                    for i,row in enumerate(prefix):
+                        need(row['arm']==label and row['weight']==weight and row['data_index']==i%len(reader)
+                             and row['record_id']==reader.ids[i%len(reader)],'Resume log role/data order differs')
+                        if fixed:need(row.get('family')==family and row.get('setting')==setting,'Resume log family/setting differs')
+                        need(all(type(row[k]) in (int,float) and math.isfinite(row[k])
+                                 for k in ('fm','align','total','grad_norm_before_clip','sigma','seconds','cumulative_training_seconds')),
+                             'Nonfinite resume log prefix')
+                        need(row['seconds']>=0 and row['cumulative_training_seconds']==previous+row['seconds'],
+                             'Resume cumulative time does not match committed step times')
+                        previous=row['cumulative_training_seconds']
+                    need(previous==cumulative,'Resume checkpoint time differs from committed prefix')
+                    save(directory/f'resume_loader_audit_attempt_{attempt:03d}.json',engine.base_load_audit)
+                    need(read(directory/'initialization.json')==audit['initialization'],'Original initialization sidecar differs')
+                    engine.base_load_audit=audit['initialization']
+                    if len(lines)>engine.steps or partial_tail:
+                        preserved=directory/f'interrupted_log_attempt_{attempt:03d}.jsonl'
+                        need(not preserved.exists(),'Attempt record exists')
+                        preserved.write_bytes(raw_log)
+                        discarded=lines[engine.steps:]
+                        save(directory/f'rollback_attempt_{attempt:03d}.json',{'checkpoint_step':engine.steps,
+                            'discarded_completed_step_returns':len(discarded),
+                            'known_discarded_step_seconds':sum(float(x['seconds']) for x in discarded),
+                            'unparsed_tail_present':partial_tail,'original_log':binding(preserved),
+                            'counts_are_wasted_cost_not_effective_training_progress':True})
+                        log.write_text(''.join(json.dumps(x,allow_nan=False)+'\n' for x in lines[:engine.steps]))
+                    for cp in checkpoints:
+                        cp_step=int(cp.stem.split('_')[-1]);row=lines[cp_step-1]
+                        cp_records.append(binding(cp)|{'step':cp_step,'update':cp_step,'variant':'Base',
+                           'cumulative_training_seconds':row['cumulative_training_seconds']})
+                else:
+                    need(not log.exists(),'Uncheckpointed attempt needs preserved restart review')
+                    save(directory/'initialization.json',engine.base_load_audit)
+                save(directory/'config.json',config) if not (directory/'config.json').exists() else need(read(directory/'config.json')==config,'Arm config changed')
+                while engine.steps<s['updates']:
+                    index=engine.data_index(len(reader));pair=reader[index]
+                    if dino:
+                        row,seconds,gpu_seconds=_hr_step(engine,pair,reader.text_for(index),scheduler,s['device'],
+                                                         teacher_target=dino_reader[index])
+                    else:
+                        row,seconds,gpu_seconds=_hr_step(engine,pair,reader.text_for(index),scheduler,s['device'])
+                    attempt_returns+=1
+                    cumulative+=seconds
+                    row=row|{'arm':label,'weight':weight,'record_id':reader.ids[index],'data_index':index,
+                             'seconds':seconds,'cumulative_training_seconds':cumulative,'gpu_event_seconds':gpu_seconds}
+                    if fixed:row.update(family=family,setting=setting)
+                    _append_row(log,row)
+                    _memory(torch,p['memory_cap_bytes'])
+                    save(run/'progress.json',{'status':'running','arm':label,'step':engine.steps,
+                         'scientific_updates':effective+engine.steps,'protocol_sha256':expected},replace=True)
+                    if engine.steps in s['checkpoint_updates']:
+                        destination=directory/'Base'/f'checkpoint_{engine.steps:06d}.pt'
+                        record=save_hr_latent_checkpoint(destination,engine,config,allowed_root=run,protocol_sha256=expected,
+                            cumulative_training_seconds=cumulative,initialization=engine.base_load_audit)
+                        cp_records.append(binding(destination)|{'step':engine.steps,'update':engine.steps,'variant':'Base',
+                              'cumulative_training_seconds':cumulative})
+                record={'weight':weight,'updates':engine.steps,'checkpoint_files':cp_records,
+                    'initialization':engine.base_load_audit,'full_training_log':binding(log),
+                    'initial_student_hashes':initial,'final_student_hashes':tensor_state_hashes(engine.model),
+                    'cumulative_training_seconds':cumulative,'teacher_is_frozen_cached_HR':True,
+                    'head_parameters':sum(x.numel() for x in engine.alignment.parameters()) if engine.alignment is not None else 0,
+                    'memory':_memory(torch,p['memory_cap_bytes'])}
+                if fixed:record.update(family=family,setting=setting,teacher_kind='dino' if dino else 'vae')
+                save(completion,record);completed[label]=record;effective+=engine.steps
+                _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            need(effective==expected_budget and len(completed)==expected_arms,'Incomplete paired HR study')
+            need(len({json.dumps(x['initial_student_hashes'],sort_keys=True) for x in completed.values()})==1,'Unequal student initialization')
+            summary={'schema':'fixed_teacher_training_summary_v1' if fixed else 'hr_vae_training_summary_v1','status':'completed','protocol_sha256':expected,
+                     'scientific_updates':effective,'arms':completed,'wall_seconds_this_attempt':time.perf_counter()-started,
+                     'diagnostic_updates_in_this_training':0,'selection_or_evaluation_done':False}
+            rollbacks=[read(path) for path in (run/'arm_runs').glob('*/rollback_attempt_*.json')]
+            earlier=[read(path) for path in run.glob('failure_attempt_*.json')]
+            summary['compute_cost']={'committed_training_step_seconds':sum(v['cumulative_training_seconds'] for v in completed.values()),
+                'known_discarded_completed_step_seconds':sum(v['known_discarded_step_seconds'] for v in rollbacks),
+                'known_discarded_completed_step_returns':sum(v['discarded_completed_step_returns'] for v in rollbacks),
+                'wall_seconds_all_training_attempts':time.perf_counter()-started+sum(v.get('wall_seconds_this_attempt',0.) for v in earlier),
+                'successful_step_returns_this_attempt':attempt_returns,
+                'unreturned_failed_step_compute':'not in committed curve; included in attempt wall time, pure GPU duration unknown',
+                'convergence_curve_time_basis':'committed synchronized training-step seconds; wasted work reported separately'}
+            save(run/f'completion_attempt_{attempt:03d}.json',{'wall_seconds':time.perf_counter()-started,
+                  'returned_updates_this_attempt':attempt_returns,'effective_updates_at_completion':effective})
+            save(run/'summary.json',summary)
+            save(run/'status.json',{'status':'completed','protocol_sha256':expected,'summary_sha256':file_sha(run/'summary.json'),
+                                    'scientific_updates':effective},replace=True)
+            return summary
+    except BaseException as error:
+        if not (run/f'failure_attempt_{attempt:03d}.json').exists():record_failure(error)
+        raise
+    finally:
+        _hr_cleanup_preserving(cleanup,sys.exc_info()[1])
+
+
+# Fixed-teacher study metadata and train-only calibration. No holdout score is
+# read while selecting the scale of the auxiliary losses.
+def _ft_common(config_path):
+    from .data import PreparedDINOData
+    study=read(config_path)
+    config=read(study['base_config'])
+    base=_base_spec(study['base_checkpoint'],SMOKE_BASE_SHA,study['allowed_base_root'],20261102)
+    need(base['config']==config and config.get('reproducibility',{}).get('mode')=='strict','Use the exact strict matched Base config')
+    cache,inputs=_cache_spec(study['cache_root'])
+    need(cache['config']==base['config_file'],'Use the same full paired producer cache')
+    root=Path(study['dino_cache_root']).resolve()
+    dino=PreparedDINOData(root,study['cache_root'])
+    try:
+        need(dino.ids==cache['selection']['training_ids'],'DINO and VAE cache order differs')
+        manifest=read(root/'manifest.json')
+        dino_cache={'root':str(root),'manifest':binding(root/'manifest.json'),'seal':binding(root/'seal.json'),
+                    'teacher':manifest['teacher'],'completion_receipt':binding(root/'completion_receipt.json'),
+                    'extraction_receipt':binding(root/'extraction_receipt.json') if (root/'extraction_receipt.json').exists() else None}
+    finally:dino.close()
+    need(study['updates']==2048 and study['training_seed']==20261102 and study['student_layer']==7
+         and study['eval_updates']==[512,1024,2048] and study['checkpoint_updates']==[512,1024,1536,2048],
+         'Retain the prospectively declared single-seed small budget')
+    need(study['smooth_l1_beta']==1. and study['head_depth']==1,'Keep meanSmoothL1 beta1 and comparable single-Linear heads')
+    return {'study':study,'study_file':binding(config_path),'sources':_source_bindings(),'base':base,
+        'cache':cache,'inputs':inputs,'dino_cache':dino_cache,
+        'official_model_files':_official_bindings(study['model_directory']),'dependencies':_dependency_bindings(),
+        'optimizer':{k:config['training'][k] for k in ('learning_rate','weight_decay','max_grad_norm')},
+        'admission':read(study['gpu_admission']),'admission_file':binding(study['gpu_admission']),
+        'gpu_lock':study['gpu_lock'],'device':study['device'],'memory_cap_bytes':16*1024**3,
+        'strict_environment':STRICT_ENVIRONMENT,'ordinary_inference_weight_EMA':False,
+        'learning_rate_schedule':{'type':'constant','separate_scheduler':None,'optimizer_groups_restored':True,
+            'training_timestep_grid':'bound native UniPC configuration, deterministic set_timesteps(1000)'}}
+
+
+def collect_ft_calibration_protocol(config_path):
+    p=_ft_common(config_path)
+    need(p['study']['schema']=='fixed_teacher_design_v1','Use the pre-score design for calibration')
+    return p|{'schema':'fixed_teacher_calibration_protocol_v1','scientific_update_budget':0,
+       'diagnostic_optimizer_budget':27,'calibration_sigmas':[.2,.5,.8],
+       'calibration_training_index':0,'relative_auxiliary_gradient_strengths':[.1,1.],
+       'selection_uses_validation_or_test':False}
+
+
+def collect_fixed_teacher_protocol(config_path):
+    p=_ft_common(config_path);s=p['study']
+    need(s['schema']=='fixed_teacher_study_v1','Expected finalized fixed-teacher study')
+    report=Path(s['calibration_report']).resolve();caldir=report.parent
+    cal=read(report);calp=read(caldir/'protocol.json');calstate=read(caldir/'status.json')
+    need(calstate.get('status')=='completed' and not (caldir/'failure.json').exists()
+         and calstate.get('protocol_sha256')==file_sha(caldir/'protocol.json')
+         and calstate.get('summary_sha256')==file_sha(report),'Preflight did not finish successfully through cleanup')
+    need(cal['status']=='passed_fixed_teacher_preflight' and cal['scientific_updates']==0
+         and cal['diagnostic_optimizer_updates']==27 and cal['sources']==p['sources']
+         and cal['protocol_sha256']==file_sha(caldir/'protocol.json'),'Require a complete source-matched real fixed-teacher preflight')
+    need(calp==collect_ft_calibration_protocol(calp['study_file']['path']),'Preflight inputs changed')
+    for key in ('base','cache','inputs','dino_cache','official_model_files','dependencies','optimizer','admission','gpu_lock','device'):
+        need(p[key]==calp[key],'Study differs from the preflight: '+key)
+    for key in ('updates','student_layer','smooth_l1_beta','eval_updates','checkpoint_updates','evaluation','metric_weights','dinov2'):
+        need(s[key]==calp['study'][key],'Final study changed the calibrated design: '+key)
+    expected=[{'label':'baseline','family':'baseline','setting':'baseline','weight':0.}]
+    for family,short,kind in (('hr_vae','vae','vae'),('hr_dino','dino','dino')):
+        for strength,weight in zip(('low','high'),cal['calibrations'][kind]['weights']):
+            expected.append({'label':short+'_'+strength,'family':family,'setting':strength,'weight':weight})
+    need(s['arms']==expected,'Candidate settings must come only from train-gradient calibration')
+    for name in ('validation_seal','validation_dataset','test_cohort_plan'):
+        item=s['evaluation'][name];need(binding(item['path'],item['sha256'])==item,'Changed prespecified evaluation declaration')
+    p.update(schema='fixed_teacher_training_protocol_v1',scientific_update_budget=5*s['updates'],
+             calibration={'protocol':binding(caldir/'protocol.json'),'summary':binding(report),'status_file':binding(caldir/'status.json')})
+    return p
+
+
+def prepare_ft_calibration(config_path,run_dir):
+    p=collect_ft_calibration_protocol(config_path);run,_=_safe_run(Path(run_dir),Path(p['study']['run_root']))
+    need(not run.exists(),'Use a new calibration run')
+    run.mkdir(parents=True);save(run/'protocol.json',p)
+    result={'status':'planned','protocol_sha256':file_sha(run/'protocol.json'),'scientific_updates':0,'GPU_loaded':False}
+    save(run/'status.json',result);return result|{'run_dir':str(run)}
+
+
+def _ft_engine_snapshot(engine):
+    from .checkpoints import _cpu_owned
+    return _cpu_owned({'student':{n:v for n,v in engine.model.named_parameters() if v.requires_grad},
+          'head':None if engine.alignment is None else engine.alignment.state_dict(),
+          'optimizer':engine.optimizer.state_dict(),'steps':engine.steps,
+          'RNG':{n:getattr(engine.rng,n).get_state() for n in ('noise','timestep','mask','corruption')}})
+
+
+def execute_ft_calibration(run_dir,expected):
+    from .data import PreparedTrainingData,PreparedDINOData
+    from .teacher import FrozenDINOv2,capture_block_output
+    from .vae import load_frozen_vae,encode_video,decode_latent
+    from .metrics import quantize_rgb,paired_metrics,PerceptualMetrics
+    from .losses import shared_gradient_norms,calibrated_auxiliary_weights
+    from .checkpoints import save_hr_latent_checkpoint,restore_hr_latent_training_state,load_training_checkpoint,_hr_equal
+    from .model import tensor_state_hashes
+    run=Path(run_dir).resolve();p=read(run/'protocol.json');s=p['study']
+    run,_=_safe_run(run,Path(s['run_root']))
+    need(file_sha(run/'protocol.json')==expected and p==collect_ft_calibration_protocol(p['study_file']['path']),
+         'Calibration source/input protocol changed')
+    need(read(run/'status.json')['status']=='planned','One diagnostic attempt per calibration run')
+    need(all(os.environ.get(k)==v for k,v in STRICT_ENVIRONMENT.items()),'Strict offline calibration environment required')
+    engine=direct=reloaded=teacher=vae=reader=dino=scheduler=None;updates=0;rows=[]
+    wall_started=time.perf_counter();gradient_seconds={}
+    clean=low=embedding=target=noise=noisy=flow_target=sigma=timestep=flow=features=fm=aux=head_grads=None
+    def cleanup():
+        nonlocal engine,direct,reloaded,teacher,vae,reader,dino,scheduler
+        nonlocal clean,low,embedding,target,noise,noisy,flow_target,sigma,timestep,flow,features,fm,aux,head_grads
+        _hr_release(engine);_hr_release(direct)
+        if teacher is not None:teacher.close()
+        if reader is not None:reader.close()
+        if dino is not None:dino.close()
+        engine=direct=reloaded=teacher=vae=reader=dino=scheduler=None
+        clean=low=embedding=target=noise=noisy=flow_target=sigma=timestep=flow=features=fm=aux=head_grads=None
+        gc.collect()
+        if torch.cuda.is_initialized():torch.cuda.empty_cache()
+    def failure(error):
+        record={'status':'failed_calibration','protocol_sha256':expected,'error':str(error),
+            'traceback':traceback.format_exc(),'diagnostic_optimizer_updates_returned':updates,'scientific_updates':0}
+        if not (run/'failure.json').exists():save(run/'failure.json',record)
+        save(run/'status.json',record,replace=True)
+    try:
+        with _hr_gpu_session(p,cleanup,failure) as admission:
+            save(run/'GPU_admission.json',admission);save(run/'runtime.json',_configure_runtime(p['base']['config']))
+            save(run/'status.json',{'status':'running','protocol_sha256':expected,'scientific_updates':0},replace=True)
+            reader=PreparedTrainingData(p['cache']['root'],expected_seal_sha256=p['cache']['seal']['sha256'])
+            dino=PreparedDINOData(p['dino_cache']['root'],p['cache']['root'],expected_seal_sha256=p['dino_cache']['seal']['sha256'])
+            vae=load_frozen_vae(s['model_directory'],device=s['device']);vf=_frozen(vae)
+            teacher=FrozenDINOv2(s['dinov2']['source_dir'],s['dinov2']['weights'],frame_batch_size=s['dinov2']['frame_batch_size'])
+            teacher.prepare(s['device']);online=[];reconstruction=[]
+            perceptual=PerceptualMetrics(s['metric_weights']['alexnet']['path'],s['metric_weights']['linear']['path'],device='cpu')
+            seal=read(Path(p['cache']['root'])/'cache_asset_seal.json')['artifact_sha256']
+            for index in (0,1):
+                rgbpath=Path(p['cache']['root'])/f'clip_{index}'/'paired_rgb.pt'
+                lpath=Path(p['cache']['root'])/f'clip_{index}'/'fresh_latents.pt'
+                binding(rgbpath,seal[f'clip_{index}/paired_rgb.pt']);binding(lpath,seal[f'clip_{index}/fresh_latents.pt'])
+                rgb=torch.load(rgbpath,map_location='cpu',weights_only=True)
+                target=torch.load(lpath,map_location='cpu',weights_only=True)['clean']
+                encoded=encode_video(vae,rgb['hr']);need(torch.equal(encoded,target),'Online VAE target differs from the original cache')
+                feature=teacher.encode_hr(rgb['hr']);cached=dino.load(index)
+                need(torch.equal(feature,cached),'Online DINO target differs from bound cache')
+                decoded=decode_latent(vae,encoded)
+                full=paired_metrics(quantize_rgb(decoded),quantize_rgb(rgb['hr']),perceptual,excluded_reference=0)
+                reconstruction.append({'source_cache_index':index,'VAE_encoding_exact_cached':True,
+                    'diagnosis_only_not_SR_upper_bound':True,'metrics':full['all_frames']})
+                online.append({'source_cache_index':index,'DINO_online_exact_cached':True,'shape':list(feature.shape)})
+            need(vf==_frozen(vae) and all(not x.requires_grad and x.grad is None for x in vae.parameters()),'VAE teacher changed')
+            teacher.close();teacher=None;perceptual=None;gc.collect();torch.cuda.empty_cache()
+            scheduler=_training_scheduler(s['model_directory'],s['device']);pair=reader[0];text=reader.text_for(0)
+            calibrations={}
+            for kind in ('vae','dino'):
+                gradient_started=time.perf_counter()
+                engine=_hr_engine(p,1.,kind=kind);before=tensor_state_hashes(engine.model);cal_rows=[]
+                clean,low,embedding=(pair['clean'].to(s['device']),pair['low'].to(s['device']),text.to(s['device']))
+                target=clean if kind=='vae' else dino[0].to(s['device'])
+                for i,nominal in enumerate((.2,.5,.8)):
+                    grid=scheduler.sigmas[:1000].detach().float().cpu()
+                    index=int((grid-nominal).abs().argmin());sigma=scheduler.sigmas[index].to(clean.device).float()
+                    timestep=scheduler.timesteps[index].to(clean.device).expand(clean.shape[0])
+                    noise=torch.randn(clean.shape,device=clean.device,generator=torch.Generator(device=clean.device).manual_seed(s['training_seed']+101+i))
+                    noisy=(1-sigma)*clean+sigma*noise;flow_target=noise-clean
+                    engine.model.train();engine.alignment.train()
+                    flow,features=capture_block_output(engine.model,7,noisy,timestep,embedding,low)
+                    fm=flow_matching_loss(flow,flow_target);aux,info=engine.alignment(features,target,tuple(engine.model.token_grid))
+                    aux_value,fm_value=float(aux.detach()),float(fm.detach())
+                    head_grads=torch.autograd.grad(aux,list(engine.alignment.parameters()),retain_graph=True)
+                    head_norm=math.sqrt(math.fsum(float(g.detach().double().square().sum().cpu()) for g in head_grads))
+                    head_grads=None
+                    norms=shared_gradient_norms(fm,aux,[v for v in engine.model.parameters() if v.requires_grad])
+                    cal_rows.append({'sigma':nominal,'native_sigma':float(sigma),'native_timestep':float(timestep[0]),
+                                     'native_timestep_index':index,'noise_seed':s['training_seed']+101+i,
+                                     'fm':fm_value,'unit_aux':aux_value,'head_unit_aux_grad_norm':head_norm,**norms})
+                    engine.model.clear_features();flow=features=fm=aux=noisy=flow_target=None
+                need(before==tensor_state_hashes(engine.model) and engine.steps==0 and not engine.optimizer.state,
+                     'Gradient calibration must not update the student')
+                calibrations[kind]=calibrated_auxiliary_weights(cal_rows)|{'rows':cal_rows}
+                gradient_seconds[kind]=time.perf_counter()-gradient_started
+                _hr_release(engine);engine=None;clean=low=embedding=target=None;gc.collect();torch.cuda.empty_cache()
+            resources={};initials=[];baseline_trajectory=[]
+            for label,kind,weight in [('baseline','vae',0.),('hr_vae','vae',calibrations['vae']['weights'][1]),
+                                      ('hr_dino','dino',calibrations['dino']['weights'][1])]:
+                engine=_hr_engine(p,weight,kind=kind);initials.append(tensor_state_hashes(engine.model));timed=[]
+                torch.cuda.reset_peak_memory_stats()
+                for i in range(8):
+                    row,seconds,event=_hr_step(engine,reader[i],reader.text_for(i),scheduler,s['device'],
+                                              teacher_target=dino[i] if kind=='dino' else None)
+                    updates+=1;entry=row|{'role':label,'seconds':seconds,'gpu_event_seconds':event,'warmup':i<2}
+                    rows.append(entry);timed.append(seconds)
+                    if label=='baseline' and i<3:baseline_trajectory.append(tensor_state_hashes(engine.model))
+                resources[label]={'weight':weight,'head_parameters':0 if engine.alignment is None else sum(v.numel() for v in engine.alignment.parameters()),
+                   'warmup2_and_timed6_seconds':timed,'timed6_mean_seconds':statistics.mean(timed[2:]),
+                   'timed6_sample_SD_seconds':statistics.stdev(timed[2:]),'memory':_memory(torch,p['memory_cap_bytes'])}
+                if weight>0:
+                    checkpoint=run/'resume_checks'/label/'Base'/'checkpoint_000008.pt';cfg=_hr_config(p,weight,kind=kind)
+                    snapshot=_ft_engine_snapshot(engine)
+                    save_hr_latent_checkpoint(checkpoint,engine,cfg,allowed_root=run,protocol_sha256=expected,
+                        cumulative_training_seconds=sum(timed),initialization=engine.base_load_audit)
+                    _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+                    reloaded,audit=load_training_checkpoint(checkpoint,device=s['device'],allowed_root=run,variant='Base',model_directory=s['model_directory'])
+                    need(_hr_equal({n:v for n,v in reloaded.named_parameters() if v.requires_grad},snapshot['student']),
+                         'Student-only inference reload differs')
+                    need(audit['training_only_state_restored'] is False,'Auxiliary state leaked into inference')
+                    reloaded=None;gc.collect();torch.cuda.empty_cache()
+                    engine=_hr_engine(p,weight,kind=kind)
+                    restore_hr_latent_training_state(engine,checkpoint,allowed_root=run,expected_protocol_sha256=expected,expected_config=cfg)
+                    need(_hr_equal(_ft_engine_snapshot(engine),snapshot),'Head/AdamW/student/RNG exact GPU resume failed')
+                _hr_release(engine);engine=None;gc.collect();torch.cuda.empty_cache()
+            need(all(x==initials[0] for x in initials),'Preflight students had different initialization')
+            direct=_hr_engine(p,0.)
+            for i in range(3):
+                pair=reader[i]
+                NoRefContinuationStep.step(direct,pair['clean'].to(s['device']),pair['low'].to(s['device']),reader.text_for(i).to(s['device']),scheduler)
+                updates+=1;need(tensor_state_hashes(direct.model)==baseline_trajectory[i],'Zero alignment failed original GPU trajectory reproduction')
+            need(updates==27,'Unexpected diagnostic update budget')
+            result={'status':'passed_fixed_teacher_preflight','protocol_sha256':expected,'sources':p['sources'],
+                 'scientific_updates':0,'diagnostic_optimizer_updates':updates,'calibrations':calibrations,
+                 'resources':resources,'relative_timed6_seconds_vs_baseline':{k:v['timed6_mean_seconds']/resources['baseline']['timed6_mean_seconds'] for k,v in resources.items()},
+                 'online_cache_checks':online,'HR_VAE_reconstruction_diagnostics':reconstruction,
+                 'all_step_rows':rows,'original_baseline_exact_GPU_updates':3,'both_heads_full_resume_exact':True,
+                 'diagnostic_weights_reused':False,'validation_or_test_scores_used_for_weights':False,
+                 'preflight_wall_seconds_including_metadata_io':time.perf_counter()-wall_started,
+                 'gradient_calibration_wall_seconds_including_fresh_model_load':gradient_seconds}
+            save(run/'summary.json',result);save(run/'status.json',{'status':'completed','protocol_sha256':expected,
+                 'summary_sha256':file_sha(run/'summary.json'),'scientific_updates':0},replace=True)
+            return result
+    except BaseException as error:
+        if not (run/'failure.json').exists():failure(error)
+        raise
+    finally:_hr_cleanup_preserving(cleanup,sys.exc_info()[1])
 
 if __name__=='__main__':
     main()

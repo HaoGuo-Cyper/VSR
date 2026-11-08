@@ -661,6 +661,731 @@ def validate_completed_base_evaluation(run_dir):
     return protocol,evidence
 
 
+# Independent clean-x4 HR-latent study evaluation.  No old G2/G3/G4 dependency.
+HR_EVALUATION_SCHEMA = 'hr_vae_clean_evaluation_protocol_v1'
+FT_EVALUATION_SCHEMA = 'fixed_teacher_clean_evaluation_protocol_v1'
+HR_SCALAR_METRICS = ('psnr_rgb_db','ssim_rgb','lpips_alex_v0_1',
+                     'tLP_alex_v0_1_TecoGAN_crop','tLP100_alex_v0_1_TecoGAN_crop',
+                     'tOF_Farneback_TecoGAN_crop')
+
+
+def _hr_sources():
+    return {p.name:binding(p) for p in sorted(Path(__file__).parent.glob('*.py'))}
+
+
+def _hr_binding(item):
+    need(isinstance(item,dict) and {'path','sha256'}.issubset(item),'Explicit file/SHA binding required')
+    actual=binding(item['path'],item['sha256'])
+    need('bytes' not in item or item['bytes']==actual['bytes'],'Bound file size changed')
+    return actual
+
+
+def _hr_finite(value):
+    import math
+    return type(value) in (int,float) and math.isfinite(value)
+
+
+def _hr_training_evidence(directory, study_file, *, fixed_teacher=False):
+    """Check the declared completed trajectories, fresh state and checkpoint chain."""
+    directory=Path(directory).resolve()
+    protocol,status,summary=(read(directory/name) for name in ('protocol.json','status.json','summary.json'))
+    psha=sha(directory/'protocol.json')
+    prefix='fixed_teacher' if fixed_teacher else 'hr_vae'
+    need(protocol.get('schema')==prefix+'_training_protocol_v1'
+         and summary.get('schema')==prefix+'_training_summary_v1','Expected the declared fixed-teacher training schemas')
+    need(status.get('status')==summary.get('status')=='completed'
+         and status['protocol_sha256']==summary['protocol_sha256']==psha
+         and status['summary_sha256']==sha(directory/'summary.json'),'Training completion hash chain differs')
+    need(protocol['sources']==_hr_sources(),'Training/evaluation source files differ')
+    need(protocol['study_file']==study_file and read(study_file['path'])==protocol['study'],'Study changed after training')
+    study=protocol['study'];arms=study['arms']
+    expected_arm_count=5 if fixed_teacher else 3
+    if fixed_teacher:
+        need(study.get('schema')=='fixed_teacher_study_v1'
+             and [a['family'] for a in arms]==['baseline','hr_vae','hr_vae','hr_dino','hr_dino']
+             and [a['setting'] for a in arms]==['baseline','low','high','low','high']
+             and arms[0]['weight']==0 and all(_hr_finite(a['weight']) and a['weight']>0 for a in arms[1:])
+             and arms[1]['weight']<arms[2]['weight'] and arms[3]['weight']<arms[4]['weight'],
+             'Require baseline plus two calibrated settings per frozen teacher family')
+        _hr_binding(study['calibration'])
+    else:need([a['weight'] for a in arms]==[0.,.01,.1],'Original HR-only weights changed')
+    need(len(arms)==expected_arm_count
+         and len({a['label'] for a in arms})==expected_arm_count and study['updates']==2048
+         and study['eval_updates']==[512,1024,2048]
+         and study['checkpoint_updates']==[512,1024,1536,2048],'Unchanged prospective HR study budget required')
+    expected_updates=len(arms)*study['updates']
+    need(status.get('scientific_updates')==summary.get('scientific_updates')==expected_updates,
+         'Require every declared scientific training update')
+    need(set(summary['arms'])=={a['label'] for a in arms},'Training summary must retain all three declared arms')
+    if fixed_teacher:_verify_nested_bindings(protocol)
+    else:
+        for key in ('base','cache','inputs','official_model_files','dependencies'):
+            _verify_nested_bindings(protocol[key])
+    ids=protocol['cache']['selection']['training_ids']
+    need(len(ids)==1641 and len(set(ids))==1641,'Use the fixed complete training order')
+    files={name:binding(directory/name) for name in ('protocol.json','status.json','summary.json')}
+    initial=None;checked={}
+    for arm in arms:
+        label,weight=arm['label'],arm['weight'];record=summary['arms'][label]
+        need(record['weight']==weight and record['updates']==2048
+             and record.get('teacher_is_frozen_cached_HR',record.get('teacher_is_frozen_cached')) is True,
+             'Wrong arm budget/weight or teacher source')
+        if fixed_teacher:
+            need(record['family']==arm['family'] and record['setting']==arm['setting'],
+                 'Training family/setting differs from the prospective study')
+        initialization=record['initialization']
+        need(initialization['checkpoint_sha256']==protocol['base']['checkpoint']['sha256']
+             and initialization['step']==8192 and initialization['variant']=='Base'
+             and all(initialization[k] is False for k in ('optimizer_state_restored','scheduler_state_restored','rng_state_restored')),
+             'Every arm must start from the same fresh Base student state')
+        current=record['initial_student_hashes']
+        need(isinstance(current,dict) and current.get('all_trainable'),'Initial student hashes are required')
+        if initial is None: initial=current
+        need(current==initial,'Arms did not share the exact initial student')
+        log=_hr_binding(record['full_training_log'])
+        need(Path(log['path'])==directory/'arm_runs'/label/'training.jsonl','Wrong arm training log path')
+        rows=[json.loads(line) for line in Path(log['path']).read_text().splitlines()]
+        need(len(rows)==2048,'Incomplete HR-latent training log')
+        previous=0.
+        for i,row in enumerate(rows,1):
+            need(row['step']==i and row['arm']==label and row['weight']==weight
+                 and row['data_index']==(i-1)%1641 and row['record_id']==ids[(i-1)%1641],
+                 'Training arm/step/weight/data order changed')
+            need(all(_hr_finite(row[k]) for k in ('fm','align','total','grad_norm_before_clip','sigma','seconds',
+                                                 'cumulative_training_seconds','gpu_event_seconds')),
+                 'Nonfinite HR training scalar')
+            need(row['seconds']>=0 and row['gpu_event_seconds']>=0
+                 and row['cumulative_training_seconds']>=previous,'Training time must be nonnegative and monotonic')
+            previous=row['cumulative_training_seconds']
+        need(_hr_finite(record['cumulative_training_seconds'])
+             and record['cumulative_training_seconds']==previous,'Final cumulative training time differs')
+        checkpoints=record['checkpoint_files']
+        need(len(checkpoints)==4 and [c.get('step',c.get('update')) for c in checkpoints]==[512,1024,1536,2048],
+             'Require all four intermediate/final training checkpoints')
+        cp_records=[]
+        for cp,step in zip(checkpoints,(512,1024,1536,2048)):
+            actual=_hr_binding(cp);path=Path(actual['path'])
+            need(path==directory/'arm_runs'/label/'Base'/f'checkpoint_{step:06d}.pt',
+                 'Student checkpoint escaped its actual training arm')
+            need(cp.get('variant')=='Base' and cp.get('update',step)==step
+                 and cp['cumulative_training_seconds']==rows[step-1]['cumulative_training_seconds'],
+                 'Checkpoint timing/variant/update differs from committed log')
+            cp_records.append(actual|{'step':step,'update':step,'cumulative_training_seconds':cp['cumulative_training_seconds']})
+            files[f'{label}/checkpoint_{step:06d}']=actual
+        for name in ('config.json','initialization.json','completion.json'):
+            path=directory/'arm_runs'/label/name
+            read(path);files[f'{label}/{name}']=binding(path)
+        need(read(directory/'arm_runs'/label/'initialization.json')==initialization,'Initialization sidecar differs')
+        files[f'{label}/training.jsonl']=log
+        checked[label]={'weight':weight,'updates':2048,'checkpoint_files':cp_records,
+                        'initial_student_hashes':current,'cumulative_training_seconds':previous}
+        if fixed_teacher:checked[label].update(family=arm['family'],setting=arm['setting'])
+    return {'schema':'hr_vae_completed_training_evidence_v1','run':str(directory),
+            'protocol_sha256':psha,'files':files,'arms':checked,'base':protocol['base'],
+            'study_file':study_file,'study':study,'scientific_updates':expected_updates,
+            'all_training_rows_finite_contiguous':True,
+            'all6144_rows_finite_contiguous':expected_updates==6144,
+            'all_arms_same_initial_student':True}
+
+
+def _hr_role_specs(config, evidence, *, fixed_teacher=False, phase='val', selection=None):
+    import re
+    roots=[Path(p).resolve() for p in config['allowed_checkpoint_roots']]
+    need(roots and len(set(roots))==len(roots),'Declare explicit distinct allowed checkpoint roots')
+    count=(3 if phase=='test' else 1+3*len(evidence['arms'])) if fixed_teacher else 10
+    wanted=config['roles'];need(isinstance(wanted,list) and len(wanted)==count,'Missing declared evaluated checkpoints')
+    labels=set();updates=set();roles=[]
+    base_config=evidence['base']['config']
+    for item in wanted:
+        label=item['label'];need(isinstance(label,str) and re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,95}',label)
+                                and label not in labels,'Unsafe or duplicate role label')
+        labels.add(label);checkpoint=_hr_binding(item['checkpoint']);path=Path(checkpoint['path'])
+        need(any(path!=r and path.is_relative_to(r) for r in roots),'Checkpoint outside explicit allowed roots')
+        step,update,weight=item['step'],item['update'],item['weight'];arm=item['arm']
+        need(type(step) is int and type(update) is int and _hr_finite(weight)
+             and _hr_finite(item['cumulative_training_seconds']) and item['cumulative_training_seconds']>=0,
+             'Invalid role update/step/weight/time metadata')
+        need(path.parent.name=='Base' and path.name==f'checkpoint_{step:06d}.pt','Expected a declared Base student checkpoint')
+        cfg=read(path.parent.parent/'config.json')
+        from .checkpoints import _check_config
+        _check_config(cfg)
+        need(cfg['model']==base_config['model'] and cfg.get('conditioning')==base_config.get('conditioning')
+             and cfg['data']==base_config['data'] and not cfg.get('reference',{}).get('enabled',False)
+             and cfg.get('reproducibility',{}).get('mode')=='strict','Student model/conditioning/data/precision changed')
+        if update==0:
+            need(phase!='test' and step==8192 and checkpoint==evidence['base']['checkpoint'] and weight==0
+                 and item['cumulative_training_seconds']==0 and ('shared',0) not in updates,
+                 'Sharedstep0 must be the exact common starting Base')
+            updates.add(('shared',0))
+        else:
+            need(arm in evidence['arms'] and step==update and update in (512,1024,2048),
+                 'Use declared intermediate/final study checkpoints only')
+            record=evidence['arms'][arm];cp=next(c for c in record['checkpoint_files'] if c['step']==step)
+            need(weight==record['weight'] and checkpoint=={k:cp[k] for k in ('path','bytes','sha256')}
+                 and item['cumulative_training_seconds']==cp['cumulative_training_seconds']
+                 and (arm,update) not in updates,'Role is not this training arm/time/checkpoint')
+            updates.add((arm,update))
+        role=({k:item[k] for k in ('label','arm','weight','update','step','cumulative_training_seconds')}|
+              {'variant':'Base','checkpoint':checkpoint,'config':cfg,'config_binding':binding(path.parent.parent/'config.json')})
+        if fixed_teacher:
+            family,setting=('baseline','shared_initial') if update==0 else (evidence['arms'][arm]['family'],evidence['arms'][arm]['setting'])
+            need(('family' not in item or item['family']==family) and ('setting' not in item or item['setting']==setting),
+                 'Role family/setting metadata differs from its actual trained arm')
+            role.update(family=family,setting=setting)
+        roles.append(role)
+    expected={('shared',0)}|{(a,u) for a in evidence['arms'] for u in (512,1024,2048)}
+    if fixed_teacher and phase=='test':
+        need(selection is not None,'Test roles require a verified validation-selection receipt')
+        expected={(r['arm'],2048) for r in selection['selected_roles']}
+        selected={r['arm']:r for r in selection['selected_roles']}
+        for role in roles:
+            need(role['checkpoint']==selected[role['arm']]['checkpoint'],'Test checkpoint is not the selected final student')
+    need(updates==expected,'All study checkpoints must be evaluated exactly once')
+    return roles
+
+
+def hr_collect_protocol(config_path, run_dir):
+    from .data import validate_seal
+    config_path=Path(config_path).resolve();cfg=read(config_path);run=Path(run_dir).resolve()
+    run_root=Path(cfg['run_root']).resolve()
+    need(run!=run_root and run.is_relative_to(run_root),'New evaluation must be a child of its output root')
+    need(str(cfg['device']).startswith('cuda:') and str(cfg['device'])[5:].isdigit()
+         and Path(cfg['gpu_lock']).is_absolute()
+         and isinstance(cfg['gpu_admission'].get('expected_gpu_uuid'),str)
+         and cfg['gpu_admission']['expected_gpu_uuid'],'Declare an explicit CUDA device, shared lock and pinned host UUID')
+    study_file=_hr_binding(cfg['study_config'])
+    training=_hr_training_evidence(cfg['training_run'],study_file)
+    roles=_hr_role_specs(cfg,training)
+    seal_path,dataset_path=Path(cfg['seal']).resolve(),Path(cfg['dataset']).resolve()
+    seal,dataset=read(seal_path),read(dataset_path);mapping=cfg.get('path_map',{})
+    validate_seal(seal,path_map=mapping)
+    need(seal['seal_digest']==COHORT_SEAL_DIGEST and len(seal['cohort'])==32
+         and dataset['cohort_seal_digest']==seal['seal_digest'] and dataset['config']==seal['config']
+         and dataset['status']=='completed_CPU_assets_no_predictions','Unchanged fullval32 provenance required')
+    cohort={x['record']['id']:x for x in seal['cohort']}
+    need(len(cohort)==32 and len(dataset['assets'])==32 and {x['record_id'] for x in dataset['assets']}==set(cohort),
+         'Require all32 unique clips, without type/mask selection')
+    assets=[]
+    for item in dataset['assets']:
+        fixed=cohort[item['record_id']]
+        need(item['source_id']==fixed['record']['source_id'] and item['mask']==fixed['mask'],'Source/mask provenance changed')
+        for entry in (item['HR'],item['clean']):
+            assets.append(binding(_mapped(entry['path'],mapping,root=seal['project_root']),entry['sha256']))
+    need(len(assets)==64 and not run.is_relative_to(dataset_path.parent),'Clean assets/output overlap or incomplete')
+    text=_hr_binding(cfg['text_cache'])
+    need(all(r['config']['data']['text_cache']['sha256']==text['sha256'] for r in roles),'Use original cached native text')
+    weights=cfg['metric_weights'];need(set(weights)=={'alexnet','linear'},'Explicit pinned LPIPS weights required')
+    fixed=sorted(seal['cohort'],key=lambda x:x['record']['source_id'])
+    need(len({x['record']['source_id'] for x in fixed})==32,'Expected independent source clips')
+    video_ids=[x['record']['id'] for x in fixed[:3]]
+    need('fixed_video_clip_ids' not in cfg or cfg['fixed_video_clip_ids']==video_ids,
+         'Video clips must be prespecified first3 sourceIDs, never selected from scores')
+    return {'schema':HR_EVALUATION_SCHEMA,'config':cfg,'config_binding':binding(config_path),
+            'sources':_hr_sources(),'study_file':study_file,'training_evidence':training,'roles':roles,
+            'cohort_seal':binding(seal_path),'cohort_seal_digest':seal['seal_digest'],'dataset':binding(dataset_path),
+            'assets':assets,'path_map':mapping,'text_cache':text,
+            'metric_weights':{k:_hr_binding(v) for k,v in weights.items()},
+            'official_model':model_bindings(cfg['model_directory']),
+            'runtime':runtime_bindings(cfg.get('dependency_root')),'strict_environment':STRICT_ENVIRONMENT,
+            'fixed_video_clip_ids':video_ids,
+            'scope':{'roles':10,'clips':32,'sampling_seeds':[42,43],'conditions':['clean'],
+                     'total_restores':640,'frames':33,'HR_hw':[128,224],'LR_hw':[32,56],
+                     'steps':20,'CFG':1.,'tile_hw':[256,448],'overlap':64,'primary_pool':'all33_frames',
+                     'primary_metric':'lpips_alex_v0_1','training_updates':0,
+                     'source_windows':'complete frozen33-frame clips, not full source videos',
+                     'row_resume_same_protocol_allowed':True,'automatic_protocol_change':False}}
+
+
+def hr_prepare(config_path, run_dir):
+    run=Path(run_dir).resolve();need(not run.exists(),'Use a new HR study evaluation directory')
+    protocol=hr_collect_protocol(config_path,run);run.mkdir(parents=True)
+    save(run/'protocol.json',protocol)
+    result={'status':'planned','protocol_sha256':sha(run/'protocol.json'),'run_dir':str(run),
+            'restores':0,'training_updates':0}
+    save(run/'status.json',result);return result
+
+
+def _hr_is_ft(protocol):return protocol['schema']==FT_EVALUATION_SCHEMA
+
+
+def _hr_total(protocol):return protocol.get('scope',{}).get('total_restores',640)
+
+
+def _hr_seal_view(protocol):
+    return {'cohort':protocol['cohort']} if _hr_is_ft(protocol) else read(protocol['cohort_seal']['path'])
+
+
+def _hr_video_required(protocol, record):
+    return _hr_is_ft(protocol) or record in protocol['fixed_video_clip_ids']
+
+
+def _hr_gt_ids(protocol):
+    return [x['record']['id'] for x in protocol['cohort']] if _hr_is_ft(protocol) else protocol['fixed_video_clip_ids']
+
+
+def _hr_collector(protocol):
+    return ft_collect_protocol if _hr_is_ft(protocol) else hr_collect_protocol
+
+
+def _hr_cases(protocol, seal):
+    return [(role,item,sample) for role in protocol['roles'] for item in seal['cohort'] for sample in (42,43)]
+
+
+def _hr_identity(protocol, role, item, sample):
+    result={'role':role['label'],'arm':role['arm'],'weight':role['weight'],'update':role['update'],
+            'step':role['step'],'cumulative_training_seconds':role['cumulative_training_seconds'],
+            'training_seed':20261102,'record_id':item['record']['id'],'source_id':item['record']['source_id'],
+            'sampling_seed':sample,'condition':'clean','checkpoint_sha256':role['checkpoint']['sha256'],
+            'cohort_seal_digest':protocol['cohort_seal_digest']}
+    if _hr_is_ft(protocol):result.update(family=role['family'],setting=role['setting'],split=protocol['scope']['source_split'])
+    return result
+
+
+def _hr_scalars(full):
+    pool=full['all_frames']
+    need(pool['frame_count']==33 and len(pool['per_frame'])==33
+         and pool['temporal_pair_count']==28,'Expected all33 frames and28 original temporal pairs')
+    need({tuple(x['indices']) for x in pool['per_temporal_pair']}=={(i,i+1) for i in range(2,30)},
+         'Original cutfr2 temporal pairs changed')
+    output={key:pool[key] for key in HR_SCALAR_METRICS}
+    need(all(_hr_finite(x) for x in output.values()),'Nonfinite clean-evaluation scalar')
+    return output
+
+
+def _hr_directory(run, role, item, sample):
+    return run/'results'/role['label']/item['record']['id']/f'seed_{sample}'
+
+
+def _hr_verify_row(protocol, run, psha, role, item, sample):
+    directory=_hr_directory(run,role,item,sample)
+    row,marker=read(directory/'metrics.json'),read(directory/'complete.json')
+    need(marker.get('protocol_sha256')==psha and marker.get('metrics_sha256')==sha(directory/'metrics.json')
+         and marker.get('PNG_count')==33,'Completed row protocol/metric marker changed')
+    identity=_hr_identity(protocol,role,item,sample)
+    need(row['status']=='completed' and row['training_updates']==0
+         and row['observation']==identity|{'metrics':_hr_scalars(row['full_frame_pair_metrics'])},
+         'Completed clean row identity/metric pool differs')
+    need(row['source_metadata']['split']==protocol.get('scope',{}).get('source_split','val')
+         and row['source_metadata']['source_frame_indices']==item['source_indices'],'Frozen validation window changed')
+    need(row['teacher_or_HR_input_to_inferrer'] is False
+         and row['inference_inputs']==['LRV','native text embedding','student checkpoint']
+         and row['restoration']['inference_inputs']==['LRV','native text embedding'],
+         'Evaluation inference must use LR/text/student only')
+    pngs=row['PNG_artifacts']
+    need(len(pngs)==33 and len({x['path'] for x in pngs})==33,'Missing/duplicate prediction PNGs')
+    for artifact in pngs:
+        need(Path(artifact['path']).resolve().is_relative_to(directory/'png'),'Prediction PNG escaped its row')
+        verify_binding(artifact)
+    video=row.get('video_artifact')
+    required=_hr_video_required(protocol,item['record']['id'])
+    need((video is not None)==required and marker.get('video_artifact')==video,'Fixed video artifact missing or changed')
+    if video:
+        need(Path(video['path']).resolve()==directory/'prediction.mp4','Video escaped its row')
+        verify_binding(video)
+        from .infer import verify_output_video
+        verify_output_video(video['path'],frames=33,height=128,width=224,fps=row['source_metadata']['output_fps'])
+    return row['observation']|{'row_metrics_path':str(directory/'metrics.json'),
+                               'row_metrics_sha256':sha(directory/'metrics.json')}
+
+
+def _hr_completed_prefix(protocol, run, psha, seal):
+    rows=[];gap=False
+    for role,item,sample in _hr_cases(protocol,seal):
+        marker=_hr_directory(run,role,item,sample)/'complete.json'
+        if not marker.exists():gap=True;continue
+        need(not gap,'Committed clean rows must form a complete canonical prefix')
+        rows.append(_hr_verify_row(protocol,run,psha,role,item,sample))
+    return rows
+
+
+def _hr_gt(protocol, run, psha, item, target, fps):
+    from .data import write_video
+    from .infer import verify_output_video
+    directory=run/'ground_truth'/item['record']['id'];marker=directory/'complete.json'
+    dataset={'assets':protocol['clean_assets']} if _hr_is_ft(protocol) else read(protocol['dataset']['path'])
+    expected_HR=next(x['HR']['sha256'] for x in dataset['assets'] if x['record_id']==item['record']['id'])
+    if marker.exists():
+        value=read(marker);need(value['protocol_sha256']==psha and value['source_HR_sha256']==expected_HR
+             and value['record_id']==item['record']['id'] and value['source_id']==item['record']['source_id']
+             and value['frames']==33 and value['FPS']==fps,'GT marker provenance changed')
+        for artifact in [*value['PNG_artifacts'],value['video_artifact']]:
+            need(Path(artifact['path']).resolve().is_relative_to(directory),'GT artifact escaped its directory')
+            verify_binding(artifact)
+        need(len(value['PNG_artifacts'])==33 and len({p['path'] for p in value['PNG_artifacts']})==33,
+             'GT requires all33 unique PNGs')
+        verify_output_video(value['video_artifact']['path'],frames=33,height=128,width=224,fps=fps)
+        return value
+    if directory.exists():_hr_quarantine(run,directory)
+    pngs=_save_pngs(target,directory/'png');video=directory/'GT.mp4'
+    write_video(video,target,fps);verify_output_video(video,frames=33,height=128,width=224,fps=fps)
+    result={'protocol_sha256':psha,'record_id':item['record']['id'],'source_id':item['record']['source_id'],
+            'PNG_artifacts':pngs,'video_artifact':binding(video),'frames':33,'FPS':fps,'not_an_inference_input':True}
+    result['source_HR_sha256']=expected_HR
+    save(marker,result);return result
+
+
+def _hr_quarantine(run, directory):
+    """Preserve an interrupted uncommitted row before recomputing that row."""
+    relative=directory.relative_to(run);parent=run/'incomplete_attempts'/relative.parent
+    parent.mkdir(parents=True,exist_ok=True);ordinal=1
+    target=parent/(relative.name+f'.attempt_{ordinal:03d}')
+    while target.exists():
+        ordinal+=1;target=parent/(relative.name+f'.attempt_{ordinal:03d}')
+    os.rename(directory,target)
+
+
+def _hr_save_final(path, value):
+    """Publish once, or accept byte-equivalent aggregate after an interruption."""
+    if Path(path).exists():need(read(path)==value,'An existing final aggregate changed during resume')
+    else:save(path,value)
+
+
+def _hr_execute_loaded(protocol, run, psha, completed):
+    cfg=protocol['config']
+    if cfg.get('dependency_root'):sys.path.insert(0,cfg['dependency_root'])
+    verify_imported_runtime(protocol['runtime'])
+    import torch
+    from .data import FramewiseReader,CAPTION_PLACEHOLDER,write_video
+    from .model import configure_reproducibility,tensor_state_hashes
+    from .checkpoints import load_training_checkpoint
+    from .vae import load_frozen_vae
+    from .infer import restore_video,verify_output_video
+    from .metrics import quantize_rgb,paired_metrics,PerceptualMetrics
+    runtime=configure_reproducibility(protocol['roles'][0]['config'])
+    need(not runtime['flags']['cuda_initialized'],'Use a fresh process before the CUDA context')
+    _hr_save_final(run/'runtime.json',runtime)
+    text=torch.load(protocol['text_cache']['path'],map_location='cpu',weights_only=True)[CAPTION_PLACEHOLDER]
+    need(list(text.shape)==[1,512,4096] and text.dtype==torch.bfloat16 and bool(torch.isfinite(text).all()),
+         'Original native text cache required, without T5 fallback')
+    seal=_hr_seal_view(protocol);reader=perceptual=None
+    observations=list(completed);done=len(completed);ordinal=0;audits=[];gt={}
+    try:
+        perceptual=PerceptualMetrics(protocol['metric_weights']['alexnet']['path'],protocol['metric_weights']['linear']['path'],device='cpu')
+        if _hr_is_ft(protocol):
+            from .data import FixedCleanReader
+            reader=FixedCleanReader(protocol['dataset']['path'],expected_split=protocol['scope']['source_split'],
+                 cohort_seal=protocol['cohort_seal']['path'],path_map=protocol['path_map'],
+                 expected_dataset_sha256=protocol['dataset']['sha256'])
+        else:reader=FramewiseReader(protocol['dataset']['path'],seal,path_map=protocol['path_map'])
+        torch.cuda.set_device(cfg['device'])
+        for role in protocol['roles']:
+            model=vae=None
+            existing_audits=list((run/'roles'/role['label']).glob('state_audit_*.json'))
+            remaining=(ordinal+64)>done or not existing_audits
+            try:
+                if remaining:
+                    model,audit=load_training_checkpoint(role['checkpoint']['path'],device=cfg['device'],
+                        allowed_root=next(str(Path(r).resolve()) for r in cfg['allowed_checkpoint_roots']
+                                          if Path(role['checkpoint']['path']).is_relative_to(Path(r).resolve())),
+                        variant='Base',model_directory=cfg['model_directory'])
+                    need(audit['step']==role['step'] and audit['checkpoint_sha256']==role['checkpoint']['sha256']
+                         and audit['config']==role['config'] and model.projector is None,'Wrong student-only restore payload')
+                    model.eval();inference=copy.deepcopy(role['config']);inference['model']['local_dir']=cfg['model_directory']
+                    vae=load_frozen_vae(inference,device=cfg['device'])
+                    need(all(p.dtype==torch.float32 and not p.requires_grad for p in vae.parameters()),'Frozen FP32 VAE required')
+                    before=tensor_state_hashes(model)
+                    attempt=sum(1 for _ in (run/'roles'/role['label']).glob('load_audit_*.json'))+1
+                    save(run/'roles'/role['label']/f'load_audit_{attempt:03d}.json',audit)
+                for item in seal['cohort']:
+                    source=target=None
+                    for sample in (42,43):
+                        if ordinal<done:ordinal+=1;continue
+                        if source is None:
+                            source=(reader.load(item['record']['id'],condition='clean',num_frames=33,start=0) if _hr_is_ft(protocol)
+                                    else reader.load('Stage2-val-clean',item['record']['id'],num_frames=33,start=0))
+                            target=quantize_rgb(source['hr'])
+                            if _hr_video_required(protocol,item['record']['id']):
+                                gt[item['record']['id']]=_hr_gt(protocol,run,psha,item,target,source['fps'])
+                        directory=_hr_directory(run,role,item,sample)
+                        if directory.exists():_hr_quarantine(run,directory)
+                        directory.mkdir(parents=True)
+                        torch.cuda.synchronize();torch.cuda.reset_peak_memory_stats();started=time.perf_counter()
+                        with _crop_policy(vae) as policy:
+                            video,meta=restore_video(model,vae,source['lr'],text,inference,steps=20,seed=sample,
+                                                     tile_hw=(256,448),overlap=64)
+                            _validate_restore(video,meta,model,sample);ledger=copy.deepcopy(policy.ledger)
+                        policy=None;torch.cuda.synchronize();seconds=time.perf_counter()-started
+                        measured=quantize_rgb(video);pngs=_save_pngs(measured,directory/'png')
+                        full=paired_metrics(measured,target,perceptual,excluded_reference=0);full['primary_pool']='all_frames'
+                        video_artifact=None
+                        if _hr_video_required(protocol,item['record']['id']):
+                            path=directory/'prediction.mp4';write_video(path,measured,source['fps'])
+                            verify_output_video(path,frames=33,height=128,width=224,fps=source['fps']);video_artifact=binding(path)
+                        observation=_hr_identity(protocol,role,item,sample)|{'metrics':_hr_scalars(full)}
+                        row={'status':'completed','observation':observation,'full_frame_pair_metrics':full,
+                             'source_metadata':source['metadata'],'restoration':meta,'VAE_ledger':ledger,
+                             'PNG_artifacts':pngs,'video_artifact':video_artifact,'restore_seconds':seconds,
+                             'cuda_peak_allocated_bytes':torch.cuda.max_memory_allocated(),'training_updates':0,
+                             'inference_inputs':['LRV','native text embedding','student checkpoint'],
+                             'teacher_or_HR_input_to_inferrer':False}
+                        save(directory/'metrics.json',row)
+                        save(directory/'complete.json',{'protocol_sha256':psha,'metrics_sha256':sha(directory/'metrics.json'),
+                                                        'PNG_count':33,'video_artifact':video_artifact})
+                        observations.append(observation|{'row_metrics_path':str(directory/'metrics.json'),
+                                                        'row_metrics_sha256':sha(directory/'metrics.json')})
+                        ordinal+=1
+                        save(run/'progress.json',{'status':'running','protocol_sha256':psha,'completed_restores':len(observations),
+                             'total_restores':_hr_total(protocol),'last_role':role['label'],'training_updates':0},replace=True)
+                        del video,measured,full
+                    source=target=None
+                if remaining:
+                    after=tensor_state_hashes(model)
+                    need(before==after and all(p.grad is None for p in model.parameters()) and _contexts_empty(model),
+                         'Evaluation changed student state')
+                    role_audit={'role':role['label'],'trainable_before':before,'trainable_after':after,
+                                'training_updates':0,'inference_weights':'student','restores_expected':64}
+                    save(run/'roles'/role['label']/f'state_audit_{attempt:03d}.json',role_audit)
+                audits.append({'role':role['label'],'restores':64,'training_updates':0,'inference_weights':'student'})
+            finally:
+                primary=sys.exc_info()[1]
+                _cleanup_preserving(primary,[lambda:model.clear_features() if model is not None else None,
+                                             lambda:vae.clear_cache() if vae is not None else None])
+                model=vae=policy=None;_cleanup_preserving(primary,[gc.collect,torch.cuda.empty_cache])
+    finally:
+        primary=sys.exc_info()[1];_cleanup_preserving(primary,[lambda:reader.close() if reader is not None else None])
+        perceptual=None;_cleanup_preserving(primary,[gc.collect,torch.cuda.empty_cache])
+    total=_hr_total(protocol)
+    need(len(observations)==total and ordinal==total,'Incomplete clean study matrix')
+    _hr_save_final(run/'observations.json',{'observations':observations,'protocol_sha256':psha})
+    _hr_save_final(run/'role_audits.json',audits)
+    summary={'status':'completed_clean_evaluation','protocol_sha256':psha,'restores':total,'roles':len(protocol['roles']),'training_updates':0,
+             'primary_metric':'all33_frame_LPIPS','quality_gate_applied':False,'old_EMA_G2_G3_G4_applied':False,
+             'fixed_video_clip_ids':protocol['fixed_video_clip_ids'],'prediction_PNGs':total*33,
+             'prediction_MP4s':total if _hr_is_ft(protocol) else 60,'GT_clips':len(_hr_gt_ids(protocol)),
+             'source_windows':'complete33frameclips_not_source_full_length'}
+    if _hr_is_ft(protocol):summary.update(phase=protocol['phase'],source_split=protocol['scope']['source_split'],
+                                         historical_test_exposure_disclosed=protocol['data_independence'])
+    _hr_save_final(run/'summary.json',summary);return summary
+
+
+def hr_execute(run_dir, expected_protocol_sha, *, resume=False, _schema=HR_EVALUATION_SCHEMA):
+    import fcntl
+    run=Path(run_dir).resolve();protocol=read(run/'protocol.json');psha=sha(run/'protocol.json')
+    need(protocol['schema']==_schema and psha==expected_protocol_sha,'Exact clean-study protocol SHA required')
+    state=read(run/'status.json')
+    need(state['protocol_sha256']==psha and state['status']!='completed','Completed runs use hr-verify, never re-execute')
+    need(state['status']=='planned' or resume,'Explicit --resume required after an interruption/failure')
+    need(all(os.environ.get(k)==v for k,v in STRICT_ENVIRONMENT.items()),'Strict offline environment required')
+    need(protocol==_hr_collector(protocol)(protocol['config_binding']['path'],run),'Prepared sources/data/training chain changed')
+    seal=_hr_seal_view(protocol)
+    with (run/'hr_execute.lock').open('a+b') as lock:
+        try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError as error:raise ValueError('This HR evaluation already has an active executor') from error
+        completed=_hr_completed_prefix(protocol,run,psha,seal)
+        attempt=len(list((run/'attempts').glob('attempt_*.json')))+1
+        save(run/'attempts'/f'attempt_{attempt:03d}.json',{'protocol_sha256':psha,'resume_requested':resume,
+             'verified_rows_reused':len(completed),'previous_status':state['status'],'automatic_protocol_change':False})
+        save(run/'status.json',{'status':'running','protocol_sha256':psha,'restores':len(completed),'training_updates':0},replace=True)
+        try:
+            from .checkpoints import gpu_lease
+            cfg=protocol['config']
+            with gpu_lease(cfg['gpu_lock'],cfg['device'],cfg['gpu_admission']) as receipt:
+                save(run/'attempts'/f'GPU_admission_{attempt:03d}.json',receipt)
+                summary=_hr_execute_loaded(protocol,run,psha,completed)
+            result={'status':'completed','protocol_sha256':psha,'restores':_hr_total(protocol),'training_updates':0,
+                    'summary_sha256':sha(run/'summary.json'),'quality_gate_applied':False}
+            save(run/'status.json',result,replace=True);return result
+        except BaseException as error:
+            failure={'status':'failed_resumable_same_protocol','protocol_sha256':psha,
+                     'error':str(error),'traceback':traceback.format_exc(),'training_updates':0,
+                     'no_automatic_protocol_change':True}
+            save(run/'attempts'/f'failure_{attempt:03d}.json',failure)
+            save(run/'status.json',failure,replace=True);raise
+        finally:fcntl.flock(lock,fcntl.LOCK_UN)
+
+
+def hr_verify(run_dir, *, _schema=HR_EVALUATION_SCHEMA):
+    run=Path(run_dir).resolve();protocol,state=read(run/'protocol.json'),read(run/'status.json')
+    psha=sha(run/'protocol.json')
+    total=_hr_total(protocol)
+    need(protocol['schema']==_schema and state['status']=='completed'
+         and state['protocol_sha256']==psha and state['restores']==total and state['training_updates']==0,
+         'A completed same-protocol clean matrix is required')
+    need(protocol==_hr_collector(protocol)(protocol['config_binding']['path'],run),'Completed clean protocol inputs changed')
+    seal=_hr_seal_view(protocol);rows=_hr_completed_prefix(protocol,run,psha,seal)
+    need(len(rows)==total and read(run/'observations.json')=={'observations':rows,'protocol_sha256':psha},
+         'Missing, duplicate or changed clean observations')
+    audits=read(run/'role_audits.json')
+    need(audits==[{'role':r['label'],'restores':64,'training_updates':0,'inference_weights':'student'}
+                  for r in protocol['roles']],'Incomplete role audit')
+    for role in protocol['roles']:
+        records=list((run/'roles'/role['label']).glob('state_audit_*.json'))
+        need(records,'Missing executed student state audit')
+        for path in records:
+            value=read(path);need(value['trainable_before']==value['trainable_after'] and value['training_updates']==0,
+                                  'Student state changed during a restore attempt')
+    for record in _hr_gt_ids(protocol):
+        item=next(x for x in seal['cohort'] if x['record']['id']==record)
+        need((run/'ground_truth'/record/'complete.json').is_file(),'Missing GT fixed clip')
+        _hr_gt(protocol,run,psha,item,None,item['cached_header']['fps'])
+    summary=read(run/'summary.json')
+    need(sha(run/'summary.json')==state['summary_sha256'] and summary['restores']==total
+         and summary['protocol_sha256']==psha and summary['quality_gate_applied'] is False,'Summary completion chain differs')
+    return {'status':'verified_complete_clean_evaluation','run':str(run),'protocol_sha256':psha,
+            'restores':total,'prediction_PNGs_verified':total*33,'prediction_MP4s_verified':total if _hr_is_ft(protocol) else 60,
+            'GT_PNGs_verified':len(_hr_gt_ids(protocol))*33,'GT_MP4s_verified':len(_hr_gt_ids(protocol)),'training_updates':0,
+            'observations_sha256':sha(run/'observations.json'),'summary_sha256':sha(run/'summary.json'),
+            'quality_gate_applied':False,
+            'validation_not_heldout_test':protocol.get('scope',{}).get('source_split','val')=='val'}
+
+
+def _ft_test_access_policy(evaluation):
+    """Separate formal test RGB/scoring from a bound integrity-only exception."""
+    need(evaluation['test_pixels_after_selection'] is True
+         and evaluation['test_prior_exposure']=='historical_models_previously_evaluated',
+         'Disclose historical test use and freeze this-round selection-before-test policy')
+    exception=evaluation.get('test_integrity_thumbnail_exception')
+    if exception is not None:
+        need(isinstance(exception,dict) and exception.get('scope')=='integrity_only'
+             and exception.get('automated') is True and exception.get('human_quality_review') is False
+             and exception.get('model_scores_used') is False,
+             'Preselection test thumbnails must remain automated integrity-only, without human quality review or model scores')
+        _hr_binding(exception['audit_receipt'])
+    return {'test_pixels_after_selection_scope':'formal_RGB_evaluation_assets_and_model_scores',
+            'test_integrity_thumbnail_exception':exception,
+            'no_preselection_test_pixel_access_claimed':False}
+
+
+def ft_collect_protocol(config_path, run_dir):
+    """Independent val/test metadata, without old EMA gates or test-as-val aliases."""
+    from .data import FixedCleanReader
+    config_path=Path(config_path).resolve();cfg=read(config_path);run=Path(run_dir).resolve()
+    phase=cfg['phase'];need(phase in ('val','test'),'Explicit val/test phase required')
+    run_root=Path(cfg['run_root']).resolve()
+    need(run!=run_root and run.is_relative_to(run_root),'Evaluation must be a new child of its output root')
+    need(str(cfg['device']).startswith('cuda:') and str(cfg['device'])[5:].isdigit()
+         and Path(cfg['gpu_lock']).is_absolute() and cfg['gpu_admission'].get('expected_gpu_uuid'),
+         'Explicit CUDA device, shared lock and pinned host UUID required')
+    study_file=_hr_binding(cfg['study_config'])
+    training=_hr_training_evidence(cfg['training_run'],study_file,fixed_teacher=True)
+    study=training['study'];evaluation=study['evaluation']
+    access_policy=_ft_test_access_policy(evaluation)
+    seal_binding=binding(cfg['seal']);dataset_binding=binding(cfg['dataset'])
+    selection=None;selection_binding=None
+    if phase=='val':
+        need(seal_binding==_hr_binding(evaluation['validation_seal'])
+             and dataset_binding==_hr_binding(evaluation['validation_dataset']),
+             'Validation inputs changed after prospective study freeze')
+    else:
+        selection_binding=_hr_binding(cfg['selection_receipt'])
+        selection=read(selection_binding['path'])
+        expected=_ft_selection_payload(cfg['validation_run'])
+        need(selection==expected and selection['study_file']==study_file,
+             'Test selection must reproduce complete validation results and the exact study')
+        need(seal_binding==_hr_binding(evaluation['test_cohort_plan'])
+             and selection['test_cohort_plan']==seal_binding,'Test cohort changed after selection')
+        dataset=read(cfg['dataset'])
+        need(dataset.get('selection_receipt')==selection_binding
+             and dataset.get('cohort_seal')==seal_binding
+             and dataset.get('materialization',{}).get('selection_frozen_before_decode') is True,
+             'Test pixels must be materialized only after the same frozen selection receipt')
+    roles=_hr_role_specs(cfg,training,fixed_teacher=True,phase=phase,selection=selection)
+    mapping=cfg.get('path_map',{})
+    reader=FixedCleanReader(cfg['dataset'],expected_split=phase,cohort_seal=cfg['seal'],
+                           path_map=mapping,expected_dataset_sha256=dataset_binding['sha256'])
+    try:description=reader.describe()
+    finally:reader.close()
+    cohort,assets=description['cohort'],description['assets']
+    need(description['source_split']==phase and description['dataset_binding']==dataset_binding
+         and len(cohort)==len(assets)==32,'Complete32 source-tagged clean clips required')
+    ids=[x['record']['id'] for x in cohort]
+    need(len(set(ids))==len({x['record']['source_id'] for x in cohort})==32
+         and {x['record_id'] for x in assets}==set(ids),'Require32 distinct sources without row selection')
+    bindings=[]
+    for item in assets:
+        bindings.extend([_hr_binding(item['HR']),_hr_binding(item['clean'])])
+    need(not run.is_relative_to(Path(cfg['dataset']).resolve().parent),'Output cannot overwrite clean inputs')
+    text=_hr_binding(cfg['text_cache'])
+    need(all(r['config']['data']['text_cache']['sha256']==text['sha256'] for r in roles),'Fixed native text cache changed')
+    weights=cfg['metric_weights'];need(set(weights)=={'alexnet','linear'},'Explicit frozen LPIPS weights required')
+    videos=[x['record']['id'] for x in sorted(cohort,key=lambda r:r['record']['source_id'])[:3]]
+    if 'fixed_video_clip_ids' in cfg:need(cfg['fixed_video_clip_ids']==videos,'Predeclared comparison clips changed')
+    protocol={'schema':FT_EVALUATION_SCHEMA,'phase':phase,'config':cfg,'config_binding':binding(config_path),
+        'sources':_hr_sources(),'study_file':study_file,'training_evidence':training,'roles':roles,
+        'cohort_seal':seal_binding,'cohort_seal_digest':description['seal_digest'],'cohort':cohort,
+        'dataset':dataset_binding,'clean_assets':assets,'assets':bindings,'path_map':mapping,
+        'text_cache':text,'metric_weights':{k:_hr_binding(v) for k,v in weights.items()},
+        'official_model':model_bindings(cfg['model_directory']),
+        'runtime':runtime_bindings(cfg.get('dependency_root')),'strict_environment':STRICT_ENVIRONMENT,
+        'fixed_video_clip_ids':videos,
+        'data_independence':{'reader':description['data_independence'],'source_split':phase,
+                            'test_prior_exposure':evaluation['test_prior_exposure'],
+                            'historically_pristine_test':False,
+                            'test_materialization_requires_validation_selection':True,**access_policy},
+        'scope':{'roles':len(roles),'clips':32,'sampling_seeds':[42,43],'conditions':['clean'],
+                 'total_restores':len(roles)*64,'source_split':phase,'frames':33,
+                 'HR_hw':[128,224],'LR_hw':[32,56],'steps':20,'CFG':1.,'tile_hw':[256,448],
+                 'overlap':64,'primary_pool':'all33_frames','primary_metric':'lpips_alex_v0_1',
+                 'video_policy':'all_clips','training_updates':0,'row_resume_same_protocol_allowed':True,
+                 'source_windows':'complete frozen33-frame clips, not full source videos'}}
+    if phase=='test':protocol.update(selection_receipt=selection_binding,validation_selection=selection)
+    return protocol
+
+
+def ft_prepare(config_path, run_dir):
+    run=Path(run_dir).resolve();need(not run.exists(),'Use a new fixed-teacher evaluation directory')
+    protocol=ft_collect_protocol(config_path,run);run.mkdir(parents=True)
+    save(run/'protocol.json',protocol)
+    result={'status':'planned','protocol_sha256':sha(run/'protocol.json'),'run_dir':str(run),
+            'phase':protocol['phase'],'restores':0,'training_updates':0}
+    save(run/'status.json',result);return result
+
+
+def ft_execute(run_dir, expected_protocol_sha, *, resume=False):
+    return hr_execute(run_dir,expected_protocol_sha,resume=resume,_schema=FT_EVALUATION_SCHEMA)
+
+
+def ft_verify(run_dir):
+    return hr_verify(run_dir,_schema=FT_EVALUATION_SCHEMA)
+
+
+def _ft_selection_payload(validation_run):
+    """Recompute final-checkpoint choices from the complete val set, never test."""
+    import statistics
+    run=Path(validation_run).resolve()
+    verification=ft_verify(run)
+    protocol=read(run/'protocol.json')
+    need(protocol['phase']=='val' and protocol['scope']['total_restores']==1024,
+         'Selection requires the complete five-trajectory validation phase')
+    study=read(protocol['study_file']['path'])
+    access_policy=_ft_test_access_policy(study['evaluation'])
+    rows=read(run/'observations.json')['observations'];records=[x['record']['id'] for x in protocol['cohort']]
+    index={(r['role'],r['record_id'],r['sampling_seed']):r for r in rows}
+    need(len(index)==1024,'Validation selection cannot drop or duplicate rows')
+    finals={r['arm']:r for r in protocol['roles'] if r['update']==2048}
+    need(set(finals)=={a['label'] for a in study['arms']},'Missing prospective final checkpoint')
+    means={arm:statistics.mean(statistics.mean(index[role['label'],record,s]['metrics']['lpips_alex_v0_1']
+                    for s in (42,43)) for record in records) for arm,role in finals.items()}
+    selected=[];candidates={}
+    for family in ('baseline','hr_vae','hr_dino'):
+        arms=[a for a in study['arms'] if a['family']==family]
+        need(len(arms)==(1 if family=='baseline' else 2),'Keep both calibrated candidates per method family')
+        chosen=min(arms,key=lambda a:(means[a['label']],a['weight']))
+        role=finals[chosen['label']]
+        selected.append({k:role[k] for k in ('label','arm','family','setting','weight','step','update',
+                                            'cumulative_training_seconds','checkpoint','config_binding')})
+        candidates[family]={a['label']:{'weight':a['weight'],'mean_val_LPIPS':means[a['label']]} for a in arms}
+    return {'schema':'fixed_teacher_validation_selection_v1','study_file':protocol['study_file'],
+            'validation_run':str(run),'validation_protocol':binding(run/'protocol.json'),
+            'validation_status':binding(run/'status.json'),'validation_summary':binding(run/'summary.json'),
+            'validation_observations':binding(run/'observations.json'),'validation_verification':verification,
+            'runtime_sources':protocol['sources'],'test_cohort_plan':study['evaluation']['test_cohort_plan'],
+            'candidate_final_means':candidates,'selected_roles':selected,
+            'selection_rule':'per-family final2048 all33 LPIPS mean(sampling42/43 then32sources); minimum; exact tie lower weight',
+            'all_candidates_reported':True,'selected_after_complete_validation':True,
+            'test_pixels_read_by_selection':False,'test_pixel_read_flag_scope':'this selection computation only',
+            'test_prior_exposure':study['evaluation']['test_prior_exposure'],**access_policy,
+            'pristine_test_claimed':False,'training_seed_repetitions':1}
+
+
+def ft_select(validation_run, output):
+    output=Path(output).resolve();need(not output.exists(),'Selection receipts are immutable; use a new path')
+    payload=_ft_selection_payload(validation_run);save(output,payload)
+    return {'status':'selected_from_complete_validation','receipt':binding(output),
+            'selected_roles':payload['selected_roles'],'test_pixels_read':False}
+
+
+
 def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command',required=True)
@@ -670,12 +1395,35 @@ def build_parser():
     p.add_argument('--run-dir',type=Path,required=True); p.add_argument('--expected-protocol-sha',required=True)
     p = sub.add_parser('verify',help='verify all row/PNG/source seals and recompute the complete gate')
     p.add_argument('--run-dir',type=Path,required=True)
+    p = sub.add_parser('hr-prepare',help='bind the independent clean-x4 HR-latent study; no GPU load')
+    p.add_argument('--config',type=Path,required=True); p.add_argument('--run-dir',type=Path,required=True)
+    p = sub.add_parser('hr-execute',help='execute640 clean restores, optionally resume verified same-protocol rows')
+    p.add_argument('--run-dir',type=Path,required=True); p.add_argument('--expected-protocol-sha',required=True)
+    p.add_argument('--resume',action='store_true')
+    p = sub.add_parser('hr-verify',help='verify the complete640-row clean evaluation and all prediction artifacts')
+    p.add_argument('--run-dir',type=Path,required=True)
+    p = sub.add_parser('ft-prepare',help='bind fixed-teacher val1024 or selected test192 metadata')
+    p.add_argument('--config',type=Path,required=True);p.add_argument('--run-dir',type=Path,required=True)
+    p = sub.add_parser('ft-execute',help='execute or resume same-protocol clean fixed-teacher rows')
+    p.add_argument('--run-dir',type=Path,required=True);p.add_argument('--expected-protocol-sha',required=True)
+    p.add_argument('--resume',action='store_true')
+    p = sub.add_parser('ft-verify',help='verify the complete val/test rows, source chain, PNG and MP4 artifacts')
+    p.add_argument('--run-dir',type=Path,required=True)
+    p = sub.add_parser('ft-select',help='verify fullval and compute immutable per-family final-weight choices before test decode')
+    p.add_argument('--validation-run',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
     return parser
 
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
-    if args.command == 'prepare': result = prepare(args.config,args.run_dir)
+    if args.command == 'ft-prepare': result = ft_prepare(args.config,args.run_dir)
+    elif args.command == 'ft-execute': result = ft_execute(args.run_dir,args.expected_protocol_sha,resume=args.resume)
+    elif args.command == 'ft-verify': result = ft_verify(args.run_dir)
+    elif args.command == 'ft-select': result = ft_select(args.validation_run,args.output)
+    elif args.command == 'hr-prepare': result = hr_prepare(args.config,args.run_dir)
+    elif args.command == 'hr-execute': result = hr_execute(args.run_dir,args.expected_protocol_sha,resume=args.resume)
+    elif args.command == 'hr-verify': result = hr_verify(args.run_dir)
+    elif args.command == 'prepare': result = prepare(args.config,args.run_dir)
     elif args.command == 'execute': result = execute(args.run_dir,args.expected_protocol_sha)
     else:
         _, evidence = validate_completed_evaluation(args.run_dir)

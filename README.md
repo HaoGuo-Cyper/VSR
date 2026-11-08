@@ -1,20 +1,24 @@
 # VSR：带教师特征监督的 Latent Diffusion 视频超分辨率
 
-本项目研究：在Wan2.1-T2V-1.3B视频超分训练中，加入EMA teacher的特征监督，能否改善受损帧恢复和时间一致性，同时保持推理开销不变。
+当前研究问题：在相同训练条件下，用真实 HR 视频的冻结 **VAE latent** 或 **DINOv2 patch 特征**监督学生中间层，能否改善 ×4 视频超分质量或训练效率。
 
-**当前状态（2026-11-07）：首轮pilot完整评价结束，G4未通过，后续GPU实验已停止。** A2相对C1的受损帧LPIPS改善0.00920，超过Base seed波动门槛0.00433；但clean PSNR下降0.133dB、SSIM下降0.00555，未满足原定保真要求。三组各2048步训练、1152次评价及38,016张PNG/来源链已完整复核；[结果与全部类型](docs/local_continuation_20261107/G4_report.md)和[完整指标表](docs/local_continuation_20261107/pilot_metrics_table.md)已记录。结果限于一个方法训练seed；G2/G3通过，正式三seed比较尚未开始。代码仍为下述10个核心模块，H100迁移延期。
+**当前任务（2026-11-08）：基线、HR-VAE、HR-DINOv2 三组探索实验。** 一个训练种子，基线一条轨迹，两种对齐各最多两个权重，共最多五条轨迹。先测真实梯度尺度与开销，再锁定每条2048步的统一预算；所有候选保留，验证集选权重，再打开最终测试评价。方案见[执行计划](docs/fixed_teacher_20261108/plan.md)和[原论文与适配](docs/fixed_teacher_20261108/method_references.md)。当前短测已通过，候选已固定：VAE 0.11/1.1、DINO 0.094/0.94；见[预执行与预算](docs/fixed_teacher_20261108/preflight_and_budget.md)和[最终配置](configs/fixed_teacher_study_20261108.json)。当前尚无本轮质量结论。
+
+本地 RTX5080 负责本轮开发与实验；H100迁移延期。旧 EMA pilot 的[完整结果](docs/local_continuation_20261107/G4_report.md)保留，其 clean 保真门槛未通过。EMA／Self-Flow 留到第二轮讨论，本轮不启动。
 
 ## 模型路径
 
 ```text
-LRV → 上采样 → 冻结VAE编码 → LR latent条件 ─┐
-                                          ↓
-初始噪声 ─────────────────────────→ Latent Diffusion → HR latent → VAE解码 → HRV
-                                          ↑
-                               EMA teacher特征监督（仅训练）
+LR视频 → 双三次上采样 → 冻结VAE编码 → LR latent条件 ─┐
+                                                     ↓
+初始噪声 ─────────────────────────────→ Latent Diffusion → HR latent → VAE解码 → HR视频
+                                            ↑
+真实HR → 冻结VAE 或 冻结DINOv2 → 中间层辅助监督（仅训练）
 ```
 
-主干冻结，训练LoRA和LR残差分支。真实HR视频的VAE latent提供flow-matching恢复目标。A2的teacher看到完整LR条件，学生看到部分被破坏的LR latent条件；两者使用相同的加噪HR latent和timestep，学生在受损位置学习teacher特征。推理只使用学生。
+学生主干冻结，训练 rank8 LoRA 和 LR 残差分支，原 flow-matching 损失保持不变。两种对齐都从第8个 block（index7，共30层）取特征，使用单层 FP32 Linear：VAE输出64维，以元素平均 Smooth L1 对齐同一次干净HR latent patch；DINO输出768维，以通道归一化后的平均余弦损失对齐局部patch表示。DINO逐帧编码后按首帧独立、后续每4帧均值映射到9个latent时间位置。
+
+不使用EMA、LR条件破坏或额外噪声门槛。推理只加载学生；HR、教师、辅助头和优化器均不进入推理。
 
 ## 每个Python文件做什么
 
@@ -25,13 +29,13 @@ LRV → 上采样 → 冻结VAE编码 → LR latent条件 ─┐
 | [data.py](vsr/data.py) | 数据清单、固定划分/窗口、×4退化、流式缓存准备和校验、时序mask/条件破坏、固定val32读取 | 视频或封存资产/配置 → LR/HR、latent、mask、元数据 |
 | [vae.py](vsr/vae.py) | 冻结FP32 VAE加载、latent几何与归一化、posterior-mode编码/解码、缓存策略 | 视频或latent → latent或视频 |
 | [model.py](vsr/model.py) | Wan模型工厂、LoRA、LR残差注入、架构与精度设置、参数hash | 官方权重/配置及LR条件 → 模型、velocity和特征 |
-| [teacher.py](vsr/teacher.py) | trainable-only EMA、安全权重交换、teacher前向和特征捕获 | 学生/EMA参数、完整LR条件 → 无梯度teacher特征 |
-| [losses.py](vsr/losses.py) | flow-matching、学生投影头、masked cosine特征损失 | 预测/目标、学生/teacher特征/mask → 损失与诊断 |
-| [train.py](vsr/train.py) | 统一Base训练、固定预算开发smoke、G3资源验证、flow-only/C1/A2 pilot；优化器/RNG、日志及门槛检查 | 缓存/配置/可选matched Base与前置结果 → checkpoint、开发/训练或资源报告 |
+| [teacher.py](vsr/teacher.py) | 冻结DINOv2提取、预处理和33→9时间聚合、中间层特征捕获；保留历史EMA | 学生/EMA参数、完整LR条件 → 无梯度teacher特征 |
+| [losses.py](vsr/losses.py) | flow-matching、VAE patch/mean Smooth L1、DINO mean cosine及梯度校准；保留历史损失 | 预测/目标、学生/teacher特征/mask → 损失与诊断 |
+| [train.py](vsr/train.py) | 固定教师五轨迹训练/梯度校准/真实小测/完整状态续跑；保留Base及历史smoke/resource/pilot入口，管理优化器/RNG和日志 | 缓存/配置/可选matched Base与前置结果 → checkpoint、开发/训练或资源报告 |
 | [infer.py](vsr/infer.py) | 仅LR推理、原生UniPC、空间tiling、视频CLI；使用固定文本缓存 | LR视频/学生checkpoint/采样设置 → HR视频 |
-| [evaluate.py](vsr/evaluate.py) | 统一3Base/3arm完整矩阵、协议与来源绑定、保存预测/行记录、G2/G4重算 | checkpoint列表/固定评价资产 → 完整观测、门槛与统计 |
+| [evaluate.py](vsr/evaluate.py) | 固定教师完整val/test、中间checkpoint评价与验证选参receipt、协议/来源/PNG/MP4核验及同协议行恢复；保留历史评价 | checkpoint列表/固定评价资产 → 完整观测、门槛与统计 |
 | [metrics.py](vsr/metrics.py) | RGB PSNR/SSIM、LPIPS、TecoGAN、固定帧/时间对池、seed/clip统计与特征诊断 | 保存像素或封存观测 → 指标、种子统计、配对区间 |
-| [checkpoints.py](vsr/checkpoints.py) | 学生权重加载、训练态分离、原子保存、共享GPU租约与进程准入 | 官方底座/任务权重/显式执行身份 → 恢复模型、新checkpoint或租约记录 |
+| [checkpoints.py](vsr/checkpoints.py) | 学生权重加载、HR训练head/AdamW/RNG完整保存恢复、训练态与推理分离、原子保存及共享GPU租约 | 官方底座/任务权重/显式执行身份 → 恢复模型、新checkpoint或租约记录 |
 
 ```text
 vsr/       # 10个核心模块 + __init__.py
@@ -57,11 +61,12 @@ python -m vsr.evaluate --help
 | 日常任务 | 入口 |
 | --- | --- |
 | 准备/检查数据 | `vsr.data manifest / prepare-cache / check-cache` |
-| 训练或开发/资源验证 | `vsr.train prepare / execute`，模式`base / smoke / resource / pilot` |
+| 当前校准与训练 | `vsr.train ft-calibration-prepare / ft-calibrate / ft-prepare / ft-execute` |
+| 历史Base/开发入口 | `vsr.train prepare / execute`，模式`base / smoke / resource / pilot` |
 | 预览权重配置/视频超分 | `vsr.infer preview / run`；run要求显式`--execute` |
-| 完整评价/结果复核 | `vsr.evaluate prepare / execute / verify` |
+| 当前评价、复核和选参 | `vsr.evaluate ft-prepare / ft-execute / ft-verify / ft-select` |
 
-`prepare`只生成新协议和来源绑定，不加载GPU模型；`execute`要求明确的协议SHA、新run和GPU准入。旧失败/停止run不支持原地resume。CLI与参数示例见[使用说明](docs/CLI_GUIDE.md)。
+`prepare`只生成新协议和来源绑定，不加载GPU模型；`execute`要求明确的协议SHA、新run和GPU准入。本轮可恢复工程故障允许同协议完整状态续跑；历史停止run不混入新实验。CLI与参数示例见[使用说明](docs/CLI_GUIDE.md)。
 
 ## 本地CPU检查
 
@@ -73,26 +78,27 @@ CUDA_VISIBLE_DEVICES="" python -m unittest discover -s tests -v
 
 测试包括tinyWan前反向、EMA、mask、数据/缓存、checkpoint、推理分块、完整1152行合成矩阵与指标回归。测试不启动GPU实验。真实LPIPS权重和3Base私有资产存在时还会运行对应CPU兼容检查，缺少时明确skip。依赖记录见`requirements.lock.txt`；`requirements.portable.txt`仍不是已验收的H100全新安装指南。
 
-## 实验顺序
+## 本轮实验顺序
 
-| 阶段 | 设置与当前状态 |
+| 阶段 | 工作及完成标准 |
 | --- | --- |
-| Base | 3个训练seed各8192步，已完成并审计；继续使用 |
-| 5080开发验证 | 已通过3诊断updates＋保存/学生重载＋1次UniPC20恢复；0正式RE，不代替G2/G3/G4 |
-| Base评价G2 | 已完成1152 restores及完整输出复核，G2通过；旧228条单独保留 |
-| 资源与语义G3 | 已完成70诊断updates，精确语义/显存通过；A2/flow=1.406≤1.5 |
-| Pilot | flow-only、C1、A2各2048步已完成，共0.75RE，初始化/日志/权重来源链已审计 |
-| Pilot评价G4 | 1152次完整评价与审计已完成；恢复收益通过，两个clean保真项失败，G4未通过 |
-| 正式比较与扩展 | 前述门槛通过后再做多seed、消融、最终外评 |
+| 数据与来源 | 固定×4双三次、33连续帧、128×224 HR；检查sourceID、文件重复和跨集合视觉近重复，封存修复后的val32/test32 |
+| 正确性与短测 | 零权重基线一致、教师冻结、学生梯度、VAE重建、DINO在线缓存一致、完整保存恢复、真实显存与吞吐 |
+| 统一训练 | 同Base01/fresh AdamW/数据与噪声序列，baseline1＋VAE2＋DINO2，各2048步，最多1.25RE |
+| 验证与选参 | 共享起点及每条512/1024/2048步，1024次完整恢复；每方法按最终LPIPS选权重 |
+| 最终测试 | 选参receipt固定后才构建正式test RGB资产；baseline/VAE/DINO最终模型共192次恢复 |
+| 分析与交付 | LPIPS主指标及PSNR/SSIM/时间指标、逐视频差异、质量随步数/实际训练秒曲线、成本拆分和固定视频 |
 
-最重要的是**A2超过C1**：C1采用同样条件破坏但没有teacher监督，flow-only衡量普通续训收益。首轮保持33连续帧/stride1、128×224 HR、×4、train1641/val32。显存增加不自动改变科学设置。
+完整恢复指已声明33帧裁剪片段，不表示原始长视频全长或全分辨率。测试源与训练隔离，但历史模型曾使用原test集合，不能称项目级盲测。自动数据完整性缩略图筛查早于选参，正式测试RGB资产及模型分数晚于选参。单训练种子结果仅作探索性证据。
+
+旧三Base、G2/G3和EMA pilot/G4保留原始协议与结果；本轮使用同一Base01起点，不继承旧EMA质量门槛作为成功标准。
 
 ## 本地5080开发与实验 → GitHub同步
 
 1. **5080开发维护**：写代码，运行相关CPU检查，保留10个核心模块和旧实验记录。
 2. **固定执行版本**：通过检查后记录完整commit及源码hash；运行期间固定代码与依赖。
 3. **本地独立run**：使用显式模型/数据/输出路径、共享GPU锁和新协议，不续跑旧停止目录。
-4. **按门槛推进**：完整Base评价G2 → 真实资源与语义G3 → flow-only/C1/A2 pilot → 完整评价G4；正常通过后继续，失败保留记录并停止依赖任务。
+4. **完成当前比较**：正确性/短测 → 五条统一训练 → 完整验证和选参 → 独立来源测试 → 分析交付；可恢复工程故障保留记录并完整状态续跑。
 5. **同步结果**：代码、配置、协议、统计和文本日志可回GitHub；权重、原始视频、tensor缓存和凭证通过私有通道管理。
 
 H100迁移方案保留为历史计划，当前延期，不是本地主线的前置条件。
@@ -107,4 +113,4 @@ H100迁移方案保留为历史计划，当前延期，不是本地主线的前�
 - [TASKS](TASKS.md)、[DECISIONS](DECISIONS.md)、[RESULTS](RESULTS.md)：任务、决策及真实实验记录。
 - [旧README](docs/history/README_before_ten_module_plan_20261106.md)：历史说明，不作当前启动依据。
 
-首轮单训练seed结果显示受损帧恢复与clean保真之间的权衡；G4未通过，正式三seed实验尚未启动。所有完成、停止和失败记录保留。
+旧EMA结果存在恢复与保真的权衡；本轮固定教师比较尚未出分，不据辅助损失推断收益。所有历史记录保留。
