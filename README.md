@@ -118,3 +118,6 @@ H100迁移方案保留为历史计划，当前延期，不是本地主线的前�
 - [旧README](docs/history/README_before_ten_module_plan_20261106.md)：历史说明，不作当前启动依据。
 
 旧EMA结果存在恢复与保真的权衡；本轮固定教师比较尚未出分，不据辅助损失推断收益。所有历史记录保留。
+
+
+Latest completed study (2026-11-08): [Wan TRD final report](docs/ema_teacher_targets_20261108/final_report.md), [reproduction and checkpoints](docs/ema_teacher_targets_20261108/reproduce_and_checkpoints.md). Full evaluation completed; EMA improvement over the original baseline remains insufficient, with additional training cost. The separately authorized [VideoMAEv2/Wan prospective plan](docs/videorepa_videomaev2_20261108/plan.md) retains the original fixed video teacher and starts only after this delivery and its own correctness/resource checks.

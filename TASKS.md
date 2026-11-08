@@ -243,3 +243,11 @@ Preflight protocolSHA `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361c
 - [ ] V2: Isolated implementation and relevant CPU/teacher/checkpoint correctness checks.
 - [ ] V3: Bounded GPU preflight; launch the new paired study only after current round completion and successful checks.
 - [ ] V4: Complete normal inference, independent analysis, fixed-video review and reproducible delivery.
+
+
+### Wan TRD final closure — 2026-11-08
+- [x] P4: all3arms2048/6144scientificupdates,12CP/fulltrainingaudit passed.
+- [x] P5: fullval640/test192/nativeverify/all3finals retained.
+- [x] P6: independent832rows/75CI,2112PNG regression,6fixedvideos/rootactual33-frameROI andcurves, finalreport/reproduction andcomplete text publication prepared; final closure commit carries this record. Evidence insufficient versus baseline, no acceleration.
+- [x] V1: independently reviewed prospectiveVideoMAEv2 plan unchanged; currentstudy closed before next numericalimplementation.
+- [~] V2: authorized nextisolatedimplementation; newGPU work onlyafter CPU/preflight checks.
