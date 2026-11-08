@@ -191,3 +191,8 @@ Proposed single-seed budget is3x2048=6144 science updates=.75RE,41 separately co
 ## Wan TRD execution authorized after plan delivery, 2026-11-08
 
 The human explicitly replied “好的，按你这个思路开始吧” to the delivered three-arm plan. This supersedes the earlier planning-only prohibition for this new study and authorizes implementation, targetedCPU tests,41-diagnostic preflight/gradientcalibration,3x2048 training,val640/test192 and bounded delivery after normal successful checks. No scientific setting or budget is changed. Newisolatedsource `/home/hugo/.codex/worktrees/vsr-wan-trd/VSR-sync` starts from18e658280157a3a13251e60c3e6aeccca8faba04; oldgamma andhistoricalactual/canonical numerics remain preserved. A failed viability/nonfinite/OOM gate stops dependentGPU,with no automatic scientific adjustment.
+
+
+## VideoMAEv2 follow-on authorization after current delivery — 2026-11-08
+
+The human explicitly authorized planning and then starting a separate Wan VSR study that preserves the VideoMAEv2 teacher and adheres as closely as feasible to original VideoREPA. Complete the existing TRD round first; this is not an extra arm within its fixed budget. Before launching, document exact original/code settings, necessary adaptations, retained choices, prospective data/metrics and a bounded paired-study budget. Normal implementation/checks and successful continuation are authorized; no automatic scientific/resource fallback.

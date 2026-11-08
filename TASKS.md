@@ -234,3 +234,12 @@ Preflight protocolSHA `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361c
 - [x] P3:15/15gradientcases,commonlambda.3,41attempted/applied/returned,exactGPUsemantics/resume/16GiB checks andindependentaudit passed.
 - [~] P4:baseline2048complete withstudenthashes matchingpriorbaseline;frozen/EMAcontinue within6144budget.
 - [~] P5/P6 orchestration:CPUhelpers andserialcontinuation passedfixtures/independentreview,waitingexistingtraining;noevaluationstarted.
+
+
+## VideoMAEv2 follow-on, queued after Wan TRD P6 — 2026-11-08
+
+- [~] V0: Read-only official VideoREPA/VideoMAEv2 implementation and local-asset review; unbound scratch only, no GPU.
+- [ ] V1: After current P6 delivery, publish prospective adaptation matrix, budget, data and evaluation criteria.
+- [ ] V2: Isolated implementation and relevant CPU/teacher/checkpoint correctness checks.
+- [ ] V3: Bounded GPU preflight; launch the new paired study only after current round completion and successful checks.
+- [ ] V4: Complete normal inference, independent analysis, fixed-video review and reproducible delivery.

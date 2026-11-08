@@ -585,3 +585,10 @@ Protocol `a74e1a44f362a569d934696ff171f71cb26a5351beab35b0b567d361ceb6c650` bind
 串行父进程只等待现有训练退出0，再完整训练审计、val640、verify、锁定三组最终2048、test192、verify和分析；任何一步失败即停止，不重启训练或调参。运行声明见原工作区 `work/active_wan_trd.json` 与其continuation/pipeline_status。全11数值源码及父流程绑定的统计helper从现在保持不变。
 
 公开训练日志按512完整行无损分块，`training_parts_manifest.json`给出每块及canonical总SHA；按顺序拼接可以恢复原JSONL完整字节，不丢步、不删行。权重、图像视频和tensor缓存保持本机。
+
+
+### Wan TRD training completed; full evaluation running — 2026-11-08
+
+Three arms each completed2048, total6144 scientific updates,12 checkpoints,0diagnostics in training. Training service normalexit0/MainPID0; summary SHA8f6bb62a1d02bff66922629196cea9ca5ded9d2244c3ae17cb368d4603720d1d. Complete CPU training audit passed. Committed synchronized Step wall2739.572551s and wholeattempt2828.383454s have different scopes. Parent advanced to unique validation640 run with protocol c8dbde5e11d5e151e0673e152829e161221db1164644e766a22835573376aa05; no partial quality conclusion. Test192, complete native verification, root independent statistics/visual/repro delivery remain required.
+
+The human separately authorized a new, more faithful VideoREPA-to-Wan VSR study retaining VideoMAEv2 teacher **after this round completes**. Only read-only official-method/resource research is concurrent now. New plan must list unavoidable adaptations, freeze a separate budget and protocol before scoring, and pass correctness/resource checks before its separate GPU launch. Current11 numerical sources and parent-bound helpers remain frozen.
