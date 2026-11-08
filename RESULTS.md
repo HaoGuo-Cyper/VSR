@@ -513,3 +513,10 @@ Calibration8cea87...c5868 exited0/MainPID0;27diagnostic/0science. Three original
 Unique trainingservice vsr-fixed-teacher-training-20261108t034113z.service isrunning; run paired_training_20261108T033800Z/protocol7b620162ea4518f52ff7bb84a18ff955b2030ca4cdc94fd357547ece11021509, budget10240. Independent formalpreexecution review passed. Source/first-round configurations and realpreflight were publicly synchronized as80703e16fc91184db2d44b498f6b2478d61c271c/tree2e74df8c...; oldcanonicala91 andactual41407b0 unchanged.
 
 18synthetic pipeline/waiter CPUcases passed. Parent vsr-fixed-teacher-continuation-20261108t034645z.service waits for existingtraining exit0 andcompleted10240; it starts no training. Onlythen serialval1024→verify→select→formaltestRGB→test192→verify→analysis. A transientcompletedstatus whileMainPIDalive still waits forcleanup. Anyfailure/sourceorhelperchange stops withoutautomaticretry. Outputplanned workspace/outputs/FixedTeacher_20261108; finalrootreview/video/evidence/report stillrequired, noqualityclaim yet.
+
+
+### Pre-evaluation metadata compatibility repair,2026-11-08
+
+Root found a deterministic metadata-only mismatch before anyevaluation: oldBase data.text_cache has source_run/path/sha256 but lacksbytes; the frozen core canonical binding is path/bytes/sha256. Oldparent review would incorrectly compare rawdict againstcanonical. Added newunbound pipeline_v2 (notediting old6helpers or11numericfiles); onlybound-normalization andselfHELPERS filename differ byAST.11CPU synthetic andreallegacy canonical equality/independentreview passed. No model/data/sampling/threshold changed.
+
+Stopped onlystill-waiting parent034645 at0evaluation and preserved launch/status/supersession receipt; existing GPU training034113 continued uninterrupted. Replacementwaiter vsr-fixed-teacher-continuation-v2-20261108t042551z.service nowbinds v2fd2ccf5a38c8d6c332bb593319bb5f5df16aa14a1318219626aa0bc9e096d786 andtheunchangedotherhelpers. Activepointer updated. Scientifictrainingprotocol7b620...1509 remainsidentical. This is a pre-execution engineering repair, not a failedquality gate or a retried matrix.

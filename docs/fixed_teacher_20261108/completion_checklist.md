@@ -2,7 +2,7 @@
 
 这些工具都已CPU验收，但真实输出必须等相应完整阶段后生成，不能把工具就绪当研究完成。所有数值源码/六个已绑定pipeline helper保持冻结。
 
-1. 先读原workspace/work/active_fixed_teacher.json和continuation.status_file；当前训练unit034113、等待父unit034645。只等待的父服务绝不启动第二个训练。训练最终必须退出0/MainPID0、10240有限连续行/20CP/相同Base初始化，随后parent串行val1024/test192/分析。
+1. 先读原workspace/work/active_fixed_teacher.json和continuation.status_file；当前训练unit034113、等待父v2 unit042551（旧034645已在0评价前superseded）。只等待的父服务绝不启动第二个训练。训练最终必须退出0/MainPID0、10240有限连续行/20CP/相同Base初始化，随后parent串行val1024/test192/分析。
 2. 训练complete10240后立即运行下面CPU diagnostics（即使val已开始），验证全部数据/σ序列及相同CP的四RNG精确相同，检查head梯度/参数更新和分噪声区间损失。若出现真实公平性或非有限问题，保留记录并停止依赖GPU，不能静默改数值协议。
 3. 完整val1024和核心ft-verify后运行shared_initial_regression，核31保留窗口/2046PNG与旧Base01/clean完全相同；1替换源不混入历史匹配。
 4. 父pipeline必须完整test192及ft-verify成功、selection只来自最终2048valLPIPS；所有候选、512/1024/2048曲线、CSV/成本和单seed描述CI完整。

@@ -23,3 +23,7 @@
 | fixed_teacher_shared_initial_regression.py | 完整验证后核对31保留窗口的2046PNG与旧Base推理精确相同 |
 | fixed_teacher_video_delivery.py | 完整test后用原PNG生成预先固定片段的五panel视频/contactsheets |
 | test_*.py | 相应工具的CPU合成回归，不能替代真实实验结果 |
+
+## 当前调度版本
+
+实际后训练调度使用 **fixed_teacher_pipeline_v2.py**，默认after-training；旧pipeline.py保留作未执行评价的历史版本，勿启动。v2只把旧Base的text_cache引用（含source_run、无bytes）按核心既定规则规范化为path/bytes/sha，仍严格验证SHA与可选size；不改变任何模型/数据/采样或阈值。新11CPU与真实legacy metadata比对、独审通过；旧六个运行helper及11个数值源码保持原字节。新父service只等待同一个训练service，旧父在0评价前封存。
