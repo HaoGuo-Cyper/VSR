@@ -187,3 +187,10 @@ See docs/hr_vae_latent_20261108/plan.md. Thisnewexplicit scope supersedes oldEMA
 ## Fixed-teacher three-group scope — 2026-11-08
 
 Latest human scope,2026-11-08: baseline + HR-VAE + HR-DINOv2 fixed-teacher study. Follow docs/fixed_teacher_20261108/plan.md and method_references.md; it supersedes previous EMA/gamma and HR-VAE-only drafts, both0GPU. One trainingseed,atmost2weights/method,atmost5trajectories; sameBase/block7/commonFM/RNG,meanSmoothL1VAE/channel-L2cosineDINO. Realpreflight/calibrationbeforeweights/budgetfreeze; planned5x2048=1.25RE withinpriorStage4budget. Completeval1024 andselection-boundtest192,all33frames; independenttestsourcewithhistoricalexposuredisclosure. Onlycompleteimplementation/correctness/budgettraining/nativeinference/analysisdeliveriesfinishthisround. Recoverablefaultresumeauthorized. EMA/SelfFlowround2suggestionsonly.
+
+### Fixed-teacher actual completion checkpoints,2026-11-08
+
+- [x] F3: all5×2048=10240 finite updates/20CP; shared data/noise/4RNG/initialization and student/head updates independently audited.
+- [x] F4: fullval1024/33792 predictionPNGs verified; final2048 selection baseline/VAE.11/DINO.094 independently reproduced. Sharedinitial31 retainedwindows/2046PNG exact historical regression passed.
+- [~] F5: selected3×32×2 test192 running under uniqueexisting parent; no new training or selection changes.
+- [ ] F6: complete test nativeverify/pairedstats/curves/video review/finalreport and text publication.

@@ -7,9 +7,9 @@
 | F0 | 资产、5080、source隔离/重复泄漏、原论文与适配核对 | 完成：声明筛查排除1val/3test跨split近重复后1705片段复筛无flag；保留局限 |
 | F1 | VAE meanSmoothL1、DINO channel-L2 cosine，同block7/同head深度，严格时空/cache绑定 | 完成：107CPU＋6tinyWan18VJP检查通过 |
 | F2 | 新DINO缓存、在线一致性、HR-VAE重建诊断、真实短测/梯度校准、冻结预算与两权重 | 完成：新DINO缓存与在线精确验算、两VAE重建、27GPU诊断与独审通过 |
-| F3 | 同Base01/freshAdamW/数据噪声序列，baseline1+VAE2+DINO2各2048步 | 已锁定5×2048/1.25RE：VAE.11/1.1，DINO.094/.94 |
-| F4 | val共享0+每轨迹512/1024/2048；16×32×2=1024恢复并选各method最终权重 | 严格完整33帧clip，所有候选保留 |
-| F5 | val选择receipt绑定后，才构建/打开test像素并评baseline/VAE/DINO三个final | 预先冻结test32来源；3×32×2=192恢复 |
+| F3 | 同Base01/freshAdamW/数据噪声序列，baseline1+VAE2+DINO2各2048步 | 完成10240/20CP及真实数据/RNG/head/学生更新审计 |
+| F4 | val共享0+每轨迹512/1024/2048；16×32×2=1024恢复并选各method最终权重 | 完成1024及native/独立审计；选VAE.11、DINO.094，全部候选保留 |
+| F5 | val选择receipt绑定后，才构建/打开test像素并评baseline/VAE/DINO三个final | 进行中：selection后已构建，唯一192矩阵，不重选 |
 | F6 | 全部逐视频/总体指标、两种质量曲线、成本拆分与固定片段视频、复现说明/GitHub | 所有交付齐备才完成本轮；第二轮不自动启动 |
 
 预算依据：原TASKS Stage4约3RE，旧pilot已用.75RE；取消的gamma和HRVAE-only草案均0更新，本轮建议1.25RE，使Stage4合计2RE，未超现有授权。有效batch1、constantlr1e-4/AdamW foreachFalse和原精度/梯度裁剪保持；checkpoint512/1024/1536/2048，中间评价512/1024/2048。真实短测确认内存/耗时后记录采用依据，不因分数加跑或扩候选。诊断optimizer更新与正式预算分别计账。
@@ -26,4 +26,4 @@ LPIPS(all33,q/255)为主，同时报告RGB PSNR/SSIM及原明确定义TecoGAN tL
 
 本轮允许诊断修复可恢复故障和完整检查点续跑，保留中断记录，恢复student/head/AdamW/constantLR参数组/4RNG/step/time/来源。当前constantLR无独立学习率scheduler；native1000训练时间步网格由绑定scheduler配置重建，不假称存在可恢复的LR调度器。所有GPU使用同一共享锁和fresh host身份，单队列。
 
-当前封存设计和权重见[真实短测与预算](preflight_and_budget.md)。正式test RGB尚未构建；完整性缩略图自动读取为单独披露的预选前例外，不作未曾访问test像素的声明。
+当前封存设计和权重见[真实短测与预算](preflight_and_budget.md)。正式test RGB已在完整val选择receipt后构建；完整性缩略图自动读取为单独披露的预选前例外，不作未曾访问test像素的声明。

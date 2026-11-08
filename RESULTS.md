@@ -529,3 +529,11 @@ Unique trainunit034113 exited0/MainPID0; complete10240 attempted/applied/returne
 RealCPU training_diagnostics passed,0flags: allfive2048 data/record/σ/native timestepsequences equal; all4RNG states equal bytewise at512/1024/1536/2048; all20CP488/488studentparams changed fromBase; all16auxCP2/2headparams changed withnonzeroAdamWsecondmoments, notjustweightdecay. Initialstudents identical. FullCSV/noisebin/first-last256diagnostics in training_diagnostics/. Unitaux decreases do not prove normalinference gain; windowdata/noise differ and cross-loss magnitudes are not directly comparable.
 
 Thev2parent advanced throughfulltrainingreview/config/metadata protocolreview andstartedval1024. Run work/fixed_teacher_runs/pipeline_paired_training_20261108T033800Z/validation, protocolb638fd326211724d9f3b561d2bc1d0fa87c3deb478aff4ca2d1810d2acb64c0a. Firstnative33framePNG/MP4/metricrowscomplete;0trainingupdates. Do notinterpretpartialqualityscores. Selection/test192/analysis/video/finalreport remainpending; this is not roundcompletion.
+
+### Fixed-teacher validation completed and selection fixed,2026-11-08
+
+Fullval1024 all33frames/33792 predictionPNG+1024MP4 completed; native source/hash/role chain verified byphase05, independent per-frame/per-pair five-metric recalculation passed. Protocolb638fd326211724d9f3b561d2bc1d0fa87c3deb478aff4ca2d1810d2acb64c0a. Final2048 LPIPS baseline.11680582599629732; VAE-low.11643833679916112/high.11997625752789617; DINO-low.11955492312236773/high.12693138522004258. Original selection rule fixesVAE.11 andDINO.094; allfive candidates retained. These validation values select settings and are not finaltest quality evidence.
+
+CPU-only sharedinitialregression passed31 retainedwindows×2samplers×33=2046 byteidenticalPNG againsthistorical Base01/clean; replacementwindowexcluded. ReportSHA69e5dda01aa708249a3f481072591902611e10a55d633562bfe39bca0042bdb6; noadditionalrestore/GPUwork.
+
+Parent subsequentlymaterializedformaltestRGB afterselection andstartedunique192rowtest protocol d1572aeb22f736d1c1823aae858f8c1aaba838a748c4875610507aaa2c011869. Same3finalCP/sampler/model/metrics/data settings; noqualityconclusion beforefulltestverify/analysis.

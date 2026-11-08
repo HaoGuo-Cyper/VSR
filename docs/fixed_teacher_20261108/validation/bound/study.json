@@ -1,0 +1,252 @@
+{
+  "base_config": "/home/hugo/Projects/VSR_/runs/stage2_protocol33_base_seed20261102_20261106T025845.129456Z/config.json",
+  "base_checkpoint": "/home/hugo/Projects/VSR_/runs/stage2_protocol33_base_seed20261102_20261106T025845.129456Z/Base/checkpoint_008192.pt",
+  "allowed_base_root": "/home/hugo/Projects/VSR_/runs",
+  "cache_root": "/home/hugo/Projects/VSR_/runs/stage2_protocol33_base_seed20261102_20261106T025845.129456Z",
+  "model_directory": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers",
+  "device": "cuda:0",
+  "gpu_uuid": "GPU-4414baf2-fd94-f31a-18e6-ebe95dcd1813",
+  "gpu_admission": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/hr_vae_admission_20261108.json",
+  "gpu_lock": "/home/hugo/Projects/VSR_/runs/stage2_gpu.lock",
+  "training_seed": 20261102,
+  "updates": 2048,
+  "checkpoint_updates": [
+    512,
+    1024,
+    1536,
+    2048
+  ],
+  "eval_updates": [
+    512,
+    1024,
+    2048
+  ],
+  "student_layer": 7,
+  "smooth_l1_beta": 1.0,
+  "loss_reduction": "element_mean",
+  "target_patch_order": "pt,ph,pw,C",
+  "target_token_order": "T,H,W",
+  "all_timesteps_and_tokens": true,
+  "uncertainty": {
+    "training_seeds": 1,
+    "sampling_seeds": [
+      42,
+      43
+    ],
+    "paired_clip_bootstrap_draws": 10000,
+    "seed": 20261102,
+    "generator": "PCG64",
+    "interval": "95% linear-percentile descriptive conditional single training seed"
+  },
+  "resume_policy": "same scientific protocol; verified full training checkpoint incl optimizer/head/RNG; preserve aborted attempts; do not count discarded updates as convergence progress",
+  "schema": "fixed_teacher_study_v1",
+  "title": "Paired baseline, clean HR-VAE and HR-DINOv2 fixed teacher study",
+  "run_root": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_runs",
+  "dino_cache_root": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_runs/dinov2_cache_20261108T032522Z",
+  "head_depth": 1,
+  "EMA": false,
+  "condition_corruption": false,
+  "teacher_targets": {
+    "vae": "same exact clean normalized VAE posterior.mode latent used by FM; native pt,ph,pw,C patches; mean SmoothL1 beta1",
+    "dino": "official frozen DINOv2-B/14 x_norm_patchtokens; HR128x224 bicubic-AA resize112x196; ImageNet RGB normalization; 8x14 patch grid; frame0 then four-frame means; channel-L2 cosine"
+  },
+  "head_parameters": {
+    "vae": 98368,
+    "dino": 1180416
+  },
+  "dinov2": {
+    "source_dir": "/home/hugo/Projects/VSR/vendor/dinov2",
+    "weights": "/home/hugo/Projects/VSR/weights/dinov2_vitb14_pretrain.pth",
+    "frame_batch_size": 8
+  },
+  "evaluation": {
+    "validation_seal": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_clean_cohorts_20261108/iteration_000/val_plan.json",
+      "bytes": 46314,
+      "sha256": "f6e17c582e84e2a2cb90c2dea016e08195edae3f2f8558c26378b75d25bc27bd"
+    },
+    "validation_dataset": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_clean_cohorts_20261108/validation_assets/dataset.json",
+      "bytes": 94095,
+      "sha256": "698fc703e1421305fa47a2f5250dfc175059e1acb09413b71e14fef52a2f9eae"
+    },
+    "test_cohort_plan": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_clean_cohorts_20261108/iteration_000/test_plan.json",
+      "bytes": 46049,
+      "sha256": "f3224734e43365f1cb8454b14554d362ff7c7e290322fd2a714b78d5a984931f"
+    },
+    "test_pixels_after_selection": true,
+    "test_prior_exposure": "historical_models_previously_evaluated",
+    "test_integrity_thumbnail_exception": {
+      "scope": "integrity_only",
+      "audit_receipt": {
+        "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_clean_cohorts_20261108/iteration_000/integrity/summary.json",
+        "bytes": 2236,
+        "sha256": "e9c21e19e86818dc2e688e412b6f2a1437f3d18f6f469be5940365b6646886eb"
+      },
+      "automated": true,
+      "human_quality_review": false,
+      "model_scores_used": false
+    }
+  },
+  "data_integrity_repair": {
+    "completion": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_clean_cohorts_20261108/completion.json",
+      "bytes": 2111,
+      "sha256": "6a80e5054d67bc0afd0dc336603c28aab0e31d2a0a9f0b4afe58be8ff4d90de9"
+    },
+    "CPU_assets_handoff": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_clean_cohorts_20261108/CPU_assets_handoff.json",
+      "bytes": 2304,
+      "sha256": "ff6f9c23354d5d577d3e692033666d0043bc966f1a171643e6d2e6d3720c5ff1"
+    },
+    "training_unchanged": true,
+    "historical_results_unchanged": true,
+    "validation_sources_replaced": 1,
+    "test_sources_replaced": 3,
+    "limitation": "declared automatic screen is not exhaustive proof against all offset, crop, reframe, transcode or semantic duplicate variants"
+  },
+  "metric_weights": {
+    "alexnet": {
+      "path": "/home/hugo/Projects/VSR/weights/alexnet-owt-7be5be79.pth",
+      "bytes": 244408911,
+      "sha256": "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+    },
+    "linear": {
+      "path": "/home/hugo/Projects/VSR/weights/lpips_v0.1_alex.pth",
+      "bytes": 6009,
+      "sha256": "df73285e35b22355a2df87cdb6b70b343713b667eddbda73e1977e0c860835c0"
+    }
+  },
+  "primary_quality_metric": "LPIPS Alex0.1 all33 RGB q255; sampler mean within clip, equal32 source clips",
+  "quality_interpretation": "pairedclip95CI baseline-minus-method LPIPS lower>0 improvement; upper<=0 no benefit; otherwise insufficient; PSNR/SSIM/temporal tradeoffs always reported; conditional single training seed",
+  "candidate_weight_rule": {
+    "train_index": 0,
+    "sigmas": [
+      0.2,
+      0.5,
+      0.8
+    ],
+    "shared_student_gradient_ratio": "median unweighted FM/aux global L2 before clip",
+    "relative_strengths": [
+      0.1,
+      1.0
+    ],
+    "round_significant_figures": 2,
+    "validation_scores_used": false
+  },
+  "selection": "within each teacher family minimum final2048 validation mean LPIPS; exact tie chooses weaker positive weight; retain both candidates and all intermediate scores",
+  "inference": {
+    "sampler": "native UniPC",
+    "steps": 20,
+    "CFG": 1.0,
+    "sampling_seeds": [
+      42,
+      43
+    ],
+    "tile_hw": [
+      256,
+      448
+    ],
+    "overlap": 64,
+    "VAE": "FP32",
+    "all_frames": 33,
+    "conditions": [
+      "clean_bicubic_x4"
+    ],
+    "full_raw_source_video": false,
+    "MP4_policy": "all rows"
+  },
+  "evaluation_budget": {
+    "val_roles": 16,
+    "val_restores": 1024,
+    "test_roles": 3,
+    "test_restores": 192,
+    "predicted_frames": 40128
+  },
+  "budget": {
+    "training_seed_count": 1,
+    "max_trajectories": 5,
+    "scientific_updates": 10240,
+    "RE": 1.25,
+    "diagnostic_updates_planned": 27,
+    "old_EMA_pilot_RE": 0.75,
+    "combined_Stage4_RE": 2.0,
+    "authorized_original_Stage4_RE_about": 3.0,
+    "diagnostic_weights_reused": false
+  },
+  "efficiency": {
+    "curves": [
+      "LPIPS vs additional updates",
+      "LPIPS vs committed synchronized training-step seconds"
+    ],
+    "common_target": "baseline final2048 validation LPIPS; measured checkpoints only; shared0 already meeting target forbids acceleration claim",
+    "costs_separate": [
+      "committed online training",
+      "known discarded steps and attempts",
+      "frozen teacher extraction/cache",
+      "calibration",
+      "evaluation"
+    ],
+    "one_time_DINO_cost_receipt": {
+      "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_runs/dinov2_cache_20261108T032522Z/completion_receipt.json",
+      "bytes": 1510,
+      "sha256": "3bc0dcf51ec62521eec74e587740c13ece5b0d7630864825a92cd42410a94dcc"
+    },
+    "VAE_cache": "existing common sunk preparation; no new per-arm VAE extraction cost"
+  },
+  "scope_end": "single-seed small paired study with val selection, final heldout-source test and complete analysis; round2 suggestions only",
+  "calibration_report": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_runs/calibration_20261108T033512Z/summary.json",
+  "calibration": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_runs/calibration_20261108T033512Z/summary.json",
+    "bytes": 82627,
+    "sha256": "b6dfbbf21ce81c20f76e16f81207768d290c214a4065d6d2e7fda40abe06ca21"
+  },
+  "arms": [
+    {
+      "label": "baseline",
+      "family": "baseline",
+      "setting": "baseline",
+      "weight": 0.0
+    },
+    {
+      "label": "vae_low",
+      "family": "hr_vae",
+      "setting": "low",
+      "weight": 0.11
+    },
+    {
+      "label": "vae_high",
+      "family": "hr_vae",
+      "setting": "high",
+      "weight": 1.1
+    },
+    {
+      "label": "dino_low",
+      "family": "hr_dino",
+      "setting": "low",
+      "weight": 0.094
+    },
+    {
+      "label": "dino_high",
+      "family": "hr_dino",
+      "setting": "high",
+      "weight": 0.94
+    }
+  ],
+  "budget_adoption_after_preflight": {
+    "updates_per_trajectory": 2048,
+    "effective_batch_size": 1,
+    "scientific_updates": 10240,
+    "RE": 1.25,
+    "step_seconds_timed6_mean": {
+      "baseline": 0.35574507449443143,
+      "hr_vae": 0.3553419530120057,
+      "hr_dino": 0.36018928365471464
+    },
+    "estimated_committed_training_seconds": 3659.381857951482,
+    "estimate_excludes": "fresh loads, warmup variance, checkpoint IO, cache read outside step, eval and all offline costs",
+    "quality_scores_used": false,
+    "budget_basis": "original authorized Stage4 about3RE; old pilot.75RE plus this1.25RE equals2RE"
+  }
+}
