@@ -1,0 +1,68 @@
+{
+  "status": "passed_10_synthetic_CPU_unittest_methods_and_independent_review",
+  "helper": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_training_diagnostics.py",
+    "bytes": 27546,
+    "sha256": "012489bfcddc13d77eb66c32eb82fb9a86ab43e9513c928848660abc0ca5a7c1"
+  },
+  "tests": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/test_fixed_teacher_training_diagnostics.py",
+    "bytes": 15780,
+    "sha256": "ba5930161d8702f3967f2167ecbe1bb749591b402788f2fe0c7d51b690ffc850"
+  },
+  "inputs": "tiny synthetic5arm/10240scalar rows/20CPUtoy checkpoints, no real weights/models",
+  "gate": "incomplete reads status.json only, rejects before protocol/log/tensors and before any output directory",
+  "checks": [
+    "completed10240 status/summary/source11/calibration/dependency chains",
+    "all5arm2048 contiguous finite logs and exact data_index/record/sigma/timestep sequence",
+    "identical initial student hashes",
+    "20checkpoint SHA+metadata+completeAdamW step/moments",
+    "4explicit RNG byte vectors equal at each shared512/1024/1536/2048 step",
+    "student raw parameter change versus original Base",
+    "only CPU Linear seed+5 head initialization, preserving global CPU RNG; no Wan/VAE/DINO teacher construction"
+  ],
+  "outputs": [
+    "training_diagnostics.json",
+    "arm_windows.csv",
+    "arm_noise_bins.csv",
+    "checkpoint_rng_digests.csv",
+    "checkpoint_update_evidence.csv",
+    "README.md"
+  ],
+  "negative_tests": [
+    "incomplete status-only refusal",
+    "self-consistently re-signed sigma/record sequence mismatch before CP",
+    "self-consistently re-signed CP RNG bit mismatch",
+    "wrong initial student",
+    "nonfinite gradient",
+    "newHRCP missing variant rejected while legacyBase missing variant accepted",
+    "same-shape duplicateoptimizerID+orphanstate rejected",
+    "wrong headfamily or shape rejected",
+    "zero head moments recorded as diagnostic flag"
+  ],
+  "no_public_raw_RNG_or_weight_bytes": true,
+  "no_GPU_or_actual_incomplete_training_diagnostics": true,
+  "core_or_frozen6_helpers_modified": false,
+  "independent_review": {
+    "path": "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/scratch/fixed_teacher_training_diagnostics_independent_CPU_review_20261108.json",
+    "bytes": 5922,
+    "sha256": "3984a099aa4131cebdaf67b28d5e2d9f88ce75d57b44afd43608642e0aab68f7"
+  },
+  "call_only_after_complete": [
+    "/home/hugo/miniconda3/envs/reprvsr-pretrained/bin/python",
+    "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_training_diagnostics.py",
+    "--run",
+    "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/work/fixed_teacher_runs/paired_training_20261108T033800Z",
+    "--source-root",
+    "/home/hugo/.codex/worktrees/vsr-gamma-ablation/VSR-sync",
+    "--output-dir",
+    "/home/hugo/Documents/Codex/2026-11-05/home-hugo-projects-vsr-home-hugo/outputs/FixedTeacherTrainingDiagnostics_20261108"
+  ],
+  "compatibility_fix": "SourceBase legacy writer lacks variant; accept None/Base only with exactBase path,8192 and config. Formal20HR CP still require variantBase.",
+  "additional_checks": [
+    "Explicit optimizer parameter-ID/name/state bijection; duplicateID+orphan negative fixture",
+    "Head family/class and shape/dtype + fixedheadspec acrossCPs",
+    "Zero head second-moment gradient evidence is flagged; changed weights alone can come from decay"
+  ],
+  "final_no_GPU_or_real_incomplete_diagnose_invoked": true
+}

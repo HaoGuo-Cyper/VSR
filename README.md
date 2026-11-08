@@ -2,7 +2,7 @@
 
 当前研究问题：在相同训练条件下，用真实 HR 视频的冻结 **VAE latent** 或 **DINOv2 patch 特征**监督学生中间层，能否改善 ×4 视频超分质量或训练效率。
 
-**当前任务（2026-11-08）：基线、HR-VAE、HR-DINOv2 三组探索实验。** 一个训练种子，基线一条轨迹，两种对齐各最多两个权重，共最多五条轨迹。先测真实梯度尺度与开销，再锁定每条2048步的统一预算；所有候选保留，验证集选权重，再打开最终测试评价。方案见[执行计划](docs/fixed_teacher_20261108/plan.md)和[原论文与适配](docs/fixed_teacher_20261108/method_references.md)。当前短测已通过，候选已固定：VAE 0.11/1.1、DINO 0.094/0.94；见[预执行与预算](docs/fixed_teacher_20261108/preflight_and_budget.md)和[最终配置](configs/fixed_teacher_study_20261108.json)。当前尚无本轮质量结论。
+**当前任务（2026-11-08）：基线、HR-VAE、HR-DINOv2 三组探索实验。** 一个训练种子，基线一条轨迹，两种对齐各最多两个权重，共最多五条轨迹。先测真实梯度尺度与开销，再锁定每条2048步的统一预算；所有候选保留，验证集选权重，再打开最终测试评价。方案见[执行计划](docs/fixed_teacher_20261108/plan.md)、[数据与指标定义](docs/fixed_teacher_20261108/data_and_metric_protocol.md)和[原论文与适配](docs/fixed_teacher_20261108/method_references.md)。当前短测已通过，候选已固定：VAE 0.11/1.1、DINO 0.094/0.94；见[预执行与预算](docs/fixed_teacher_20261108/preflight_and_budget.md)和[最终配置](configs/fixed_teacher_study_20261108.json)。当前尚无本轮质量结论。
 
 本地 RTX5080 负责本轮开发与实验；H100迁移延期。旧 EMA pilot 的[完整结果](docs/local_continuation_20261107/G4_report.md)保留，其 clean 保真门槛未通过。EMA／Self-Flow 留到第二轮讨论，本轮不启动。
 

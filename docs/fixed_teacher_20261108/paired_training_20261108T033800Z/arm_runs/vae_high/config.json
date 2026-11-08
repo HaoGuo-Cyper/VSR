@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "stage": "hr_vae_latent_single_seed",
+  "seed": 20261102,
+  "model": {
+    "repo_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "local_dir": "/home/hugo/Projects/ReprVSR-pretrained/models/Wan2.1-T2V-1.3B-Diffusers"
+  },
+  "data": {
+    "raw_root": "/home/hugo/Projects/ReprVSR-pretrained/data/HQ-VSR",
+    "manifest": "manifests/hq_vsr.json",
+    "num_frames": 33,
+    "height": 128,
+    "width": 224,
+    "scale": 4,
+    "fps": "preserve_original_no_temporal_resampling",
+    "selection": "train",
+    "val_limit": 32,
+    "save_input_videos": 2,
+    "temporal_stride": 1,
+    "eligible_train_clips": 1641,
+    "text_cache": {
+      "source_run": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z",
+      "path": "/home/hugo/Projects/VSR/runs/formal_hq_v2_noref_20261102T142214.588571Z/fresh_text_embeddings.pt",
+      "sha256": "1dd219cde3005b4d16febaad67ad87e79c1403ae9bdaae69f2723ab9cbf239c2"
+    }
+  },
+  "conditioning": {
+    "injection_layers": [
+      0,
+      5,
+      9
+    ],
+    "alignment_layer": 9,
+    "rank": 8,
+    "alpha": 8,
+    "stem_channels": 128,
+    "projector_hidden": 1024,
+    "teacher_dim": 768,
+    "hri_enabled": false
+  },
+  "teacher": {
+    "repo": "https://github.com/facebookresearch/dinov2",
+    "revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "source_dir": "vendor/dinov2",
+    "weights": "weights/dinov2_vitb14_pretrain.pth",
+    "weights_url": "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth",
+    "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73"
+  },
+  "training": {
+    "variants": [
+      "Base"
+    ],
+    "batch_size": 1,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.01,
+    "max_grad_norm": 1.0,
+    "mixed_precision": "bf16",
+    "gradient_checkpointing": true,
+    "lambda_align": 0.0,
+    "fm_target": "noise_minus_clean",
+    "noise_interpolation": "(1-sigma)*clean+sigma*noise",
+    "timestep": "native_UniPC_1000_timestep_grid_uniform_index",
+    "official_initialization_per_variant": true,
+    "resume": false,
+    "updates": 2048,
+    "evaluate_at": [
+      0,
+      2048,
+      4096,
+      8192
+    ],
+    "checkpoint_at": [
+      2048,
+      4096,
+      8192
+    ],
+    "gradient_log_every": 512,
+    "log_every": 200,
+    "lambda_relation": 0.0,
+    "preparation_variants": [
+      "Base"
+    ],
+    "seed": 20261102
+  },
+  "formal_training": {
+    "enabled": true,
+    "training_source": "HQ-VSR only",
+    "matrix": [
+      "Base"
+    ],
+    "updates_each": 8192,
+    "official_independent_initialization_each": true,
+    "shared_data_and_degradation": true,
+    "caption_ignored_by_user_fixed_interface": true
+  },
+  "evaluation_protocol": {
+    "internal_val": "HQ-VSR source grouped val",
+    "internal_test": "HQ-VSR source grouped test untouched during preflight",
+    "external_paired": [
+      "REDS explicit sequence IDs pending",
+      "YouHQ40"
+    ],
+    "real": [
+      "VideoLQ MUSIQ + playback blind review"
+    ],
+    "second_round_expansion": "OpenVidHD only after module benefit confirmed",
+    "hri": "stage5 only",
+    "metrics": "official LPIPS/tLP/tOF adapters not yet implemented; never approximate under these names"
+  },
+  "experiment_name": "stage2_protocol33_base_seed20261102",
+  "caption_policy": "user_approved_fixed_generic_text; preserve_caption_interface; no_semantic_claim",
+  "evaluation": {
+    "sampling_steps": 20,
+    "seeds": [
+      42,
+      43
+    ],
+    "monitor_seeds": [
+      42
+    ],
+    "modes": [
+      "correct",
+      "disabled",
+      "shuffled"
+    ],
+    "rgb_range": [
+      0,
+      1
+    ],
+    "border_shave": 0,
+    "scope": "prospective_protocol33_stride1_fixed_train1641_val32;test_untouched",
+    "acceptance": {
+      "minimum_psnr_margin_over_controls_db": 1.0,
+      "all_clip_seed_pairs_positive": true,
+      "manual_content_motion_check": true
+    }
+  },
+  "flow": {
+    "weights": "weights/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
+    "weights_sha256": "ff5fadd56d26b40647388883af1547351ea17868b765c05b27231e72dd16a322",
+    "updates": 12,
+    "fb_alpha": 0.01,
+    "fb_beta": 0.5,
+    "direct_anchor_pairs": [
+      [
+        0,
+        4
+      ],
+      [
+        4,
+        8
+      ]
+    ]
+  },
+  "reproducibility": {
+    "mode": "strict",
+    "relation_loss_device": "cpu",
+    "verified_probe": "strict_determinism_probe: identical backward and 3-update same-state trajectories on thisGPU; no cross-hardware claim"
+  },
+  "protocol_transition": {
+    "human_accepted": "2026-11-05",
+    "protocol": "33contiguous_stride1",
+    "raw_split_unchanged": true,
+    "same_33_source_frame_span_as_historical": true,
+    "test_pixels_or_scores_not_used_for_protocol_choice": true
+  },
+  "stage2_contract": {
+    "protocol_id": "protocol33_stride1_v1_20261105",
+    "allowed_root": "/home/hugo/Projects/VSR_/runs",
+    "base_only": true,
+    "streaming_preparation": true,
+    "T5_load_allowed": false,
+    "DINO_load_allowed": false,
+    "expected_training_clips": 1641,
+    "expected_validation_clips": 32,
+    "expected_latent_grid": [
+      9,
+      16,
+      28
+    ],
+    "probe_updates": 8,
+    "continue_without_repeated_approval": true
+  },
+  "_source_config_sha256": "f238bc71677088a2aed52728075851b0e6873652d073dbb4329219b38f6b95a3",
+  "auxiliary_supervision": {
+    "target": "clean normalized HR VAE latent",
+    "weight": 1.1,
+    "student_layer": 7,
+    "head": "Linear1536to64_FP32",
+    "loss": "SmoothL1",
+    "beta": 1.0,
+    "reduction": "elementmean",
+    "teacher_frozen": true,
+    "EMA": false,
+    "condition_corruption": false
+  },
+  "_sha256": "304052e9f56065a46d7bcba248ae033341a062bec4542bfc5bd7520a4d852037"
+}
